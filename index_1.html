@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Differentiation &amp; Integration — A Visual Review</title>
+<style>
+  :root{
+    --surface-1:#fcfcfb;
+    --page:#f9f9f7;
+    --ink-primary:#0b0b0b;
+    --ink-secondary:#52514e;
+    --ink-muted:#898781;
+    --grid:#e1e0d9;
+    --baseline:#c3c2b7;
+    --border:rgba(11,11,11,0.10);
+
+    --blue:#2a78d6;      /* f(x) curves */
+    --orange:#eb6834;    /* secant / average-rate elements */
+    --aqua:#1baf7a;      /* tangent / exact / area elements */
+    --yellow:#eda100;    /* highlight / accent */
+    --magenta:#e87ba4;   /* secondary highlight */
+    --violet:#4a3aa7;    /* derivative curves */
+    --red:#e34948;       /* alerts / delta */
+
+    --radius:14px;
+    --shadow:0 1px 2px rgba(11,11,11,0.06), 0 6px 20px rgba(11,11,11,0.06);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--page);
+    color:var(--ink-primary);
+    line-height:1.55;
+  }
+  .math{ font-style:italic; font-family:"Cambria Math",Georgia,"Times New Roman",serif; }
+  .math sup{ font-style:italic; }
+  .wrap{ max-width:980px; margin:0 auto; padding:0 20px; }
+
+  /* ---- Nav ---- */
+  header.topnav{
+    position:sticky; top:0; z-index:50;
+    background:rgba(252,252,251,0.92);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--border);
+  }
+  .navrow{
+    max-width:980px; margin:0 auto; padding:10px 20px;
+    display:flex; align-items:center; gap:6px; overflow-x:auto;
+    scrollbar-width:thin;
+  }
+  .navrow .brand{ font-weight:700; margin-right:14px; white-space:nowrap; color:var(--ink-primary); }
+  .navrow a{
+    white-space:nowrap; font-size:13.5px; color:var(--ink-secondary);
+    text-decoration:none; padding:6px 10px; border-radius:999px;
+  }
+  .navrow a:hover{ background:var(--grid); color:var(--ink-primary); }
+
+  /* ---- Sections ---- */
+  section{ padding:56px 0; border-bottom:1px solid var(--grid); }
+  section:last-of-type{ border-bottom:none; }
+  .kicker{
+    text-transform:uppercase; letter-spacing:0.08em; font-size:12px;
+    font-weight:700; color:var(--ink-muted); margin:0 0 8px;
+  }
+  h1{ font-size:2.1rem; margin:0 0 12px; letter-spacing:-0.01em; }
+  h2{ font-size:1.55rem; margin:0 0 10px; letter-spacing:-0.01em; }
+  h3{ font-size:1.1rem; margin:0 0 8px; }
+  .lede{ font-size:1.08rem; color:var(--ink-secondary); max-width:70ch; }
+  p{ color:var(--ink-secondary); }
+  .tag{
+    display:inline-block; font-size:12px; font-weight:600; padding:3px 9px;
+    border-radius:999px; margin-right:6px; margin-bottom:6px;
+  }
+  .tag.geo{ background:#e7f0fb; color:#1c5cab; }
+  .tag.phys{ background:#fdeee6; color:#a8431b; }
+  .tag.rule{ background:#e9f8f1; color:#0f7a52; }
+
+  /* ---- Panels / cards ---- */
+  .panel{
+    background:var(--surface-1); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:20px; margin-top:18px;
+  }
+  .grid2{ display:grid; grid-template-columns:1.15fr 0.85fr; gap:22px; align-items:start; }
+  @media (max-width:760px){ .grid2{ grid-template-columns:1fr; } }
+
+  canvas{ width:100%; height:auto; display:block; background:var(--surface-1); border-radius:10px; }
+  .canvas-box{ border:1px solid var(--grid); border-radius:10px; padding:8px; background:var(--surface-1); }
+
+  .controls{ display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin-top:12px; }
+  .ctrl{ display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-secondary); }
+  .ctrl label{ font-weight:600; color:var(--ink-primary); }
+  input[type=range]{ width:170px; accent-color:var(--blue); }
+  select, .btn{
+    font-family:inherit; font-size:13.5px; padding:7px 12px; border-radius:8px;
+    border:1px solid var(--baseline); background:#fff; color:var(--ink-primary); cursor:pointer;
+  }
+  .btn{ font-weight:600; }
+  .btn.primary{ background:var(--blue); color:#fff; border-color:var(--blue); }
+  .btn.primary:hover{ background:#1c5cab; }
+  .btn:hover{ background:var(--grid); }
+  .btn.tab{ border-radius:999px; padding:7px 14px; }
+  .btn.tab.active{ background:var(--ink-primary); color:#fff; border-color:var(--ink-primary); }
+
+  .readout{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:12px;
+  }
+  .stat{
+    flex:1 1 140px; background:var(--page); border:1px solid var(--grid); border-radius:10px;
+    padding:10px 12px;
+  }
+  .stat .k{ font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); font-weight:700; }
+  .stat .v{ font-size:1.15rem; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .stat.blue .v{ color:var(--blue); }
+  .stat.orange .v{ color:#a8431b; }
+  .stat.aqua .v{ color:#0f7a52; }
+  .stat.violet .v{ color:var(--violet); }
+
+  .explain{ font-size:14.5px; }
+  .explain .formula{
+    display:block; background:var(--page); border:1px solid var(--grid); border-radius:8px;
+    padding:10px 12px; margin:10px 0; font-size:1.05rem;
+  }
+  .note{
+    font-size:13px; background:#fff9ec; border:1px solid #f1dfae; color:#6b4c04;
+    border-radius:8px; padding:8px 10px; margin-top:10px;
+  }
+
+  .tabpanel{ display:none; }
+  .tabpanel.active{ display:block; }
+
+  table.summary{ width:100%; border-collapse:collapse; margin-top:14px; font-size:14px; }
+  table.summary th, table.summary td{ text-align:left; padding:10px 12px; border-bottom:1px solid var(--grid); vertical-align:top; }
+  table.summary th{ color:var(--ink-muted); font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; }
+  table.summary td.diff{ border-left:3px solid var(--blue); }
+  table.summary td.integ{ border-left:3px solid var(--aqua); }
+
+  ol.prompts li{ margin-bottom:8px; color:var(--ink-secondary); }
+  ol.prompts{ padding-left:22px; }
+
+  footer{ padding:40px 0 70px; text-align:center; color:var(--ink-muted); font-size:13px; }
+
+  .legend-dot{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:middle; }
+  .pipeline{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:14px; margin-top:14px;}
+  .pipebox{ background:var(--page); border:1px solid var(--grid); border-radius:8px; padding:8px 12px; font-variant-numeric:tabular-nums; min-width:64px; text-align:center;}
+  .pipearrow{ color:var(--ink-muted); font-size:18px; }
+</style>
+</head>
+<body>
+
+<header class="topnav">
+  <nav class="navrow">
+    <span class="brand">∫ d/dx</span>
+    <a href="#diff-intuition">Derivative: intuition</a>
+    <a href="#diff-physical">Derivative: motion</a>
+    <a href="#diff-rules">Derivative: rules</a>
+    <a href="#integ-intuition">Integral: intuition</a>
+    <a href="#integ-physical">Integral: motion</a>
+    <a href="#integ-rules">Integral: rules</a>
+    <a href="#ftc">FTC</a>
+    <a href="#summary">Summary</a>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <section id="intro">
+    <p class="kicker">First-year engineering &middot; Calculus review</p>
+    <h1>Differentiation &amp; Integration, rebuilt from intuition</h1>
+    <p class="lede">You've seen these before. This is a fast, visual re-derivation of what a derivative and an
+      integral actually <em>are</em> — geometrically and physically — before we refresh the rules you'll use
+      all semester. Every diagram below is live: drag the sliders, press play, and watch the definitions
+      happen rather than just reading them.</p>
+  </section>
+
+  <section id="diff-intuition">
+    <p class="kicker">Part 1 &middot; Differentiation</p>
+    <h2>What is a derivative? Zoom in until the curve looks straight.</h2>
+    <span class="tag geo">Geometric</span>
+    <p class="lede">Pick two points on a curve and the slope between them is an <em>average</em> rate of change —
+      that's the secant line. Now slide the second point toward the first. The secant keeps rotating until,
+      in the limit, it settles onto the <strong>tangent line</strong>: the instantaneous rate of change at a
+      single point. That limit is the derivative.</p>
+
+    <div class="panel">
+      <div class="grid2">
+        <div>
+          <div class="canvas-box"><canvas id="cv-diff1" data-h="300"></canvas></div>
+          <div class="controls">
+            <div class="ctrl"><label>Function</label>
+              <select id="diff1-fn">
+                <option value="quad">f(x) = x²</option>
+                <option value="cubic">f(x) = x³ − 2x</option>
+                <option value="sine">f(x) = sin(x)</option>
+              </select>
+            </div>
+            <div class="ctrl"><label>Point x₀ = <span id="diff1-x0val">0.50</span></label>
+              <input type="range" id="diff1-x0" min="-2.5" max="2.5" step="0.01" value="0.5"></div>
+            <div class="ctrl"><label>Gap h = <span id="diff1-hval">1.20</span></label>
+              <input type="range" id="diff1-h" min="-2" max="2" step="0.01" value="1.2"></div>
+            <div class="ctrl"><label>&nbsp;</label>
+              <button class="btn primary" id="diff1-play">▶ Shrink h → 0</button></div>
+          </div>
+          <div class="readout">
+            <div class="stat orange"><div class="k">Secant slope (avg. rate)</div><div class="v" id="diff1-secant">—</div></div>
+            <div class="stat aqua"><div class="k">Tangent slope f′(x₀) (exact)</div><div class="v" id="diff1-tangent">—</div></div>
+            <div class="stat"><div class="k">Gap h</div><div class="v" id="diff1-hshow">—</div></div>
+          </div>
+        </div>
+        <div class="explain">
+          <h3>Reading the diagram</h3>
+          <p><span class="legend-dot" style="background:var(--blue)"></span><b>Blue</b> — the function f(x).<br>
+             <span class="legend-dot" style="background:var(--orange)"></span><b>Orange</b> — the secant line through P=(x₀,f(x₀)) and Q=(x₀+h, f(x₀+h)).<br>
+             <span class="legend-dot" style="background:var(--aqua)"></span><b>Aqua</b> — the tangent line, revealed once h is small enough.</p>
+          <span class="formula math">f′(x₀) = lim<sub>h→0</sub> [f(x₀+h) − f(x₀)] / h</span>
+          <p>Press <b>Shrink h → 0</b> and watch the orange secant slope converge onto the aqua tangent slope —
+            numerically and visually, at the same time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="diff-physical">
+    <span class="tag phys">Physical</span>
+    <h2>Same idea, different story: velocity is a derivative</h2>
+    <p class="lede">A car's position s(t) traces a curve on a position-vs-time graph. Average velocity over an
+      interval is just a secant slope again — displacement over elapsed time. Instantaneous velocity, the
+      number on the speedometer <em>right now</em>, is the tangent slope: s′(t).</p>
+
+    <div class="panel">
+      <div class="grid2">
+        <div>
+          <div class="canvas-box"><canvas id="cv-diff2" data-h="300"></canvas></div>
+          <div class="controls">
+            <div class="ctrl"><label>Time t₀ = <span id="diff2-t0val">1.00</span> s</label>
+              <input type="range" id="diff2-t0" min="0" max="3.6" step="0.01" value="1"></div>
+            <div class="ctrl"><label>Interval Δt = <span id="diff2-dtval">1.00</span> s</label>
+              <input type="range" id="diff2-dt" min="0.05" max="2" step="0.01" value="1"></div>
+            <div class="ctrl"><label>&nbsp;</label>
+              <button class="btn primary" id="diff2-play">▶ Shrink Δt → 0</button></div>
+          </div>
+          <div class="readout">
+            <div class="stat orange"><div class="k">Average velocity</div><div class="v" id="diff2-avg">—</div></div>
+            <div class="stat aqua"><div class="k">Instantaneous velocity s′(t₀)</div><div class="v" id="diff2-inst">—</div></div>
+          </div>
+          <div class="canvas-box" style="margin-top:12px;"><canvas id="cv-diff2-track" data-h="70"></canvas></div>
+        </div>
+        <div class="explain">
+          <h3>Scenario</h3>
+          <p>A cart's position is <span class="math">s(t) = t²</span> metres, <span class="math">t</span> in seconds
+             (it's accelerating — think of it rolling down a ramp). The track below the graph shows where the
+             cart actually is.</p>
+          <span class="formula math">average velocity = [s(t₀+Δt) − s(t₀)] / Δt</span>
+          <span class="formula math">instantaneous velocity = s′(t₀) = 2t₀</span>
+          <p>This is the same limiting process as the geometric picture above — only now the slope literally
+            means "how fast is this thing moving," which is why engineers care about derivatives at all.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="diff-rules">
+    <span class="tag rule">Rules refresher</span>
+    <h2>Now the shortcuts, seen rather than memorized</h2>
+    <p class="lede">The limit definition is how derivatives are <em>defined</em> — but in practice you'll use
+      three workhorse rules. Here's why each one is true, not just what it says.</p>
+
+    <div class="panel" id="diffrules-root">
+      <div class="controls" style="margin-top:0;">
+        <button class="btn tab active" data-tab="power">Power rule</button>
+        <button class="btn tab" data-tab="product">Product rule</button>
+        <button class="btn tab" data-tab="chain">Chain rule</button>
+      </div>
+
+      <div class="tabpanel active" data-tab="power">
+        <div class="grid2">
+          <div>
+            <div class="canvas-box"><canvas id="cv-power" data-h="280"></canvas></div>
+            <div class="controls">
+              <div class="ctrl"><label>Power n = <span id="power-nval">2</span></label>
+                <input type="range" id="power-n" min="1" max="4" step="1" value="2"></div>
+              <div class="ctrl"><label>Point x₀ = <span id="power-x0val">1.00</span></label>
+                <input type="range" id="power-x0" min="-2" max="2" step="0.01" value="1"></div>
+            </div>
+            <div class="readout">
+              <div class="stat aqua"><div class="k">Tangent slope at x₀</div><div class="v" id="power-slope">—</div></div>
+            </div>
+          </div>
+          <div class="explain">
+            <span class="formula math">d/dx [x<sup>n</sup>] = n·x<sup>n−1</sup></span>
+            <p>Drag <span class="math">n</span> and watch the exponent step down by one while a factor of the
+              old exponent appears out front — exactly what the tangent-slope readout confirms numerically at
+              every x₀ you pick.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-tab="product">
+        <div class="grid2">
+          <div>
+            <div class="canvas-box"><canvas id="cv-product" data-h="280"></canvas></div>
+            <div class="controls">
+              <div class="ctrl"><label>x = <span id="product-xval">1.00</span></label>
+                <input type="range" id="product-x" min="0.3" max="2.6" step="0.01" value="1"></div>
+              <div class="ctrl"><label>&nbsp;</label>
+                <button class="btn primary" id="product-nudge">▶ Nudge x by Δx</button></div>
+            </div>
+            <div class="readout">
+              <div class="stat blue"><div class="k">u(x)·v(x)</div><div class="v" id="product-area">—</div></div>
+              <div class="stat orange"><div class="k">u·Δv + v·Δu (predicted ΔArea)</div><div class="v" id="product-pred">—</div></div>
+            </div>
+          </div>
+          <div class="explain">
+            <p>Think of the product <span class="math">u(x)·v(x)</span> as the area of a rectangle with width
+              <span class="math">u</span> and height <span class="math">v</span>. Nudge x forward a little: the
+              rectangle grows by a top strip (<span class="math">u·Δv</span>) plus a side strip
+              (<span class="math">v·Δu</span>) — the tiny corner (<span class="math">Δu·Δv</span>) vanishes
+              faster than the rest as Δx→0.</p>
+            <span class="formula math">d/dx [u·v] = u·v′ + v·u′</span>
+            <p><span class="legend-dot" style="background:var(--blue)"></span>rectangle &nbsp;
+               <span class="legend-dot" style="background:var(--orange)"></span>top strip u·Δv &nbsp;
+               <span class="legend-dot" style="background:var(--aqua)"></span>side strip v·Δu</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-tab="chain">
+        <div class="grid2">
+          <div>
+            <div class="canvas-box"><canvas id="cv-chain" data-h="260"></canvas></div>
+            <div class="controls">
+              <div class="ctrl"><label>x₀ = <span id="chain-x0val">1.00</span></label>
+                <input type="range" id="chain-x0" min="0.2" max="2.2" step="0.01" value="1"></div>
+            </div>
+            <div class="pipeline" id="chain-pipeline">
+              <div class="pipebox">x₀ = <span id="chain-x">—</span></div>
+              <span class="pipearrow">→ g →</span>
+              <div class="pipebox">g(x₀) = <span id="chain-g">—</span></div>
+              <span class="pipearrow">→ f →</span>
+              <div class="pipebox">f(g(x₀)) = <span id="chain-fg">—</span></div>
+            </div>
+            <div class="readout">
+              <div class="stat"><div class="k">g′(x₀)</div><div class="v" id="chain-gp">—</div></div>
+              <div class="stat"><div class="k">f′(g(x₀))</div><div class="v" id="chain-fp">—</div></div>
+              <div class="stat aqua"><div class="k">(f∘g)′(x₀) = product</div><div class="v" id="chain-total">—</div></div>
+            </div>
+          </div>
+          <div class="explain">
+            <p>Example: <span class="math">g(x) = x²</span>, <span class="math">f(u) = sin(u)</span>, so
+              <span class="math">h(x) = f(g(x)) = sin(x²)</span>. A nudge in x gets stretched by
+              <span class="math">g′(x)</span> on its way through g, then stretched again by
+              <span class="math">f′(g(x))</span> on its way through f. Two stretches in a row multiply.</p>
+            <span class="formula math">(f∘g)′(x) = f′(g(x))·g′(x)</span>
+            <p>The aqua tangent line on h(x) = sin(x²) always has exactly this slope — the abstract pipeline and
+              the geometric tangent agree.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="integ-intuition">
+    <p class="kicker">Part 2 &middot; Integration</p>
+    <h2>What is an integral? Fill the area with thinner and thinner rectangles.</h2>
+    <span class="tag geo">Geometric</span>
+    <p class="lede">To find the area under a curve, approximate it with rectangles — easy shapes we already know
+      how to measure. A few fat rectangles are a rough guess. As you add more, thinner ones, the guess tightens.
+      In the limit of infinitely many infinitely thin rectangles, the sum <em>is</em> the exact area — that
+      limit is the definite integral.</p>
+
+    <div class="panel">
+      <div class="grid2">
+        <div>
+          <div class="canvas-box"><canvas id="cv-riemann" data-h="300"></canvas></div>
+          <div class="controls">
+            <div class="ctrl"><label>Function</label>
+              <select id="riemann-fn">
+                <option value="quad">f(x) = x² on [0, 2]</option>
+                <option value="hump">f(x) = 4 − (x−2)² on [0, 4]</option>
+                <option value="sine">f(x) = sin(x) on [0, π]</option>
+              </select>
+            </div>
+            <div class="ctrl"><label>Rectangles n = <span id="riemann-nval">6</span></label>
+              <input type="range" id="riemann-n" min="1" max="120" step="1" value="6"></div>
+            <div class="ctrl"><label>Rule</label>
+              <select id="riemann-rule">
+                <option value="left">Left endpoint</option>
+                <option value="right">Right endpoint</option>
+                <option value="mid" selected>Midpoint</option>
+              </select>
+            </div>
+            <div class="ctrl"><label>&nbsp;</label>
+              <button class="btn primary" id="riemann-play">▶ Animate n → ∞</button></div>
+          </div>
+          <div class="readout">
+            <div class="stat blue"><div class="k">Riemann sum</div><div class="v" id="riemann-sum">—</div></div>
+            <div class="stat aqua"><div class="k">Exact integral</div><div class="v" id="riemann-exact">—</div></div>
+            <div class="stat orange"><div class="k">Error</div><div class="v" id="riemann-err">—</div></div>
+          </div>
+        </div>
+        <div class="explain">
+          <h3>Reading the diagram</h3>
+          <p><span class="legend-dot" style="background:var(--blue)"></span>rectangles approximating the area
+            &nbsp; <span class="legend-dot" style="background:var(--aqua)"></span>curve f(x)</p>
+          <span class="formula math">∫<sub>a</sub><sup>b</sup> f(x) dx = lim<sub>n→∞</sub> Σ f(x<sub>i</sub>)·Δx</span>
+          <p>Drag n up and the rectangle sum visibly melts into the shaded region under the curve. Try the same
+            n with Left vs. Midpoint — midpoint rectangles converge faster because over- and under-shoots cancel.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="integ-physical">
+    <span class="tag phys">Physical</span>
+    <h2>Same idea, different story: area under velocity is distance</h2>
+    <p class="lede">Flip the earlier motion example around. Now we're handed a velocity-vs-time graph and asked
+      how far the object travelled. Chop time into thin slices; over each slice velocity is roughly constant,
+      so distance ≈ velocity × Δt — the area of a thin strip. Add the strips.</p>
+
+    <div class="panel">
+      <div class="grid2">
+        <div>
+          <div class="canvas-box"><canvas id="cv-integ2" data-h="280"></canvas></div>
+          <div class="controls">
+            <div class="ctrl"><label>Time t = <span id="integ2-tval">0.00</span> s</label>
+              <input type="range" id="integ2-t" min="0" max="4" step="0.01" value="0"></div>
+            <div class="ctrl"><label>&nbsp;</label>
+              <button class="btn primary" id="integ2-play">▶ Play motion</button></div>
+          </div>
+          <div class="readout">
+            <div class="stat blue"><div class="k">Current velocity v(t)</div><div class="v" id="integ2-v">—</div></div>
+            <div class="stat aqua"><div class="k">Distance travelled = area</div><div class="v" id="integ2-dist">—</div></div>
+          </div>
+          <div class="canvas-box" style="margin-top:12px;"><canvas id="cv-integ2-track" data-h="70"></canvas></div>
+        </div>
+        <div class="explain">
+          <h3>Scenario</h3>
+          <p>A drone's velocity is <span class="math">v(t) = 3 − 0.5t</span> m/s (decelerating), t in seconds.
+             The shaded region is the distance covered so far — as t sweeps forward, watch the drone on the
+             track move by exactly the shaded area, not the current velocity.</p>
+          <span class="formula math">distance(t) = ∫<sub>0</sub><sup>t</sup> v(τ) dτ</span>
+          <p>This is the mirror image of the differentiation motion example: there we went position → velocity
+            by differentiating; here we go velocity → distance by integrating (accumulating). That mirror-image
+            relationship is exactly the Fundamental Theorem of Calculus, coming up.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="integ-rules">
+    <span class="tag rule">Rules refresher</span>
+    <h2>Integration rules: mostly differentiation in reverse</h2>
+    <p class="lede">Every rule below is a differentiation rule read right-to-left. Recognizing that saves you
+      from re-memorizing anything.</p>
+
+    <div class="panel" id="integrules-root">
+      <div class="controls" style="margin-top:0;">
+        <button class="btn tab active" data-tab="powerint">Power rule</button>
+        <button class="btn tab" data-tab="usub">u-substitution</button>
+      </div>
+
+      <div class="tabpanel active" data-tab="powerint">
+        <div class="grid2">
+          <div>
+            <div class="canvas-box"><canvas id="cv-powerint" data-h="280"></canvas></div>
+            <div class="controls">
+              <div class="ctrl"><label>Power n = <span id="powerint-nval">2</span></label>
+                <input type="range" id="powerint-n" min="1" max="3" step="1" value="2"></div>
+              <div class="ctrl"><label>Constant C = <span id="powerint-cval">0.00</span></label>
+                <input type="range" id="powerint-c" min="-3" max="3" step="0.1" value="0"></div>
+            </div>
+          </div>
+          <div class="explain">
+            <span class="formula math">∫x<sup>n</sup> dx = x<sup>n+1</sup>/(n+1) + C</span>
+            <p>Every one of the parallel aqua curves below has <em>exactly the same</em> derivative, shown in
+              blue underneath — because a vertical shift doesn't change slope anywhere. That's why the "+C"
+              matters: the antiderivative isn't one curve, it's a whole family. Drag C to slide your chosen
+              curve through the family.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpanel" data-tab="usub">
+        <div class="grid2">
+          <div>
+            <div class="canvas-box"><canvas id="cv-usub" data-h="280"></canvas></div>
+            <div class="controls">
+              <div class="ctrl"><label>Upper limit x = <span id="usub-xval">1.00</span></label>
+                <input type="range" id="usub-x" min="0.1" max="2.2" step="0.01" value="1"></div>
+            </div>
+            <div class="pipeline">
+              <div class="pipebox">∫ 2x·cos(x²) dx</div>
+              <span class="pipearrow">← recognize u=g(x) →</span>
+              <div class="pipebox">∫ cos(u) du</div>
+            </div>
+            <div class="readout">
+              <div class="stat blue"><div class="k">Area swept (numeric)</div><div class="v" id="usub-area">—</div></div>
+              <div class="stat aqua"><div class="k">sin(x²) − sin(0) (antiderivative)</div><div class="v" id="usub-formula">—</div></div>
+            </div>
+          </div>
+          <div class="explain">
+            <p>The integrand <span class="math">2x·cos(x²)</span> is exactly a chain-rule output: with
+              <span class="math">u = g(x) = x²</span>, <span class="math">du = 2x·dx</span>, so the integral
+              becomes <span class="math">∫cos(u)du = sin(u)+C = sin(x²)+C</span> — the reverse of the chain-rule
+              pipeline from the differentiation rules panel.</p>
+            <span class="formula math">∫ f′(g(x))·g′(x) dx = f(g(x)) + C</span>
+            <p>The blue accumulated area (computed by literally summing thin strips) should match the aqua
+              closed-form value at every x — a nice numerical check that u-substitution really does work.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="ftc">
+    <p class="kicker">Part 3 &middot; The bridge</p>
+    <h2>The Fundamental Theorem of Calculus: they undo each other</h2>
+    <p class="lede">Define an <b>accumulation function</b> A(x) = the running area under f from a fixed start
+      point up to x. As x sweeps rightward, A(x) is being built up in real time by the integral. Now watch A(x)'s
+      own tangent slope — it always equals the height of f at that same x.</p>
+
+    <div class="panel">
+      <div class="grid2">
+        <div>
+          <div class="canvas-box"><canvas id="cv-ftc-top" data-h="220"></canvas></div>
+          <div class="canvas-box" style="margin-top:10px;"><canvas id="cv-ftc-bottom" data-h="220"></canvas></div>
+          <div class="controls">
+            <div class="ctrl"><label>x = <span id="ftc-xval">0.50</span></label>
+              <input type="range" id="ftc-x" min="0.05" max="3.1" step="0.01" value="0.5"></div>
+            <div class="ctrl"><label>&nbsp;</label>
+              <button class="btn primary" id="ftc-play">▶ Sweep x</button></div>
+          </div>
+          <div class="readout">
+            <div class="stat blue"><div class="k">f(x) — height</div><div class="v" id="ftc-fx">—</div></div>
+            <div class="stat aqua"><div class="k">A′(x) — slope of accumulation</div><div class="v" id="ftc-ap">—</div></div>
+          </div>
+        </div>
+        <div class="explain">
+          <h3>Reading the diagram</h3>
+          <p><b>Top:</b> f(x) = <span class="math">0.6x² − x + 1.6</span> with the running shaded area
+            A(x) = <span class="math">∫₀ˣ f(t)dt</span>.<br><b>Bottom:</b> A(x) itself being traced out, with its
+            tangent line at the current x.</p>
+          <span class="formula math">A(x) = ∫<sub>a</sub><sup>x</sup> f(t) dt &nbsp;⟹&nbsp; A′(x) = f(x)</span>
+          <p>Notice the two readouts above always match. That single fact — differentiating an accumulated area
+            gives back the original function — is the Fundamental Theorem of Calculus. It's why "integration"
+            and "antidifferentiation" are taught as the same operation: finding an antiderivative <em>is</em>
+            how we evaluate a definite integral in practice, instead of summing infinitely many strips by hand.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section id="summary">
+    <p class="kicker">Wrap-up</p>
+    <h2>Two operations, one relationship</h2>
+    <table class="summary">
+      <thead><tr><th>&nbsp;</th><th>Differentiation</th><th>Integration</th></tr></thead>
+      <tbody>
+        <tr><th>Geometric meaning</th><td class="diff">Slope of the tangent line at a point</td><td class="integ">Area under the curve over an interval</td></tr>
+        <tr><th>Built from</th><td class="diff">Secant slopes, as the gap h → 0</td><td class="integ">Rectangle sums, as the width Δx → 0</td></tr>
+        <tr><th>Physical meaning</th><td class="diff">Instantaneous rate of change (e.g. velocity from position)</td><td class="integ">Total accumulation (e.g. distance from velocity)</td></tr>
+        <tr><th>Symbol</th><td class="diff"><span class="math">f′(x)</span> or <span class="math">df/dx</span></td><td class="integ"><span class="math">∫f(x)dx</span></td></tr>
+        <tr><th>Key rules seen today</th><td class="diff">Power, product, chain</td><td class="integ">Power, u-substitution</td></tr>
+        <tr><th>Connected by</th><td colspan="2">The Fundamental Theorem of Calculus: <span class="math">d/dx ∫<sub>a</sub><sup>x</sup> f(t)dt = f(x)</span> — differentiation and integration are inverse operations.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="panel">
+      <h3>Discussion / practice prompts</h3>
+      <ol class="prompts">
+        <li>In the secant-to-tangent animation, why does the secant slope not always approach the tangent slope <em>monotonically</em> — could it overshoot? Try f(x) = sin(x) near a curved region and see.</li>
+        <li>For the Riemann sum tool, at a fixed small n, which rule (left/right/midpoint) tends to have the smallest error on a concave-down function, and why does that match the shape of the curve?</li>
+        <li>Using the product-rule rectangle picture, derive what happens to the "tiny corner" term Δu·Δv as Δx→0, and explain why it's dropped from the final rule.</li>
+        <li>The chain-rule pipeline multiplies two derivatives. If g′(x₀) = 0, what does that predict about (f∘g)′(x₀) — and can you confirm it by dragging the slider to a point where g′=0?</li>
+        <li>In the physical sections, sketch what the position-time graph would look like if the drone's velocity were <em>constant</em> instead of decreasing. What would that do to the accumulation-area picture?</li>
+        <li>Using the FTC panel, explain in one sentence why "the derivative of the area function gives back the height" without using any symbols — only the picture.</li>
+      </ol>
+    </div>
+  </section>
+
+</main>
+
+<footer>Built for a first-year engineering calculus review &middot; drag things, press play, break nothing.</footer>
+
+<script>
+"use strict";
+
+/* ============================= Function registry ============================= */
+const FN = {
+  quad:  { label:"f(x) = x²",        f:x=>x*x,            fp:x=>2*x,          F:x=>x*x*x/3,                domain:[-3,3],  range:[-1,9.5] },
+  cubic: { label:"f(x) = x³ − 2x",   f:x=>x*x*x-2*x,       fp:x=>3*x*x-2,      F:x=>x*x*x*x/4 - x*x,        domain:[-2.4,2.4], range:[-4,4] },
+  sine:  { label:"f(x) = sin(x)",    f:x=>Math.sin(x),     fp:x=>Math.cos(x),  F:x=>-Math.cos(x),           domain:[-6.6,6.6], range:[-1.7,1.7] }
+};
+
+const COLORS = {
+  blue:"#2a78d6", orange:"#eb6834", aqua:"#1baf7a", yellow:"#eda100",
+  magenta:"#e87ba4", violet:"#4a3aa7", red:"#e34948", ink:"#0b0b0b", secondary:"#52514e"
+};
+
+function trapezoid(f,a,b,n){
+  n = n||300; const h=(b-a)/n; let s=0.5*(f(a)+f(b));
+  for(let i=1;i<n;i++) s += f(a+i*h);
+  return s*h;
+}
+
+function drawTrack(canvas,posMax,pos,color){
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(rect.width,260), h = parseFloat(canvas.dataset.h)||70;
+  canvas.width = w*dpr; canvas.height = h*dpr; canvas.style.height = h+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+  const padL=22,padR=22, midY=h/2;
+  ctx.strokeStyle = "#c3c2b7"; ctx.lineWidth=3; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(padL,midY); ctx.lineTo(w-padR,midY); ctx.stroke();
+  ctx.fillStyle = "#898781"; ctx.font = "11px system-ui,sans-serif"; ctx.textAlign="center";
+  ctx.fillText("0", padL, midY+22);
+  ctx.fillText(fmt2(posMax), w-padR, midY+22);
+  const px = padL + clamp(pos/posMax,0,1)*(w-padL-padR);
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(px,midY,9,0,7); ctx.fill();
+  ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke();
+}
+
+/* Re-render registry: fired (debounced) after any window resize so canvases redraw
+   at their new size instead of going blank. */
+const RERENDERS = [];
+function registerRerender(fn){ RERENDERS.push(fn); }
+let __resizeTimer = null;
+window.addEventListener("resize", ()=>{
+  clearTimeout(__resizeTimer);
+  __resizeTimer = setTimeout(()=>{ RERENDERS.forEach(fn=>{ try{ fn(); }catch(e){ console.error(e); } }); }, 120);
+});
+
+/* ============================= Plot helper ============================= */
+class Plot{
+  constructor(canvas, opts){
+    this.canvas = canvas;
+    this.ctx = canvas.getContext("2d");
+    this.xMin = opts.xMin; this.xMax = opts.xMax;
+    this.yMin = opts.yMin; this.yMax = opts.yMax;
+    this.padL = opts.padL ?? 34; this.padR = opts.padR ?? 14;
+    this.padT = opts.padT ?? 14; this.padB = opts.padB ?? 28;
+    this.resize();
+    window.addEventListener("resize", ()=>this.resize());
+  }
+  resize(){
+    const rect = this.canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(rect.width, 260);
+    const h = this.canvas.dataset.h ? parseFloat(this.canvas.dataset.h) : Math.max(rect.width*0.56, 220);
+    this.canvas.width = w*dpr; this.canvas.height = h*dpr;
+    this.canvas.style.height = h+"px";
+    this.ctx.setTransform(dpr,0,0,dpr,0,0);
+    this.w = w; this.h = h;
+  }
+  toPx(x,y){
+    const px = this.padL + (x-this.xMin)/(this.xMax-this.xMin) * (this.w-this.padL-this.padR);
+    const py = this.h-this.padB - (y-this.yMin)/(this.yMax-this.yMin) * (this.h-this.padT-this.padB);
+    return [px,py];
+  }
+  setDomain(xMin,xMax,yMin,yMax){ this.xMin=xMin; this.xMax=xMax; this.yMin=yMin; this.yMax=yMax; }
+  clear(){ this.ctx.clearRect(0,0,this.w,this.h); }
+  drawAxes(opts={}){
+    const ctx=this.ctx;
+    ctx.save();
+    ctx.strokeStyle = "#e1e0d9"; ctx.lineWidth=1;
+    const nx = opts.nx ?? 8, ny = opts.ny ?? 6;
+    for(let i=0;i<=nx;i++){
+      const x = this.xMin + (this.xMax-this.xMin)*i/nx;
+      const [px] = this.toPx(x,0);
+      ctx.beginPath(); ctx.moveTo(px,this.padT); ctx.lineTo(px,this.h-this.padB); ctx.stroke();
+    }
+    for(let i=0;i<=ny;i++){
+      const y = this.yMin + (this.yMax-this.yMin)*i/ny;
+      const [,py] = this.toPx(0,y);
+      ctx.beginPath(); ctx.moveTo(this.padL,py); ctx.lineTo(this.w-this.padR,py); ctx.stroke();
+    }
+    ctx.strokeStyle = "#c3c2b7"; ctx.lineWidth=1.4;
+    if(this.yMin<0 && this.yMax>0){ const [,zy]=this.toPx(0,0); ctx.beginPath(); ctx.moveTo(this.padL,zy); ctx.lineTo(this.w-this.padR,zy); ctx.stroke(); }
+    if(this.xMin<0 && this.xMax>0){ const [zx]=this.toPx(0,0); ctx.beginPath(); ctx.moveTo(zx,this.padT); ctx.lineTo(zx,this.h-this.padB); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.moveTo(this.padL,this.h-this.padB); ctx.lineTo(this.w-this.padR,this.h-this.padB); ctx.stroke(); }
+    ctx.restore();
+  }
+  drawCurve(fn, color, lw, from, to, steps, alpha){
+    lw = lw ?? 2.5; from = from ?? this.xMin; to = to ?? this.xMax; steps = steps ?? 220;
+    const ctx=this.ctx; ctx.save();
+    if(alpha!=null) ctx.globalAlpha = alpha;
+    ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.lineJoin="round"; ctx.lineCap="round";
+    ctx.beginPath();
+    let started=false;
+    for(let i=0;i<=steps;i++){
+      const x = from + (to-from)*i/steps;
+      const y = fn(x);
+      if(!isFinite(y) || y<this.yMin-(this.yMax-this.yMin) || y>this.yMax+(this.yMax-this.yMin)){ started=false; continue; }
+      const [px,py]=this.toPx(x,y);
+      if(!started){ ctx.moveTo(px,py); started=true; } else ctx.lineTo(px,py);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+  drawLine(x1,y1,x2,y2,color,lw,dash,alpha){
+    const ctx=this.ctx; ctx.save();
+    if(alpha!=null) ctx.globalAlpha = alpha;
+    ctx.strokeStyle=color; ctx.lineWidth=lw??2; if(dash) ctx.setLineDash(dash);
+    const [px1,py1]=this.toPx(x1,y1), [px2,py2]=this.toPx(x2,y2);
+    ctx.beginPath(); ctx.moveTo(px1,py1); ctx.lineTo(px2,py2); ctx.stroke();
+    ctx.restore();
+  }
+  strokeRect(x1,y1,x2,y2,color,lw){
+    const ctx=this.ctx; ctx.save();
+    ctx.strokeStyle=color; ctx.lineWidth=lw??1.5;
+    const [px1,py1]=this.toPx(x1,y1), [px2,py2]=this.toPx(x2,y2);
+    ctx.strokeRect(Math.min(px1,px2),Math.min(py1,py2),Math.abs(px2-px1),Math.abs(py2-py1));
+    ctx.restore();
+  }
+  drawPoint(x,y,color,r){
+    r = r??5; const ctx=this.ctx; const [px,py]=this.toPx(x,y);
+    ctx.save(); ctx.fillStyle=color; ctx.beginPath(); ctx.arc(px,py,r,0,7); ctx.fill();
+    ctx.strokeStyle="#fff"; ctx.lineWidth=1.5; ctx.stroke(); ctx.restore();
+  }
+  fillRect(x1,y1,x2,y2,color){
+    const ctx=this.ctx; const [px1,py1]=this.toPx(x1,y1), [px2,py2]=this.toPx(x2,y2);
+    ctx.save(); ctx.fillStyle=color; ctx.fillRect(Math.min(px1,px2),Math.min(py1,py2),Math.abs(px2-px1),Math.abs(py2-py1));
+    ctx.restore();
+  }
+  fillUnderCurve(fn,x1,x2,color,steps){
+    steps = steps ?? 100; const ctx=this.ctx; ctx.save(); ctx.fillStyle=color;
+    ctx.beginPath();
+    const [pxs] = [this.toPx(x1,0)[0]];
+    ctx.moveTo(this.toPx(x1,0)[0], this.toPx(x1,0)[1]);
+    for(let i=0;i<=steps;i++){ const x=x1+(x2-x1)*i/steps; const y=fn(x); const [px,py]=this.toPx(x,y); ctx.lineTo(px,py); }
+    ctx.lineTo(this.toPx(x2,0)[0], this.toPx(x2,0)[1]);
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  text(x,y,str,opts={}){
+    const ctx=this.ctx; const [px,py]=this.toPx(x,y);
+    ctx.save();
+    ctx.fillStyle = opts.color ?? "#52514e";
+    ctx.font = (opts.weight??"600")+" "+(opts.size??12)+"px system-ui,sans-serif";
+    ctx.textAlign = opts.align ?? "left";
+    ctx.textBaseline = opts.baseline ?? "alphabetic";
+    ctx.fillText(str, px+(opts.dx??0), py+(opts.dy??0));
+    ctx.restore();
+  }
+  ptext(px,py,str,opts={}){
+    const ctx=this.ctx; ctx.save();
+    ctx.fillStyle = opts.color ?? "#52514e";
+    ctx.font = (opts.weight??"600")+" "+(opts.size??12)+"px system-ui,sans-serif";
+    ctx.textAlign = opts.align ?? "left";
+    ctx.textBaseline = opts.baseline ?? "alphabetic";
+    ctx.fillText(str, px, py);
+    ctx.restore();
+  }
+}
+
+function fmt(n,d){ d = d??3; if(!isFinite(n)) return "—"; return n.toFixed(d).replace(/\.?0+$/,m=>m.includes(".")?"":m); }
+function fmt2(n){ if(!isFinite(n)) return "—"; return n.toFixed(2); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+/* Tab wiring helper: given a container, wires .btn.tab buttons to .tabpanel siblings by data-tab */
+function wireTabs(root){
+  const btns = root.querySelectorAll(".btn.tab");
+  btns.forEach(b=>{
+    b.addEventListener("click", ()=>{
+      btns.forEach(x=>x.classList.remove("active"));
+      root.querySelectorAll(".tabpanel").forEach(p=>p.classList.remove("active"));
+      b.classList.add("active");
+      root.querySelector('.tabpanel[data-tab="'+b.dataset.tab+'"]').classList.add("active");
+    });
+  });
+}
+
+/* ============================= INIT REGISTRY (declared early: sections below call onInit immediately) ============================= */
+const INITS = [];
+function onInit(fn){ INITS.push(fn); }
+
+/* ============================= Section 1: secant → tangent ============================= */
+function initDiff1(){
+  const canvas = document.getElementById("cv-diff1");
+  const plot = new Plot(canvas, {xMin:-3,xMax:3,yMin:-1,yMax:9.5});
+  const fnSel = document.getElementById("diff1-fn");
+  const x0In = document.getElementById("diff1-x0"), x0Val = document.getElementById("diff1-x0val");
+  const hIn = document.getElementById("diff1-h"), hVal = document.getElementById("diff1-hval");
+  const hShow = document.getElementById("diff1-hshow");
+  const playBtn = document.getElementById("diff1-play");
+  const secantOut = document.getElementById("diff1-secant"), tangentOut = document.getElementById("diff1-tangent");
+
+  let fnKey = "quad", x0 = 0.5, h = 1.2, playing = false;
+
+  function render(){
+    const spec = FN[fnKey];
+    plot.setDomain(spec.domain[0], spec.domain[1], spec.range[0], spec.range[1]);
+    plot.clear(); plot.drawAxes();
+    plot.drawCurve(spec.f, COLORS.blue, 2.6);
+
+    let hh = h; if(Math.abs(hh) < 0.02) hh = (hh<0?-1:1)*0.02;
+    const x1 = clamp(x0+hh, spec.domain[0], spec.domain[1]);
+    hh = x1 - x0; if(Math.abs(hh) < 0.005) hh = (h<0?-1:1)*0.02;
+    const y0 = spec.f(x0), y1 = spec.f(x0+hh);
+    const secant = (y1-y0)/hh;
+    plot.drawLine(spec.domain[0], y0+secant*(spec.domain[0]-x0), spec.domain[1], y0+secant*(spec.domain[1]-x0), COLORS.orange, 2.5);
+
+    const tslope = spec.fp(x0);
+    const alpha = clamp(1 - Math.abs(hh)/0.5, 0.12, 1);
+    plot.drawLine(spec.domain[0], y0+tslope*(spec.domain[0]-x0), spec.domain[1], y0+tslope*(spec.domain[1]-x0), COLORS.aqua, 2.5, null, alpha);
+
+    plot.drawPoint(x0, y0, COLORS.ink, 5);
+    plot.drawPoint(x0+hh, y1, COLORS.orange, 5);
+
+    secantOut.textContent = fmt2(secant);
+    tangentOut.textContent = fmt2(tslope);
+    hShow.textContent = fmt2(hh);
+  }
+
+  fnSel.addEventListener("change", ()=>{ fnKey = fnSel.value; render(); });
+  x0In.addEventListener("input", ()=>{ x0 = parseFloat(x0In.value); x0Val.textContent = fmt2(x0); render(); });
+  hIn.addEventListener("input", ()=>{ h = parseFloat(hIn.value); hVal.textContent = fmt2(h); render(); });
+
+  playBtn.addEventListener("click", ()=>{
+    if(playing) return; playing = true; playBtn.disabled = true;
+    let hCur = (h===0?1:(h<0?-1:1)) * 1.5;
+    const step = ()=>{
+      hCur *= 0.965;
+      if(Math.abs(hCur) < 0.02){ hCur = (hCur<0?-1:1)*0.02; }
+      h = hCur; hIn.value = clamp(hCur,-2,2); hVal.textContent = fmt2(h);
+      render();
+      if(Math.abs(hCur) > 0.021){ requestAnimationFrame(step); }
+      else { playing = false; playBtn.disabled = false; }
+    };
+    requestAnimationFrame(step);
+  });
+
+  render();
+  registerRerender(render);
+}
+onInit(initDiff1);
+
+/* ============================= Section 2: motion / velocity ============================= */
+function initDiff2(){
+  const plot = new Plot(document.getElementById("cv-diff2"), {xMin:0,xMax:5.8,yMin:-2,yMax:34});
+  const track = document.getElementById("cv-diff2-track");
+  const t0In = document.getElementById("diff2-t0"), t0Val = document.getElementById("diff2-t0val");
+  const dtIn = document.getElementById("diff2-dt"), dtVal = document.getElementById("diff2-dtval");
+  const playBtn = document.getElementById("diff2-play");
+  const avgOut = document.getElementById("diff2-avg"), instOut = document.getElementById("diff2-inst");
+
+  const s = t=>t*t, sp = t=>2*t;
+  let t0 = 1, dt = 1, playing = false;
+
+  function render(){
+    plot.clear(); plot.drawAxes();
+    plot.drawCurve(s, COLORS.blue, 2.6, 0, 5.8);
+    const t1 = t0+dt, y0 = s(t0), y1 = s(t1);
+    const avg = (y1-y0)/dt;
+    plot.drawLine(t0,y0,t1,y1, COLORS.orange, 2.5);
+    plot.drawPoint(t0,y0,COLORS.ink,5); plot.drawPoint(t1,y1,COLORS.orange,5);
+    const inst = sp(t0);
+    const alpha = clamp(1-dt/0.7, 0.12, 1);
+    plot.drawLine(Math.max(0,t0-0.8),y0+inst*(Math.max(0,t0-0.8)-t0), Math.min(5.8,t0+0.8), y0+inst*(Math.min(5.8,t0+0.8)-t0), COLORS.aqua, 2.5, null, alpha);
+    avgOut.textContent = fmt2(avg)+" m/s"; instOut.textContent = fmt2(inst)+" m/s";
+    drawTrack(track, 34, y0, COLORS.blue);
+  }
+
+  t0In.addEventListener("input", ()=>{ t0 = parseFloat(t0In.value); t0Val.textContent=fmt2(t0); render(); });
+  dtIn.addEventListener("input", ()=>{ dt = parseFloat(dtIn.value); dtVal.textContent=fmt2(dt); render(); });
+
+  playBtn.addEventListener("click", ()=>{
+    if(playing) return; playing=true; playBtn.disabled=true;
+    let dtCur = 1.6;
+    const step = ()=>{
+      dtCur *= 0.965;
+      if(dtCur < 0.03) dtCur = 0.03;
+      dt = dtCur; dtIn.value = dtCur; dtVal.textContent = fmt2(dt);
+      render();
+      if(dtCur > 0.031){ requestAnimationFrame(step); } else { playing=false; playBtn.disabled=false; }
+    };
+    requestAnimationFrame(step);
+  });
+
+  render();
+  registerRerender(render);
+}
+onInit(initDiff2);
+
+/* ============================= Section 3: differentiation rules ============================= */
+function initDiffRules(){
+  wireTabs(document.getElementById("diffrules-root"));
+
+  /* --- power rule --- */
+  (function(){
+    const plot = new Plot(document.getElementById("cv-power"), {xMin:-2.2,xMax:2.2,yMin:-1,yMax:5});
+    const nIn = document.getElementById("power-n"), nVal = document.getElementById("power-nval");
+    const x0In = document.getElementById("power-x0"), x0Val = document.getElementById("power-x0val");
+    const slopeOut = document.getElementById("power-slope");
+    let n = 2, x0 = 1;
+    function render(){
+      const f = x=>Math.pow(x,n), fp = x=> n*Math.pow(x,n-1);
+      const yMax = Math.pow(2.2,n)*1.15, yMin = (n%2===0) ? -0.6 : -yMax;
+      plot.setDomain(-2.2,2.2,yMin,yMax);
+      plot.clear(); plot.drawAxes();
+      plot.drawCurve(f, COLORS.blue, 2.6);
+      const slope = fp(x0), y0 = f(x0);
+      plot.drawLine(-2.2, y0+slope*(-2.2-x0), 2.2, y0+slope*(2.2-x0), COLORS.aqua, 2.5);
+      plot.drawPoint(x0,y0,COLORS.ink,5);
+      slopeOut.textContent = fmt2(slope)+"  (= "+n+"·"+fmt2(x0)+"^"+(n-1)+")";
+    }
+    nIn.addEventListener("input", ()=>{ n=parseInt(nIn.value); nVal.textContent=n; render(); });
+    x0In.addEventListener("input", ()=>{ x0=parseFloat(x0In.value); x0Val.textContent=fmt2(x0); render(); });
+    render(); registerRerender(render);
+  })();
+
+  /* --- product rule --- */
+  (function(){
+    const plot = new Plot(document.getElementById("cv-product"), {xMin:0,xMax:3.1,yMin:0,yMax:3.1});
+    const xIn = document.getElementById("product-x"), xVal = document.getElementById("product-xval");
+    const nudgeBtn = document.getElementById("product-nudge");
+    const areaOut = document.getElementById("product-area"), predOut = document.getElementById("product-pred");
+    const u = x=>0.8+0.7*x, up = ()=>0.7, v = x=>1.5+0.5*x, vp = ()=>0.5;
+    let x = 1, dx = 0, animating = false;
+
+    function render(){
+      plot.clear();
+      const uw = u(x), vh = v(x);
+      plot.fillRect(0,0,uw,vh, "rgba(42,120,214,0.22)");
+      plot.strokeRect(0,0,uw,vh, COLORS.blue, 2);
+      if(dx > 0.001){
+        const du = up()*dx, dv = vp()*dx;
+        plot.fillRect(0,vh,uw,vh+dv, "rgba(235,104,52,0.55)");
+        plot.fillRect(uw,0,uw+du,vh, "rgba(27,175,122,0.55)");
+        plot.fillRect(uw,vh,uw+du,vh+dv, "rgba(237,161,0,0.7)");
+        const predicted = uw*dv + vh*du;
+        predOut.textContent = fmt2(predicted);
+      } else {
+        predOut.textContent = "—";
+      }
+      areaOut.textContent = fmt2(uw*vh);
+    }
+    xIn.addEventListener("input", ()=>{ x=parseFloat(xIn.value); dx=0; xVal.textContent=fmt2(x); render(); });
+
+    nudgeBtn.addEventListener("click", ()=>{
+      if(animating) return; animating = true; nudgeBtn.disabled = true;
+      const target = 0.4, start = performance.now(), dur = 700;
+      function grow(now){
+        const t = clamp((now-start)/dur,0,1);
+        dx = target*t; render();
+        if(t<1) requestAnimationFrame(grow);
+        else setTimeout(()=>{
+          x = clamp(x+target, 0.3, 2.6); dx = 0;
+          xIn.value = x; xVal.textContent = fmt2(x);
+          render(); animating = false; nudgeBtn.disabled = false;
+        }, 850);
+      }
+      requestAnimationFrame(grow);
+    });
+    render(); registerRerender(render);
+  })();
+
+  /* --- chain rule --- */
+  (function(){
+    const plot = new Plot(document.getElementById("cv-chain"), {xMin:-0.3,xMax:2.5,yMin:-1.3,yMax:1.3});
+    const x0In = document.getElementById("chain-x0"), x0Val = document.getElementById("chain-x0val");
+    const g = x=>x*x, gp = x=>2*x, f = u=>Math.sin(u), fp = u=>Math.cos(u);
+    function render(){
+      const x0 = parseFloat(x0In.value);
+      plot.clear(); plot.drawAxes();
+      plot.drawCurve(x=>f(g(x)), COLORS.blue, 2.6, -0.3, 2.5);
+      const g0 = g(x0), gp0 = gp(x0), fp0 = fp(g0), total = fp0*gp0, y0 = f(g0);
+      plot.drawLine(-0.3, y0+total*(-0.3-x0), 2.5, y0+total*(2.5-x0), COLORS.aqua, 2.5);
+      plot.drawPoint(x0,y0,COLORS.ink,5);
+      x0Val.textContent = fmt2(x0);
+      document.getElementById("chain-x").textContent = fmt2(x0);
+      document.getElementById("chain-g").textContent = fmt2(g0);
+      document.getElementById("chain-fg").textContent = fmt2(y0);
+      document.getElementById("chain-gp").textContent = fmt2(gp0);
+      document.getElementById("chain-fp").textContent = fmt2(fp0);
+      document.getElementById("chain-total").textContent = fmt2(total);
+    }
+    x0In.addEventListener("input", render);
+    render(); registerRerender(render);
+  })();
+}
+onInit(initDiffRules);
+
+/* ============================= Section 4: Riemann sums ============================= */
+const RFN = {
+  quad:  { f:x=>x*x,                 F:x=>x*x*x/3,                     a:0, b:2,        yMax:4.6 },
+  hump:  { f:x=>4-(x-2)*(x-2),       F:x=>4*x-Math.pow(x-2,3)/3,       a:0, b:4,        yMax:4.6 },
+  sine:  { f:x=>Math.sin(x),         F:x=>-Math.cos(x),                a:0, b:Math.PI,  yMax:1.35 }
+};
+function initRiemann(){
+  const plot = new Plot(document.getElementById("cv-riemann"), {xMin:0,xMax:2,yMin:-0.3,yMax:4.6});
+  const fnSel = document.getElementById("riemann-fn");
+  const nIn = document.getElementById("riemann-n"), nVal = document.getElementById("riemann-nval");
+  const ruleSel = document.getElementById("riemann-rule");
+  const playBtn = document.getElementById("riemann-play");
+  const sumOut = document.getElementById("riemann-sum"), exactOut = document.getElementById("riemann-exact"), errOut = document.getElementById("riemann-err");
+  let playing = false;
+
+  function render(){
+    const spec = RFN[fnSel.value];
+    const n = parseInt(nIn.value);
+    const pad = (spec.b-spec.a)*0.08;
+    plot.setDomain(spec.a-pad, spec.b+pad, -0.3, spec.yMax);
+    plot.clear(); plot.drawAxes();
+    const dx = (spec.b-spec.a)/n;
+    let sum = 0;
+    for(let i=0;i<n;i++){
+      const xL = spec.a+i*dx, xR = xL+dx;
+      const xs = ruleSel.value==="left" ? xL : ruleSel.value==="right" ? xR : (xL+xR)/2;
+      const height = spec.f(xs);
+      sum += height*dx;
+      plot.fillRect(xL,0,xR,height,"rgba(42,120,214,0.32)");
+      plot.strokeRect(xL,0,xR,height,COLORS.blue,1);
+    }
+    plot.drawCurve(spec.f, COLORS.aqua, 2.6, spec.a-pad*0.5, spec.b+pad*0.5);
+    const exact = spec.F(spec.b)-spec.F(spec.a);
+    sumOut.textContent = fmt2(sum);
+    exactOut.textContent = fmt2(exact);
+    errOut.textContent = fmt2(Math.abs(sum-exact));
+  }
+
+  fnSel.addEventListener("change", render);
+  ruleSel.addEventListener("change", render);
+  nIn.addEventListener("input", ()=>{ nVal.textContent = nIn.value; render(); });
+
+  playBtn.addEventListener("click", ()=>{
+    if(playing) return; playing=true; playBtn.disabled=true;
+    let n = 2; nIn.value = 2; nVal.textContent = 2; render();
+    const step = ()=>{
+      n = Math.min(120, Math.round(n*1.07)+1);
+      nIn.value = n; nVal.textContent = n; render();
+      if(n < 120){ requestAnimationFrame(step); } else { playing=false; playBtn.disabled=false; }
+    };
+    requestAnimationFrame(step);
+  });
+
+  render(); registerRerender(render);
+}
+onInit(initRiemann);
+
+/* ============================= Section 5: velocity → distance ============================= */
+function initInteg2(){
+  const plot = new Plot(document.getElementById("cv-integ2"), {xMin:0,xMax:4.3,yMin:-0.3,yMax:3.3});
+  const track = document.getElementById("cv-integ2-track");
+  const tIn = document.getElementById("integ2-t"), tVal = document.getElementById("integ2-tval");
+  const playBtn = document.getElementById("integ2-play");
+  const vOut = document.getElementById("integ2-v"), distOut = document.getElementById("integ2-dist");
+  const v = t=>3-0.5*t, s = t=>3*t-0.25*t*t;
+  let playing = false;
+
+  function render(){
+    const t = parseFloat(tIn.value);
+    plot.clear(); plot.drawAxes();
+    plot.drawCurve(v, COLORS.blue, 2.6, 0, 4);
+    plot.fillUnderCurve(v, 0, t, "rgba(27,175,122,0.30)");
+    plot.drawPoint(t, v(t), COLORS.ink, 5);
+    vOut.textContent = fmt2(v(t))+" m/s";
+    distOut.textContent = fmt2(s(t))+" m";
+    drawTrack(track, 8, s(t), COLORS.aqua);
+  }
+  tIn.addEventListener("input", ()=>{ tVal.textContent = fmt2(parseFloat(tIn.value)); render(); });
+
+  playBtn.addEventListener("click", ()=>{
+    if(playing) return; playing=true; playBtn.disabled=true;
+    let t = 0; tIn.value = 0; tVal.textContent="0.00"; render();
+    const step = ()=>{
+      t += 0.03;
+      if(t>4){ t=4; }
+      tIn.value = t; tVal.textContent = fmt2(t); render();
+      if(t<4){ requestAnimationFrame(step); } else { playing=false; playBtn.disabled=false; }
+    };
+    requestAnimationFrame(step);
+  });
+
+  render(); registerRerender(render);
+}
+onInit(initInteg2);
+
+/* ============================= Section 6: integration rules ============================= */
+function initIntegRules(){
+  wireTabs(document.getElementById("integrules-root"));
+
+  /* --- power rule for integrals (family of antiderivatives) --- */
+  (function(){
+    const plot = new Plot(document.getElementById("cv-powerint"), {xMin:0,xMax:2.3,yMin:-4,yMax:6});
+    const nIn = document.getElementById("powerint-n"), nVal = document.getElementById("powerint-nval");
+    const cIn = document.getElementById("powerint-c"), cVal = document.getElementById("powerint-cval");
+    function render(){
+      const n = parseInt(nIn.value), C = parseFloat(cIn.value);
+      const base = x=>Math.pow(x,n+1)/(n+1);
+      const yMax = base(2.3)+4, yMin=-4;
+      plot.setDomain(0,2.3,yMin,yMax);
+      plot.clear(); plot.drawAxes();
+      [-3,-1.5,1.5,3].forEach(c=>{ plot.drawCurve(x=>base(x)+c, COLORS.aqua, 1.6, 0, 2.3, 100, 0.22); });
+      plot.drawCurve(x=>base(x)+C, COLORS.aqua, 3, 0, 2.3, 140, 1);
+      plot.drawCurve(x=>Math.pow(x,n), COLORS.blue, 2.6, 0, 2.3);
+      plot.text(1.9, Math.pow(1.9,n), "f(x) = x^"+n, {color:COLORS.blue, size:12, dy:-8});
+      plot.text(1.9, base(1.9)+C, "F(x) = x^"+(n+1)+"/"+(n+1)+" + C", {color:COLORS.aqua, size:12, dy:-8});
+    }
+    nIn.addEventListener("input", ()=>{ nVal.textContent = nIn.value; render(); });
+    cIn.addEventListener("input", ()=>{ cVal.textContent = fmt2(parseFloat(cIn.value)); render(); });
+    render(); registerRerender(render);
+  })();
+
+  /* --- u-substitution --- */
+  (function(){
+    const plot = new Plot(document.getElementById("cv-usub"), {xMin:0,xMax:2.3,yMin:-5,yMax:5});
+    const xIn = document.getElementById("usub-x"), xVal = document.getElementById("usub-xval");
+    const areaOut = document.getElementById("usub-area"), formOut = document.getElementById("usub-formula");
+    const f = x=>2*x*Math.cos(x*x);
+    function render(){
+      const x = parseFloat(xIn.value);
+      plot.clear(); plot.drawAxes();
+      plot.drawCurve(f, COLORS.blue, 2.6, 0, 2.3);
+      plot.fillUnderCurve(f, 0, x, "rgba(42,120,214,0.25)");
+      plot.drawPoint(x, f(x), COLORS.ink, 4);
+      const numeric = trapezoid(f, 0, x, 400);
+      const closed = Math.sin(x*x) - Math.sin(0);
+      areaOut.textContent = fmt2(numeric);
+      formOut.textContent = fmt2(closed);
+      xVal.textContent = fmt2(x);
+    }
+    xIn.addEventListener("input", render);
+    render(); registerRerender(render);
+  })();
+}
+onInit(initIntegRules);
+
+/* ============================= Section 7: FTC ============================= */
+function initFTC(){
+  const top = new Plot(document.getElementById("cv-ftc-top"), {xMin:0,xMax:3.3,yMin:0,yMax:4.7});
+  const bottom = new Plot(document.getElementById("cv-ftc-bottom"), {xMin:0,xMax:3.3,yMin:0,yMax:7.3});
+  const xIn = document.getElementById("ftc-x"), xVal = document.getElementById("ftc-xval");
+  const playBtn = document.getElementById("ftc-play");
+  const fxOut = document.getElementById("ftc-fx"), apOut = document.getElementById("ftc-ap");
+  const f = x=>0.6*x*x - x + 1.6;
+  const A = x=>0.2*x*x*x - 0.5*x*x + 1.6*x;
+  let playing = false;
+
+  function render(){
+    const x = parseFloat(xIn.value);
+    top.clear(); top.drawAxes();
+    top.drawCurve(f, COLORS.blue, 2.6, 0, 3.3);
+    top.fillUnderCurve(f, 0, x, "rgba(27,175,122,0.28)");
+    top.drawPoint(x, f(x), COLORS.ink, 4);
+
+    bottom.clear(); bottom.drawAxes();
+    bottom.drawCurve(A, COLORS.aqua, 2.6, 0, x, Math.max(20,Math.round(x*80)));
+    const slope = f(x), y0 = A(x);
+    const xa = Math.max(0,x-0.7), xb = Math.min(3.3,x+0.7);
+    bottom.drawLine(xa, y0+slope*(xa-x), xb, y0+slope*(xb-x), COLORS.orange, 2.5);
+    bottom.drawPoint(x,y0,COLORS.ink,4);
+
+    const eps = 0.01;
+    const xL = Math.max(0,x-eps), xR = Math.min(3.3,x+eps);
+    const numericSlope = (A(xR)-A(xL))/(xR-xL);
+    fxOut.textContent = fmt2(f(x));
+    apOut.textContent = fmt2(numericSlope);
+    xVal.textContent = fmt2(x);
+  }
+  xIn.addEventListener("input", render);
+
+  playBtn.addEventListener("click", ()=>{
+    if(playing) return; playing=true; playBtn.disabled=true;
+    let x = 0.05; xIn.value=x; render();
+    const step = ()=>{
+      x += 0.02;
+      if(x>3.1) x=3.1;
+      xIn.value = x; render();
+      if(x<3.1){ requestAnimationFrame(step); } else { playing=false; playBtn.disabled=false; }
+    };
+    requestAnimationFrame(step);
+  });
+
+  render(); registerRerender(render);
+}
+onInit(initFTC);
+
+window.addEventListener("DOMContentLoaded", ()=>{
+  INITS.forEach(fn=>{ try{ fn(); }catch(e){ console.error(e); } });
+});
+</script>
+</body>
+</html>
