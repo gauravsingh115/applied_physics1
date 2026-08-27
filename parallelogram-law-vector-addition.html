@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parallelogram Law of Vector Addition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B1E33;
+    --panel: #10233d;
+    --panel-2: #0d1f38;
+    --line-faint: rgba(180, 210, 240, 0.08);
+    --line-major: rgba(180, 210, 240, 0.16);
+    --border: rgba(180, 210, 240, 0.14);
+    --text: #EAF2FA;
+    --text-muted: #7FA0C2;
+    --amber: #F2A93B;
+    --coral: #FF6B5E;
+    --mint: #5FE1C7;
+    --mint-dim: rgba(95, 225, 199, 0.25);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 28px 20px 60px;
+  }
+  .app{ max-width: 1180px; margin: 0 auto; }
+
+  header{ margin-bottom: 22px; }
+  header .eyebrow{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--mint);
+    margin: 0 0 8px;
+  }
+  h1{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(24px, 4vw, 34px);
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  h1 span{ color: var(--amber); }
+  header .sub{
+    color: var(--text-muted);
+    font-size: 14.5px;
+    line-height: 1.5;
+    max-width: 660px;
+    margin: 0;
+  }
+
+  main{
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  @media (max-width: 860px){
+    main{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+
+  .canvas-wrap svg{
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+  }
+
+  .readout-strip{
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+  .chip{
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    flex: 1 1 140px;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .chip .k{ color: var(--text-muted); display:block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .chip .v{ font-weight: 600; }
+  .chip.a{ border-left: 3px solid var(--amber); }
+  .chip.b{ border-left: 3px solid var(--coral); }
+  .chip.r{ border-left: 3px solid var(--mint); }
+  .chip.hideable.hidden{ opacity: 0.28; }
+  .chip.hideable.hidden .v{ filter: blur(3px); }
+
+  .controls{ display: flex; flex-direction: column; gap: 14px; }
+
+  .vector-control h3{
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .swatch{ width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .swatch.a{ background: var(--amber); }
+  .swatch.b{ background: var(--coral); }
+  .swatch.r{ background: var(--mint); }
+
+  .slider-row{ margin-bottom: 12px; }
+  .slider-row:last-child{ margin-bottom: 0; }
+  .slider-row label{
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .slider-row label .val{
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    font-weight: 500;
+  }
+  input[type="range"]{
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-major);
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--border);
+  }
+  input[type="range"]::-moz-range-thumb{
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+  }
+
+  .steps ol{
+    list-style: none;
+    margin: 0; padding: 0;
+    counter-reset: step;
+  }
+  .steps li{
+    counter-increment: step;
+    display: flex;
+    gap: 10px;
+    padding: 9px 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    transition: color 0.3s ease;
+    cursor: pointer;
+  }
+  .steps li:first-child{ border-top: none; }
+  .steps li::before{
+    content: counter(step);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    width: 20px; height: 20px;
+    min-width: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+  }
+  .steps li.active{ color: var(--text); }
+  .steps li.active::before{
+    background: var(--mint);
+    border-color: var(--mint);
+    color: #062018;
+  }
+  .steps li.done::before{
+    background: var(--mint-dim);
+    border-color: var(--mint);
+    color: var(--mint);
+  }
+
+  .playback{ display: flex; gap: 8px; }
+  .playback button{
+    flex: 1;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 10px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .playback button:hover{ background: #142845; border-color: rgba(180,210,240,0.3); }
+  .playback button:active{ transform: translateY(1px); }
+  .playback button.primary{
+    background: var(--mint);
+    color: #062018;
+    border-color: var(--mint);
+    font-weight: 600;
+  }
+  .playback button.primary:hover{ background: #4fd1b8; }
+  .playback button:disabled{ opacity: 0.35; cursor: not-allowed; }
+
+  .formula{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    text-align: center;
+    color: var(--mint);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  /* SVG element transitions */
+  #vecA line, #vecB line, #copyA line, #copyB line, #vecR line{
+    transition: x2 0.55s cubic-bezier(.4,0,.2,1), y2 0.55s cubic-bezier(.4,0,.2,1),
+                x1 0.55s cubic-bezier(.4,0,.2,1), y1 0.55s cubic-bezier(.4,0,.2,1),
+                opacity 0.4s ease;
+  }
+  #parallelogram{ transition: opacity 0.5s ease; }
+  .vec-label{ transition: opacity 0.4s ease, transform 0.55s cubic-bezier(.4,0,.2,1); font-family:'JetBrains Mono', monospace; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <p class="eyebrow">Vector algebra · guided construction</p>
+    <h1>Parallelogram Law of <span>Vector Addition</span></h1>
+    <p class="sub">Both vectors start from the same point this time. Set A and B, then step through completing the parallelogram to see why its diagonal is the sum.</p>
+  </header>
+
+  <main>
+    <section class="card canvas-wrap">
+      <svg id="stage" viewBox="0 0 800 620" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="22" height="22" patternUnits="userSpaceOnUse">
+            <path d="M 22 0 L 0 0 0 22" fill="none" stroke="var(--line-faint)" stroke-width="1"/>
+          </pattern>
+          <pattern id="gridMajor" width="110" height="110" patternUnits="userSpaceOnUse">
+            <path d="M 110 0 L 0 0 0 110" fill="none" stroke="var(--line-major)" stroke-width="1"/>
+          </pattern>
+          <marker id="arrowA" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="var(--amber)"/>
+          </marker>
+          <marker id="arrowB" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="var(--coral)"/>
+          </marker>
+          <marker id="arrowR" markerWidth="11" markerHeight="11" refX="7" refY="3.5" orient="auto">
+            <polygon points="0 0, 8 3.5, 0 7" fill="var(--mint)"/>
+          </marker>
+        </defs>
+
+        <rect x="0" y="0" width="800" height="620" fill="url(#grid)"/>
+        <rect x="0" y="0" width="800" height="620" fill="url(#gridMajor)"/>
+
+        <!-- axes -->
+        <line id="axisX" x1="20" y1="380" x2="780" y2="380" stroke="rgba(180,210,240,0.3)" stroke-width="1.2"/>
+        <line id="axisY" x1="320" y1="600" x2="320" y2="20" stroke="rgba(180,210,240,0.3)" stroke-width="1.2"/>
+        <text x="770" y="373" fill="var(--text-muted)" font-size="11" font-family="JetBrains Mono, monospace">x</text>
+        <text x="328" y="30" fill="var(--text-muted)" font-size="11" font-family="JetBrains Mono, monospace">y</text>
+
+        <!-- parallelogram fill, revealed at step 2 -->
+        <polygon id="parallelogram" points="320,380 320,380 320,380 320,380" fill="var(--mint)" opacity="0"/>
+
+        <!-- Vector A: origin -> tipA -->
+        <g id="vecA">
+          <line x1="320" y1="380" x2="320" y2="380" stroke="var(--amber)" stroke-width="3.5" marker-end="url(#arrowA)" stroke-linecap="round" opacity="0"/>
+        </g>
+        <text id="labelA" class="vec-label" x="320" y="380" fill="var(--amber)" font-size="14" opacity="0">A</text>
+
+        <!-- Vector B: origin -> tipB -->
+        <g id="vecB">
+          <line x1="320" y1="380" x2="320" y2="380" stroke="var(--coral)" stroke-width="3.5" marker-end="url(#arrowB)" stroke-linecap="round" opacity="0"/>
+        </g>
+        <text id="labelB" class="vec-label" x="320" y="380" fill="var(--coral)" font-size="14" opacity="0">B</text>
+
+        <!-- copyB: dashed copy of B, from tipA -> corner -->
+        <g id="copyB">
+          <line x1="320" y1="380" x2="320" y2="380" stroke="var(--coral)" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="6 5" opacity="0"/>
+        </g>
+
+        <!-- copyA: dashed copy of A, from tipB -> corner -->
+        <g id="copyA">
+          <line x1="320" y1="380" x2="320" y2="380" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="6 5" opacity="0"/>
+        </g>
+
+        <!-- Resultant: origin -> corner (diagonal) -->
+        <g id="vecR">
+          <line x1="320" y1="380" x2="320" y2="380" stroke="var(--mint)" stroke-width="4.5" marker-end="url(#arrowR)" stroke-linecap="round" opacity="0"/>
+        </g>
+        <text id="labelR" class="vec-label" x="320" y="380" fill="var(--mint)" font-size="15" opacity="0">R</text>
+      </svg>
+
+      <div class="readout-strip">
+        <div class="chip a">
+          <span class="k">Vector A</span>
+          <span class="v" id="readA">(0.00, 0.00)</span>
+        </div>
+        <div class="chip b">
+          <span class="k">Vector B</span>
+          <span class="v" id="readB">(0.00, 0.00)</span>
+        </div>
+        <div class="chip r hideable" id="readRChip">
+          <span class="k">R = A + B (diagonal)</span>
+          <span class="v" id="readR">(0.00, 0.00) · |R| 0.00 · θ 0°</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="controls">
+      <div class="card vector-control">
+        <h3><span class="swatch a"></span>Vector A</h3>
+        <div class="slider-row">
+          <label>Magnitude <span class="val" id="magAVal">4.0</span></label>
+          <input type="range" id="magA" min="1" max="6" step="0.5" value="4">
+        </div>
+        <div class="slider-row">
+          <label>Angle <span class="val" id="angAVal">30°</span></label>
+          <input type="range" id="angA" min="0" max="355" step="5" value="30">
+        </div>
+      </div>
+
+      <div class="card vector-control">
+        <h3><span class="swatch b"></span>Vector B</h3>
+        <div class="slider-row">
+          <label>Magnitude <span class="val" id="magBVal">3.0</span></label>
+          <input type="range" id="magB" min="1" max="6" step="0.5" value="3">
+        </div>
+        <div class="slider-row">
+          <label>Angle <span class="val" id="angBVal">110°</span></label>
+          <input type="range" id="angB" min="0" max="355" step="5" value="110">
+        </div>
+      </div>
+
+      <div class="card steps">
+        <ol>
+          <li data-step="1">Place A and B together, both tails at the origin.</li>
+          <li data-step="2">Complete the parallelogram — copy each vector to the far side.</li>
+          <li data-step="3">Draw R as the diagonal from the origin to the opposite corner. That's A + B.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <div class="playback">
+          <button id="prevBtn">◀ Back</button>
+          <button id="playBtn" class="primary">▶ Play</button>
+          <button id="nextBtn">Next ▶</button>
+        </div>
+        <div style="height:8px"></div>
+        <div class="playback">
+          <button id="resetBtn" style="flex:1">Reset to step 0</button>
+        </div>
+      </div>
+
+      <div class="card formula" id="formulaBox">R = A + B</div>
+    </aside>
+  </main>
+</div>
+
+<script>
+  const UNIT = 22;
+  const ORIGIN = { x: 320, y: 380 };
+  const MAX_STEP = 3;
+
+  const el = id => document.getElementById(id);
+  const magASlider = el('magA'), angASlider = el('angA');
+  const magBSlider = el('magB'), angBSlider = el('angB');
+  const magAVal = el('magAVal'), angAVal = el('angAVal');
+  const magBVal = el('magBVal'), angBVal = el('angBVal');
+
+  const vecALine = document.querySelector('#vecA line');
+  const vecBLine = document.querySelector('#vecB line');
+  const copyALine = document.querySelector('#copyA line');
+  const copyBLine = document.querySelector('#copyB line');
+  const vecRLine = document.querySelector('#vecR line');
+  const parallelogram = el('parallelogram');
+  const labelA = el('labelA'), labelB = el('labelB'), labelR = el('labelR');
+  const readA = el('readA'), readB = el('readB'), readR = el('readR'), readRChip = el('readRChip');
+  const stepItems = document.querySelectorAll('.steps li');
+
+  let step = 0;
+  let playing = false;
+  let playTimer = null;
+
+  function polar(mag, angleDeg){
+    const rad = angleDeg * Math.PI / 180;
+    return { x: mag * UNIT * Math.cos(rad), y: -mag * UNIT * Math.sin(rad) };
+  }
+
+  function fmt(n){ return (Math.round(n * 100) / 100).toFixed(2); }
+
+  function compute(){
+    const magA = parseFloat(magASlider.value);
+    const angA = parseFloat(angASlider.value);
+    const magB = parseFloat(magBSlider.value);
+    const angB = parseFloat(angBSlider.value);
+
+    const dA = polar(magA, angA);
+    const dB = polar(magB, angB);
+
+    const tipA = { x: ORIGIN.x + dA.x, y: ORIGIN.y + dA.y };
+    const tipB = { x: ORIGIN.x + dB.x, y: ORIGIN.y + dB.y };
+    const corner = { x: ORIGIN.x + dA.x + dB.x, y: ORIGIN.y + dA.y + dB.y };
+
+    return { magA, angA, magB, angB, dA, dB, tipA, tipB, corner };
+  }
+
+  function render(){
+    const s = compute();
+
+    readA.textContent = `(${fmt(s.dA.x/UNIT)}, ${fmt(-s.dA.y/UNIT)})`;
+    readB.textContent = `(${fmt(s.dB.x/UNIT)}, ${fmt(-s.dB.y/UNIT)})`;
+
+    const Rx = s.dA.x/UNIT + s.dB.x/UNIT;
+    const Ry = -s.dA.y/UNIT + -s.dB.y/UNIT;
+    const mag = Math.hypot(Rx, Ry);
+    let theta = Math.atan2(Ry, Rx) * 180 / Math.PI;
+    if (theta < 0) theta += 360;
+    readR.textContent = `(${fmt(Rx)}, ${fmt(Ry)}) · |R| ${fmt(mag)} · θ ${fmt(theta)}°`;
+
+    magAVal.textContent = s.magA.toFixed(1);
+    angAVal.textContent = s.angA + '°';
+    magBVal.textContent = s.magB.toFixed(1);
+    angBVal.textContent = s.angB + '°';
+
+    // Vector A: origin -> tipA
+    vecALine.setAttribute('x1', ORIGIN.x);
+    vecALine.setAttribute('y1', ORIGIN.y);
+    vecALine.setAttribute('x2', s.tipA.x);
+    vecALine.setAttribute('y2', s.tipA.y);
+    vecALine.setAttribute('opacity', step >= 1 ? 1 : 0);
+    labelA.setAttribute('x', s.tipA.x + (s.dA.x >= 0 ? 10 : -22));
+    labelA.setAttribute('y', s.tipA.y - 8);
+    labelA.setAttribute('opacity', step >= 1 ? 1 : 0);
+
+    // Vector B: origin -> tipB
+    vecBLine.setAttribute('x1', ORIGIN.x);
+    vecBLine.setAttribute('y1', ORIGIN.y);
+    vecBLine.setAttribute('x2', s.tipB.x);
+    vecBLine.setAttribute('y2', s.tipB.y);
+    vecBLine.setAttribute('opacity', step >= 1 ? 1 : 0);
+    labelB.setAttribute('x', s.tipB.x + (s.dB.x >= 0 ? 10 : -22));
+    labelB.setAttribute('y', s.tipB.y - 8);
+    labelB.setAttribute('opacity', step >= 1 ? 1 : 0);
+
+    // copyB: dashed, tipA -> corner (parallel to B)
+    copyBLine.setAttribute('x1', s.tipA.x);
+    copyBLine.setAttribute('y1', s.tipA.y);
+    copyBLine.setAttribute('x2', step >= 2 ? s.corner.x : s.tipA.x);
+    copyBLine.setAttribute('y2', step >= 2 ? s.corner.y : s.tipA.y);
+    copyBLine.setAttribute('opacity', step >= 2 ? 0.85 : 0);
+
+    // copyA: dashed, tipB -> corner (parallel to A)
+    copyALine.setAttribute('x1', s.tipB.x);
+    copyALine.setAttribute('y1', s.tipB.y);
+    copyALine.setAttribute('x2', step >= 2 ? s.corner.x : s.tipB.x);
+    copyALine.setAttribute('y2', step >= 2 ? s.corner.y : s.tipB.y);
+    copyALine.setAttribute('opacity', step >= 2 ? 0.85 : 0);
+
+    // parallelogram fill
+    parallelogram.setAttribute('points',
+      `${ORIGIN.x},${ORIGIN.y} ${s.tipA.x},${s.tipA.y} ${s.corner.x},${s.corner.y} ${s.tipB.x},${s.tipB.y}`);
+    parallelogram.setAttribute('opacity', step >= 2 ? 0.1 : 0);
+
+    // Resultant: origin -> corner (diagonal)
+    vecRLine.setAttribute('x1', ORIGIN.x);
+    vecRLine.setAttribute('y1', ORIGIN.y);
+    vecRLine.setAttribute('x2', step >= 3 ? s.corner.x : ORIGIN.x);
+    vecRLine.setAttribute('y2', step >= 3 ? s.corner.y : ORIGIN.y);
+    vecRLine.setAttribute('opacity', step >= 3 ? 1 : 0);
+    labelR.setAttribute('x', s.corner.x + 12);
+    labelR.setAttribute('y', s.corner.y + 4);
+    labelR.setAttribute('opacity', step >= 3 ? 1 : 0);
+
+    readRChip.classList.toggle('hidden', step < 3);
+
+    stepItems.forEach(li => {
+      const n = parseInt(li.dataset.step, 10);
+      li.classList.toggle('active', n === step);
+      li.classList.toggle('done', n < step);
+    });
+
+    el('formulaBox').textContent = step >= 3
+      ? `R = A + B  →  |R| = ${fmt(mag)},  θ = ${fmt(theta)}°`
+      : 'R = A + B';
+
+    prevNextState();
+  }
+
+  function prevNextState(){
+    el('prevBtn').disabled = step === 0;
+    el('nextBtn').disabled = step === MAX_STEP;
+  }
+
+  function goStep(n){
+    step = Math.max(0, Math.min(MAX_STEP, n));
+    render();
+  }
+
+  el('prevBtn').addEventListener('click', () => { stopPlay(); goStep(step - 1); });
+  el('nextBtn').addEventListener('click', () => { stopPlay(); goStep(step + 1); });
+  el('resetBtn').addEventListener('click', () => { stopPlay(); goStep(0); });
+
+  stepItems.forEach(li => {
+    li.addEventListener('click', () => { stopPlay(); goStep(parseInt(li.dataset.step, 10)); });
+  });
+
+  function stopPlay(){
+    playing = false;
+    clearInterval(playTimer);
+    el('playBtn').textContent = '▶ Play';
+  }
+
+  el('playBtn').addEventListener('click', () => {
+    if (playing){ stopPlay(); return; }
+    if (step >= MAX_STEP) goStep(0);
+    playing = true;
+    el('playBtn').textContent = '⏸ Pause';
+    playTimer = setInterval(() => {
+      if (step >= MAX_STEP){ stopPlay(); return; }
+      goStep(step + 1);
+    }, 1200);
+  });
+
+  [magASlider, angASlider, magBSlider, angBSlider].forEach(s => {
+    s.addEventListener('input', render);
+  });
+
+  render();
+</script>
+</body>
+</html>
