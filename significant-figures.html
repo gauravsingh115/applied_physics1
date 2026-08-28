@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Significant Figures</title>
+<meta name="description" content="Scroll-through animations for all seven significant-figure rules, each with a worked example and a live, editable practice check.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#f1f4ee;
+    --surface:#ffffff;
+    --surface-2:#e8ede1;
+    --ink:#1c2622;
+    --ink-soft:#5a685f;
+    --line:#d9ddd0;
+    --accent:#a5711f;
+    --accent-glow:rgba(165,113,31,.32);
+    --faded:#a9b1a2;
+    --faded-line:rgba(90,104,95,.4);
+    --shadow:0 1px 2px rgba(28,38,34,.06), 0 10px 28px -14px rgba(28,38,34,.22);
+    --radius:16px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1410;
+      --surface:#171e18;
+      --surface-2:#1e2820;
+      --ink:#eaefe5;
+      --ink-soft:#a5b1a0;
+      --line:#2a352b;
+      --accent:#e2ad57;
+      --accent-glow:rgba(226,173,87,.38);
+      --faded:#54614f;
+      --faded-line:rgba(165,177,160,.4);
+      --shadow:0 1px 2px rgba(0,0,0,.45), 0 14px 32px -16px rgba(0,0,0,.65);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1410;
+    --surface:#171e18;
+    --surface-2:#1e2820;
+    --ink:#eaefe5;
+    --ink-soft:#a5b1a0;
+    --line:#2a352b;
+    --accent:#e2ad57;
+    --accent-glow:rgba(226,173,87,.38);
+    --faded:#54614f;
+    --faded-line:rgba(165,177,160,.4);
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 14px 32px -16px rgba(0,0,0,.65);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--line) 65%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--line) 65%, transparent) 1px, transparent 1px);
+    background-size: 100% 34px, 34px 100%;
+    background-position: 0 0, 0 0;
+    color:var(--ink);
+    font-family:'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3{ font-family:'Fraunces', Georgia, serif; text-wrap:balance; margin:0; }
+  ::selection{ background:var(--accent-glow); }
+  a{ color:inherit; }
+  button{ font-family:inherit; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
+  .page{ max-width:760px; margin:0 auto; padding:0 20px 96px; position:relative; }
+
+  /* progress + tracker */
+  .progress-rail{ position:fixed; top:0; left:0; right:0; height:3px; z-index:60; background:transparent; }
+  .progress-fill{ height:100%; width:0%; background:var(--accent); box-shadow:0 0 10px var(--accent-glow); transition:width .12s linear; }
+  .tracker{ position:fixed; top:3px; left:0; right:0; display:flex; justify-content:center; z-index:59; pointer-events:none; }
+  .tracker span{
+    display:inline-flex; gap:.5em; align-items:baseline;
+    background:var(--surface); color:var(--ink-soft);
+    font:500 .72rem/1 'IBM Plex Mono', monospace; letter-spacing:.02em;
+    padding:.5rem .9rem; border-radius:0 0 12px 12px;
+    border:1px solid var(--line); border-top:none; box-shadow:var(--shadow);
+    opacity:0; transform:translateY(-8px); transition:opacity .25s ease, transform .25s ease;
+  }
+  .tracker span b{ color:var(--accent); font-weight:600; }
+  .tracker.show span{ opacity:1; transform:translateY(0); }
+
+  /* hero */
+  .hero{ padding:64px 0 28px; }
+  .kicker{ font:600 .72rem/1 'IBM Plex Mono', monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  .hero h1{ font-size:clamp(2.4rem, 6vw, 3.6rem); font-weight:600; font-optical-sizing:auto; }
+  .hero-def{ font-size:1.1rem; color:var(--ink-soft); max-width:60ch; margin:18px 0 0; }
+  .hl-certain{ color:var(--ink); font-weight:600; padding-bottom:1px; border-bottom:2px solid var(--ink-soft); }
+  .hl-uncertain{ color:var(--accent); font-weight:600; padding-bottom:1px; border-bottom:2px dashed var(--accent); display:inline-block; animation:wiggle 2.8s ease-in-out infinite; }
+  @keyframes wiggle{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-2px);} }
+
+  .ruler{ margin:34px 0 6px; height:46px; position:relative; }
+  .ruler-track{ position:absolute; left:0; right:0; bottom:10px; height:1px; background:var(--line); }
+  .ruler-ticks{ position:absolute; left:0; right:0; bottom:10px; display:flex; justify-content:space-between; }
+  .ruler-ticks i{ width:1px; height:10px; background:var(--ink-soft); opacity:.55; display:block; transform:translateY(0); }
+  .ruler-ticks i:nth-child(5n+1){ height:16px; opacity:.9; }
+  .ruler-pointer{ position:absolute; bottom:16px; left:0; width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-top:11px solid var(--accent); filter:drop-shadow(0 0 6px var(--accent-glow)); animation: slide-in 1.4s cubic-bezier(.2,.7,.3,1) both; animation-delay:.3s; }
+  @keyframes slide-in{ from{ left:0; opacity:0; } to{ left:24%; opacity:1; } }
+  .ruler-read{ position:absolute; bottom:-2px; left:24%; transform:translateX(-50%); font:600 .78rem/1 'IBM Plex Mono', monospace; color:var(--ink-soft); opacity:0; animation: fade-up .6s ease both; animation-delay:1.5s; }
+  @keyframes fade-up{ from{opacity:0; transform:translate(-50%,4px);} to{opacity:1; transform:translate(-50%,0);} }
+
+  /* legend + nav */
+  .legend{ display:flex; flex-wrap:wrap; gap:16px 22px; margin:26px 0 6px; padding:14px 18px; background:var(--surface); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+  .legend-item{ display:flex; align-items:center; gap:.55em; font-size:.82rem; color:var(--ink-soft); font-weight:500; }
+  .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .dot-sig{ background:var(--accent); box-shadow:0 0 8px var(--accent-glow); }
+  .dot-notsig{ background:var(--faded); position:relative; }
+  .dot-mute{ background:var(--ink-soft); opacity:.55; }
+
+  .rule-nav{ display:flex; flex-wrap:wrap; gap:8px; margin:18px 0 8px; }
+  .rule-nav a{ font:500 .78rem/1 'IBM Plex Sans'; text-decoration:none; color:var(--ink-soft); background:var(--surface-2); border:1px solid var(--line); padding:.5rem .8rem; border-radius:999px; transition:color .15s, border-color .15s, background .15s; }
+  .rule-nav a:hover{ color:var(--accent); border-color:var(--accent); }
+  .rule-nav a b{ color:var(--accent); font-weight:600; margin-right:.35em; }
+
+  /* rule sections */
+  .rule{ padding:56px 0 8px; border-top:1px solid var(--line); margin-top:8px; scroll-margin-top:70px; }
+  .rule:first-of-type{ border-top:none; }
+  .rule-tag{ font:600 .72rem/1 'IBM Plex Mono', monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin:0 0 10px; }
+  .rule-title{ font-size:clamp(1.35rem, 3.4vw, 1.7rem); font-weight:600; margin-bottom:10px; }
+  .rule-explain{ color:var(--ink-soft); max-width:58ch; margin:0 0 22px; }
+
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px 24px; position:relative; }
+  .card + .card{ margin-top:16px; }
+  .card::before, .card::after{ content:''; position:absolute; width:10px; height:10px; border:1.5px solid var(--accent); opacity:.5; }
+  .card::before{ top:8px; left:8px; border-right:none; border-bottom:none; }
+  .card::after{ bottom:8px; right:8px; border-left:none; border-top:none; }
+
+  .readout-row{ font-family:'IBM Plex Mono', monospace; font-size:clamp(1.5rem, 4.4vw, 2.15rem); letter-spacing:.01em; display:flex; flex-wrap:wrap; align-items:baseline; gap:.03em; padding:.4rem 0 .6rem; font-variant-numeric:tabular-nums; }
+  .tk{ opacity:0; transform:translateY(6px) scale(.94); transition:opacity .28s ease, transform .28s ease, color .2s ease; position:relative; white-space:pre; }
+  .tk.in{ opacity:1; transform:translateY(0) scale(1); }
+  .tk-sig.in{ color:var(--accent); font-weight:600; text-shadow:0 0 16px var(--accent-glow); }
+  .tk-exact.in{ color:var(--accent); font-weight:600; }
+  .tk-notsig{ color:var(--faded); }
+  .tk-notsig.in::after{ content:''; position:absolute; left:-3px; right:-3px; top:52%; height:1.5px; background:var(--faded-line); transform:rotate(-9deg); }
+  .tk-mute{ color:var(--ink-soft); font-weight:400; }
+  .tk sup{ font-size:.55em; top:-.7em; }
+
+  .readout-foot{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-top:10px; border-top:1px dashed var(--line); }
+  .tally{ font:500 .92rem/1 'IBM Plex Mono', monospace; color:var(--ink-soft); margin:0; transition:transform .18s ease; }
+  .tally-num{ font-weight:600; color:var(--accent); font-size:1.15em; display:inline-block; transition:transform .2s ease; }
+  .bump .tally-num{ transform:scale(1.3); }
+  .infinite-pop .tally-num{ animation:pop .55s ease; }
+  @keyframes pop{ 0%{ transform:scale(.3) rotate(-12deg); opacity:0; } 65%{ transform:scale(1.35); } 100%{ transform:scale(1); } }
+
+  .replay{ display:inline-flex; align-items:center; gap:.4em; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft); font:500 .78rem/1 'IBM Plex Sans'; padding:.5rem .85rem; border-radius:999px; transition:color .15s, border-color .15s; }
+  .replay:hover{ color:var(--accent); border-color:var(--accent); }
+
+  .card-note{ margin:14px 0 0; font-size:.88rem; color:var(--ink-soft); border-left:2px solid var(--accent); padding-left:.8em; }
+
+  .alt-compare{ margin-top:18px; padding-top:16px; border-top:1px dashed var(--line); }
+  .alt-label{ margin:0 0 2px; font-size:.85rem; color:var(--ink-soft); }
+  .alt-compare .readout-row{ font-size:clamp(1.2rem, 3.4vw, 1.7rem); }
+
+  .practice{ display:flex; flex-direction:column; gap:10px; }
+  .practice-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .practice-label{ font:600 .72rem/1 'IBM Plex Mono', monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); margin:0; }
+  .practice-input{ font-family:'IBM Plex Mono', monospace; font-size:1.4rem; font-weight:500; margin:0; font-variant-numeric:tabular-nums; background:transparent; border:none; border-bottom:2px solid var(--line); color:var(--ink); padding:.15rem .05rem .4rem; width:100%; max-width:360px; transition:border-color .15s ease; }
+  .practice-input:focus{ outline:none; border-bottom-color:var(--accent); }
+  .practice-input::placeholder{ color:var(--ink-soft); opacity:.6; }
+  .practice-hint{ margin:6px 0 0; font-size:.76rem; color:var(--ink-soft); opacity:.85; }
+  .exact-toggle{ display:flex; align-items:center; gap:.55em; font-size:.85rem; color:var(--ink-soft); margin:12px 0 0; cursor:pointer; }
+  .exact-toggle input{ accent-color:var(--accent); width:15px; height:15px; flex:none; cursor:pointer; }
+  .reveal{ background:var(--accent); color:var(--surface); border:none; font:600 .82rem/1 'IBM Plex Sans'; padding:.6rem 1rem; border-radius:999px; transition:opacity .15s, transform .1s; }
+  .reveal:hover{ opacity:.88; }
+  .reveal:active{ transform:scale(.97); }
+  .practice-panel{ margin-top:4px; padding-top:14px; border-top:1px dashed var(--line); }
+  .practice-panel[hidden]{ display:none; }
+
+  .infinity{ font-family:'Fraunces', serif; }
+
+  /* cheat sheet */
+  .cheatsheet{ margin-top:64px; padding-top:40px; border-top:1px solid var(--line); }
+  .cheatsheet h2{ font-size:1.3rem; margin-bottom:6px; }
+  .cheatsheet p.sub{ color:var(--ink-soft); margin:0 0 18px; font-size:.92rem; }
+  .table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow); }
+  table{ width:100%; border-collapse:collapse; font-size:.88rem; min-width:520px; }
+  thead th{ text-align:left; font:600 .68rem/1 'IBM Plex Mono', monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); padding:12px 16px; border-bottom:1px solid var(--line); }
+  tbody td{ padding:12px 16px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; }
+  td.ex{ font-family:'IBM Plex Mono', monospace; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.cnt{ font-family:'IBM Plex Mono', monospace; color:var(--accent); font-weight:600; text-align:right; }
+  .cheat-tip{ margin:16px 2px 0; font-size:.85rem; color:var(--ink-soft); }
+
+  footer.credit{ margin-top:48px; text-align:center; color:var(--ink-soft); font-size:.78rem; }
+
+  @media (max-width:560px){
+    .hero{ padding-top:48px; }
+    .card{ padding:18px 16px; }
+    .readout-row{ font-size:1.35rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+    html{ scroll-behavior:auto; }
+  }
+</style>
+</head>
+<body>
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+<div class="tracker" id="tracker"><span id="trackerText"></span></div>
+
+<div class="page">
+
+  <header class="hero">
+    <p class="kicker">Measurement &amp; uncertainty</p>
+    <h1>Significant Figures</h1>
+    <p class="hero-def">Significant digits are the digits in a measured quantity that are <span class="hl-certain">known with certainty</span>, plus the <span class="hl-uncertain">first uncertain (estimated) digit</span>.</p>
+
+    <div class="ruler" aria-hidden="true">
+      <div class="ruler-track"></div>
+      <div class="ruler-ticks">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div class="ruler-pointer"></div>
+      <div class="ruler-read">reading ≈ 2.4 cm</div>
+    </div>
+
+    <div class="legend">
+      <span class="legend-item"><span class="dot dot-sig"></span>Significant — counts</span>
+      <span class="legend-item"><span class="dot dot-notsig"></span>Not significant — doesn't count</span>
+      <span class="legend-item"><span class="dot dot-mute"></span>Not counted — unit, decimal point, exponent</span>
+    </div>
+
+    <nav class="rule-nav" aria-label="Jump to a rule">
+      <a href="#rule-1"><b>1</b>Non-zero digits</a>
+      <a href="#rule-2"><b>2</b>Sandwiched zeros</a>
+      <a href="#rule-3"><b>3</b>Leading zeros</a>
+      <a href="#rule-4"><b>4</b>Trailing, w/ decimal</a>
+      <a href="#rule-5"><b>5</b>Trailing, no decimal</a>
+      <a href="#rule-6"><b>6</b>Exact numbers</a>
+      <a href="#rule-7"><b>7</b>Scientific notation</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="rule" id="rule-1" data-rule="0" data-tracker="Rule 1 · Non-zero digits">
+      <p class="rule-tag">Rule 01 · 07</p>
+      <h2 class="rule-title">All Non-Zero Digits Are Significant</h2>
+      <p class="rule-explain">If a digit isn't zero, it always counts as significant — no exceptions.</p>
+
+      <div class="card readout" data-role="main">
+        <div class="readout-row" data-tokens></div>
+        <div class="readout-foot">
+          <button class="replay" type="button">⟲ Replay</button>
+          <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+        </div>
+        <p class="card-note" data-note></p>
+      </div>
+
+      <div class="card practice">
+        <div class="practice-top">
+          <p class="practice-label">Try it</p>
+          <button class="reveal" type="button">Reveal answer</button>
+        </div>
+        <input class="practice-input" type="text" data-practice-input autocomplete="off" spellcheck="false" aria-label="Editable example number">
+        <p class="practice-hint">Edit the number — the breakdown below updates as you type.</p>
+        <div class="practice-panel" hidden>
+          <div class="readout-row" data-tokens></div>
+          <div class="readout-foot">
+            <button class="replay" type="button" data-practice-replay>⟲ Replay</button>
+            <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+          </div>
+          <p class="card-note" data-note></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rule" id="rule-2" data-rule="1" data-tracker="Rule 2 · Sandwiched zeros">
+      <p class="rule-tag">Rule 02 · 07</p>
+      <h2 class="rule-title">Zeros Between Non-zero Digits Are Significant</h2>
+      <p class="rule-explain">Zeros sandwiched between two non-zero digits were measured too, so they always count.</p>
+
+      <div class="card readout" data-role="main">
+        <div class="readout-row" data-tokens></div>
+        <div class="readout-foot">
+          <button class="replay" type="button">⟲ Replay</button>
+          <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+        </div>
+        <p class="card-note" data-note></p>
+      </div>
+
+      <div class="card practice">
+        <div class="practice-top">
+          <p class="practice-label">Try it</p>
+          <button class="reveal" type="button">Reveal answer</button>
+        </div>
+        <input class="practice-input" type="text" data-practice-input autocomplete="off" spellcheck="false" aria-label="Editable example number">
+        <p class="practice-hint">Edit the number — the breakdown below updates as you type.</p>
+        <div class="practice-panel" hidden>
+          <div class="readout-row" data-tokens></div>
+          <div class="readout-foot">
+            <button class="replay" type="button" data-practice-replay>⟲ Replay</button>
+            <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+          </div>
+          <p class="card-note" data-note></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rule" id="rule-3" data-rule="2" data-tracker="Rule 3 · Leading zeros">
+      <p class="rule-tag">Rule 03 · 07</p>
+      <h2 class="rule-title">Leading Zeros Are Not Significant</h2>
+      <p class="rule-explain">Zeros before the first non-zero digit only locate the decimal point — they were never measured.</p>
+
+      <div class="card readout" data-role="main">
+        <div class="readout-row" data-tokens></div>
+        <div class="readout-foot">
+          <button class="replay" type="button">⟲ Replay</button>
+          <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+        </div>
+        <p class="card-note" data-note></p>
+      </div>
+
+      <div class="card practice">
+        <div class="practice-top">
+          <p class="practice-label">Try it</p>
+          <button class="reveal" type="button">Reveal answer</button>
+        </div>
+        <input class="practice-input" type="text" data-practice-input autocomplete="off" spellcheck="false" aria-label="Editable example number">
+        <p class="practice-hint">Edit the number — the breakdown below updates as you type.</p>
+        <div class="practice-panel" hidden>
+          <div class="readout-row" data-tokens></div>
+          <div class="readout-foot">
+            <button class="replay" type="button" data-practice-replay>⟲ Replay</button>
+            <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+          </div>
+          <p class="card-note" data-note></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rule" id="rule-4" data-rule="3" data-tracker="Rule 4 · Trailing zeros, decimal">
+      <p class="rule-tag">Rule 04 · 07</p>
+      <h2 class="rule-title">Trailing Zeros After the Decimal Point Are Significant</h2>
+      <p class="rule-explain">A zero written after the decimal point was placed there on purpose, so it counts.</p>
+
+      <div class="card readout" data-role="main">
+        <div class="readout-row" data-tokens></div>
+        <div class="readout-foot">
+          <button class="replay" type="button">⟲ Replay</button>
+          <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+        </div>
+        <p class="card-note" data-note></p>
+      </div>
+
+      <div class="card practice">
+        <div class="practice-top">
+          <p class="practice-label">Try it</p>
+          <button class="reveal" type="button">Reveal answer</button>
+        </div>
+        <input class="practice-input" type="text" data-practice-input autocomplete="off" spellcheck="false" aria-label="Editable example number">
+        <p class="practice-hint">Edit the number — the breakdown below updates as you type.</p>
+        <div class="practice-panel" hidden>
+          <div class="readout-row" data-tokens></div>
+          <div class="readout-foot">
+            <button class="replay" type="button" data-practice-replay>⟲ Replay</button>
+            <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+          </div>
+          <p class="card-note" data-note></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rule" id="rule-5" data-rule="4" data-tracker="Rule 5 · Trailing zeros, no decimal">
+      <p class="rule-tag">Rule 05 · 07</p>
+      <h2 class="rule-title">Trailing Zeros Without a Decimal Point Are Generally Not Significant</h2>
+      <p class="rule-explain">Without a decimal point, trailing zeros are ambiguous — by convention we don't count them.</p>
+
+      <div class="card readout" data-role="main">
+        <div class="readout-row" data-tokens></div>
+        <div class="readout-foot">
+          <button class="replay" type="button">⟲ Replay</button>
+          <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+        </div>
+        <p class="card-note" data-note></p>
+        <div class="alt-compare">
+          <p class="alt-label" data-alt-label></p>
+          <div class="readout-row alt" data-tokens-alt></div>
+        </div>
+      </div>
+
+      <div class="card practice">
+        <div class="practice-top">
+          <p class="practice-label">Try it</p>
+          <button class="reveal" type="button">Reveal answer</button>
+        </div>
+        <input class="practice-input" type="text" data-practice-input autocomplete="off" spellcheck="false" aria-label="Editable example number">
+        <p class="practice-hint">Edit the number — the breakdown below updates as you type.</p>
+        <div class="practice-panel" hidden>
+          <div class="readout-row" data-tokens></div>
+          <div class="readout-foot">
+            <button class="replay" type="button" data-practice-replay>⟲ Replay</button>
+            <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+          </div>
+          <p class="card-note" data-note></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rule" id="rule-6" data-rule="5" data-tracker="Rule 6 · Exact numbers">
+      <p class="rule-tag">Rule 06 · 07</p>
+      <h2 class="rule-title">Exact Numbers Have Infinite Significant Figures</h2>
+      <p class="rule-explain">Counted items and defined conversions carry no uncertainty at all, so their precision never runs out.</p>
+
+      <div class="card readout" data-role="main">
+        <div class="readout-row" data-tokens></div>
+        <div class="readout-foot">
+          <button class="replay" type="button">⟲ Replay</button>
+          <p class="tally">Significant figures: <span class="tally-num infinity">0</span></p>
+        </div>
+        <p class="card-note" data-note></p>
+      </div>
+
+      <div class="card practice">
+        <div class="practice-top">
+          <p class="practice-label">Try it</p>
+          <button class="reveal" type="button">Reveal answer</button>
+        </div>
+        <input class="practice-input" type="text" data-practice-input autocomplete="off" spellcheck="false" aria-label="Editable example number">
+        <label class="exact-toggle"><input type="checkbox" data-exact-toggle checked> Treat as an exact count or defined value</label>
+        <p class="practice-hint">Untick the box to see how ordinary digit rules would count the same number instead.</p>
+        <div class="practice-panel" hidden>
+          <div class="readout-row" data-tokens></div>
+          <div class="readout-foot">
+            <button class="replay" type="button" data-practice-replay>⟲ Replay</button>
+            <p class="tally">Significant figures: <span class="tally-num infinity">0</span></p>
+          </div>
+          <p class="card-note" data-note></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rule" id="rule-7" data-rule="6" data-tracker="Rule 7 · Scientific notation">
+      <p class="rule-tag">Rule 07 · 07</p>
+      <h2 class="rule-title">In Scientific Notation, Only the Coefficient Digits Are Significant</h2>
+      <p class="rule-explain">Scientific notation separates precision from magnitude — the exponent is just bookkeeping.</p>
+
+      <div class="card readout" data-role="main">
+        <div class="readout-row" data-tokens></div>
+        <div class="readout-foot">
+          <button class="replay" type="button">⟲ Replay</button>
+          <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+        </div>
+        <p class="card-note" data-note></p>
+      </div>
+
+      <div class="card practice">
+        <div class="practice-top">
+          <p class="practice-label">Try it</p>
+          <button class="reveal" type="button">Reveal answer</button>
+        </div>
+        <input class="practice-input" type="text" data-practice-input autocomplete="off" spellcheck="false" aria-label="Editable example number">
+        <p class="practice-hint">Edit the number — the breakdown below updates as you type.</p>
+        <div class="practice-panel" hidden>
+          <div class="readout-row" data-tokens></div>
+          <div class="readout-foot">
+            <button class="replay" type="button" data-practice-replay>⟲ Replay</button>
+            <p class="tally">Significant figures: <span class="tally-num">0</span></p>
+          </div>
+          <p class="card-note" data-note></p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <section class="cheatsheet">
+    <h2>Quick reference</h2>
+    <p class="sub">All seven rules in one place — handy for review before a quiz.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Rule</th><th>Example</th><th style="text-align:right;">Sig. figs</th></tr>
+        </thead>
+        <tbody id="cheatBody"></tbody>
+      </table>
+    </div>
+    <p class="cheat-tip">Tip: click <strong>⟲ Replay</strong> on any card above to run its animation again.</p>
+  </section>
+
+  <footer class="credit">Scroll back up any time — every animation replays on demand.</footer>
+
+</div>
+<script>
+(function(){
+  "use strict";
+
+  function toks(spec){
+    var out = [];
+    spec.forEach(function(seg){
+      var text = seg[0], type = seg[1], sup = seg[2] || false;
+      for (var i = 0; i < text.length; i++){
+        out.push({ ch: text[i], type: type, sup: sup });
+      }
+    });
+    return out;
+  }
+
+  var RULES = [
+    { // Rule 1
+      title: "All Non-Zero Digits are Significant",
+      example: "82.4 cm",
+      main: { spec:[["8","sig"],["2","sig"],[".","mute"],["4","sig"],[" cm","mute"]],
+              note:"8, 2, and 4 are all non-zero, so every one of them counts." },
+      practice: { number:"915 mg" }
+    },
+    { // Rule 2
+      title: "Zeros Between Non-zero Digits are Significant",
+      example: "7.003 L",
+      main: { spec:[["7","sig"],[".","mute"],["0","sig"],["0","sig"],["3","sig"],[" L","mute"]],
+              note:"The two zeros sit between 7 and 3, so they're captured — and count too." },
+      practice: { number:"1002 kg" }
+    },
+    { // Rule 3
+      title: "Leading Zeros are Not Significant",
+      example: "0.0052 m",
+      main: { spec:[["0","notsig"],[".","mute"],["0","notsig"],["0","notsig"],["5","sig"],["2","sig"],[" m","mute"]],
+              note:"These zeros only mark the decimal's position — they carry no measurement information." },
+      practice: { number:"0.081 g" }
+    },
+    { // Rule 4
+      title: "Trailing Zeros After the Decimal Point are Significant",
+      example: "4.500 cm",
+      main: { spec:[["4","sig"],[".","mute"],["5","sig"],["0","sig"],["0","sig"],[" cm","mute"]],
+              note:"Once a decimal point is written, every trailing zero after it was deliberately measured." },
+      practice: { number:"12.300 mL" }
+    },
+    { // Rule 5
+      title: "Trailing Zeros Without a Decimal Point are Generally Not Significant",
+      example: "1500 m",
+      main: { spec:[["1","sig"],["5","sig"],["0","notsig"],["0","notsig"],[" m","mute"]],
+              note:"Without a decimal point, these zeros could just be placeholders — so by convention they don't count." },
+      alt: { spec:[["1","sig"],[".","mute"],["5","sig"],["0","sig"],["0","sig"],[" × 10","mute"],["3","mute",true],[" m","mute"]],
+             label:"Written as 1.500 × 10³ m, the very same length now shows its zeros ARE significant:" },
+      practice: { number:"20,000 km" }
+    },
+    { // Rule 6
+      title: "Exact Numbers Have Infinite Significant Figures",
+      example: "24 students",
+      infinite: true,
+      main: { spec:[["2","exact"],["4","exact"],[" students","mute"]],
+              note:"You counted a whole class — there's no estimation, so the certainty never runs out." },
+      practice: { number:"12 inches = 1 foot" }
+    },
+    { // Rule 7
+      title: "In Scientific Notation, Only the Digits in the Coefficient are Significant",
+      example: "3.20 × 10⁴ m",
+      main: { spec:[["3","sig"],[".","mute"],["2","sig"],["0","sig"],[" × 10","mute"],["4","mute",true],[" m","mute"]],
+              note:"Only 3.20 is significant — the power of ten just relocates the decimal point." },
+      practice: { number:"6.0 × 10⁻³ g" }
+    }
+  ];
+
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function renderTokenSpans(container, tokens){
+    container.innerHTML = '';
+    return tokens.map(function(tok){
+      var span = document.createElement('span');
+      span.className = 'tk tk-' + tok.type;
+      if (tok.sup){
+        var sup = document.createElement('sup');
+        sup.textContent = tok.ch;
+        span.appendChild(sup);
+      } else {
+        span.textContent = tok.ch === ' ' ? '\u00a0' : tok.ch;
+      }
+      container.appendChild(span);
+      return span;
+    });
+  }
+
+  function buildTokens(container, spec){
+    return renderTokenSpans(container, toks(spec));
+  }
+
+  // Classifies an arbitrary, user-typed number string into significant /
+  // not-significant / not-counted characters, following the same seven
+  // rules taught above. Understands a decimal point, comma separators,
+  // units or trailing text, and scientific notation written as
+  // "3.2e4", "3.2 x 10^4", "3.2 × 10⁴", etc.
+  function classify(raw, opts){
+    opts = opts || {};
+    raw = raw == null ? '' : String(raw);
+
+    if (raw === ''){
+      return { tokens: [], sigCount: 0, exact: !!opts.exact, hasExponent: false, empty: true };
+    }
+
+    if (opts.exact){
+      var exactTokens = [];
+      for (var e = 0; e < raw.length; e++){
+        var ec = raw[e];
+        exactTokens.push({ ch: ec, type: /[0-9]/.test(ec) ? 'exact' : 'mute', sup: false });
+      }
+      return { tokens: exactTokens, sigCount: 0, exact: true, hasExponent: false, empty: false };
+    }
+
+    var expRe = /([×x\*]\s*10\s*\^?\s*[-−⁻+]?[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]+|[eE][-+]?[0-9]+)/;
+    var m = expRe.exec(raw);
+    var mantissaStr, expTokenStr, restStr;
+    if (m){
+      mantissaStr = raw.slice(0, m.index);
+      expTokenStr = m[0];
+      restStr = raw.slice(m.index + m[0].length);
+    } else {
+      mantissaStr = raw; expTokenStr = ''; restStr = '';
+    }
+
+    var chars = mantissaStr.split('');
+    var digitPositions = [];
+    chars.forEach(function(c, i){ if (/[0-9]/.test(c)) digitPositions.push(i); });
+    var hasDecimal = mantissaStr.indexOf('.') !== -1;
+    var nonZeroPositions = digitPositions.filter(function(i){ return chars[i] !== '0'; });
+    var firstNZ = nonZeroPositions.length ? nonZeroPositions[0] : null;
+    var lastNZ = nonZeroPositions.length ? nonZeroPositions[nonZeroPositions.length - 1] : null;
+
+    var tokens = [];
+    var sigCount = 0;
+    chars.forEach(function(c, i){
+      var type;
+      if (/[0-9]/.test(c)){
+        if (c !== '0'){
+          type = 'sig';
+        } else if (firstNZ === null){
+          type = 'notsig';
+        } else if (i < firstNZ){
+          type = 'notsig';
+        } else if (i > lastNZ){
+          type = hasDecimal ? 'sig' : 'notsig';
+        } else {
+          type = 'sig';
+        }
+        if (type === 'sig') sigCount++;
+      } else {
+        type = 'mute';
+      }
+      tokens.push({ ch: c, type: type, sup: false });
+    });
+
+    if (expTokenStr){
+      var numMatch = expTokenStr.match(/[-−⁻+]?[0-9⁰¹²³⁴⁵⁶⁷⁸⁹]+$/);
+      var prefixLen = numMatch ? expTokenStr.length - numMatch[0].length : expTokenStr.length;
+      for (var j = 0; j < expTokenStr.length; j++){
+        tokens.push({ ch: expTokenStr[j], type: 'mute', sup: j >= prefixLen });
+      }
+    }
+    for (var k = 0; k < restStr.length; k++){
+      tokens.push({ ch: restStr[k], type: 'mute', sup: false });
+    }
+
+    return { tokens: tokens, sigCount: sigCount, exact: false, hasExponent: !!expTokenStr, empty: false };
+  }
+
+  function describeNote(result){
+    if (result.exact) return "Defined or counted exactly — no estimation involved, so significant figures are infinite no matter the digits.";
+    if (result.empty) return "Type a number above to see its significant figures.";
+    var sigChars = result.tokens.filter(function(t){ return t.type === 'sig'; }).map(function(t){ return t.ch; });
+    var notsigChars = result.tokens.filter(function(t){ return t.type === 'notsig'; }).map(function(t){ return t.ch; });
+    var bits = [];
+    if (sigChars.length) bits.push(sigChars.join(', ') + (sigChars.length > 1 ? ' count' : ' counts'));
+    if (notsigChars.length) bits.push((notsigChars.length > 1 ? 'the zeros ' : 'the zero ') + notsigChars.join(', ') + " don't");
+    var text = bits.length ? bits.join(' — ') + '.' : 'No significant digits yet — try typing one.';
+    if (result.hasExponent) text += ' The exponent is never counted.';
+    return text;
+  }
+
+  function showInstant(container, tallyNumEl, result){
+    var spans = renderTokenSpans(container, result.tokens);
+    spans.forEach(function(s){ s.classList.add('in'); });
+    tallyNumEl.parentElement.classList.remove('infinite-pop');
+    tallyNumEl.textContent = result.exact ? '∞' : String(result.sigCount);
+    return spans;
+  }
+
+  function playTokensOnly(spans){
+    spans.forEach(function(s){ s.classList.remove('in'); });
+    void (spans[0] && spans[0].offsetWidth);
+    spans.forEach(function(s, i){
+      var delay = reduced ? 0 : i * 65;
+      window.setTimeout(function(){ s.classList.add('in'); }, delay);
+    });
+  }
+
+  function playAnimation(spans, tallyNumEl, opts){
+    opts = opts || {};
+    var infinite = !!opts.infinite;
+    var count = 0;
+    tallyNumEl.textContent = '0';
+    tallyNumEl.parentElement.classList.remove('infinite-pop');
+    spans.forEach(function(s){ s.classList.remove('in'); });
+    // force reflow so re-adding 'in' re-triggers transitions on replay
+    void spans[0] && spans[0].offsetWidth;
+    spans.forEach(function(s, i){
+      var delay = reduced ? 0 : i * 65;
+      window.setTimeout(function(){
+        s.classList.add('in');
+        if (s.classList.contains('tk-sig')){
+          count++;
+          tallyNumEl.textContent = String(count);
+          tallyNumEl.parentElement.classList.add('bump');
+          window.setTimeout(function(){ tallyNumEl.parentElement.classList.remove('bump'); }, 200);
+        }
+        if (i === spans.length - 1 && infinite){
+          window.setTimeout(function(){
+            tallyNumEl.textContent = '∞';
+            tallyNumEl.parentElement.classList.add('infinite-pop');
+          }, reduced ? 0 : 260);
+        }
+      }, delay);
+    });
+  }
+
+  function wireReadoutCard(card, data){
+    var container = card.querySelector('[data-tokens]');
+    var noteEl = card.querySelector('[data-note]');
+    var tallyNum = card.querySelector('.tally-num');
+    var replayBtn = card.querySelector('.replay');
+    noteEl.textContent = data.note;
+
+    var spans = buildTokens(container, data.spec);
+
+    function trigger(){ playAnimation(spans, tallyNum, { infinite: !!data.infinite }); }
+
+    replayBtn.addEventListener('click', trigger);
+
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting){
+          trigger();
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.45 });
+    io.observe(card);
+
+    if (data.altSpec){
+      var altContainer = card.querySelector('[data-tokens-alt]');
+      var altLabel = card.querySelector('[data-alt-label]');
+      altLabel.textContent = data.altLabel;
+      var altSpans = buildTokens(altContainer, data.altSpec);
+      var altIo = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting){
+            playTokensOnly(altSpans);
+            altIo.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+      altIo.observe(altContainer);
+    }
+  }
+
+  function wirePracticeCard(card, initialNumber){
+    var input = card.querySelector('[data-practice-input]');
+    var exactToggle = card.querySelector('[data-exact-toggle]');
+    var revealBtn = card.querySelector('.reveal');
+    var replayBtn = card.querySelector('[data-practice-replay]');
+    var panel = card.querySelector('.practice-panel');
+    var container = panel.querySelector('[data-tokens]');
+    var noteEl = panel.querySelector('[data-note]');
+    var tallyNum = panel.querySelector('.tally-num');
+
+    input.value = initialNumber;
+    var open = false;
+
+    function currentResult(){
+      return classify(input.value, { exact: !!(exactToggle && exactToggle.checked) });
+    }
+
+    function revealWithAnimation(){
+      var result = currentResult();
+      var spans = renderTokenSpans(container, result.tokens);
+      playAnimation(spans, tallyNum, { infinite: result.exact });
+      noteEl.textContent = describeNote(result);
+    }
+
+    function updateLive(){
+      if (!open) return;
+      var result = currentResult();
+      showInstant(container, tallyNum, result);
+      noteEl.textContent = describeNote(result);
+    }
+
+    revealBtn.addEventListener('click', function(){
+      open = !open;
+      panel.hidden = !open;
+      revealBtn.textContent = open ? 'Hide answer' : 'Reveal answer';
+      if (open){ revealWithAnimation(); }
+    });
+
+    input.addEventListener('input', updateLive);
+
+    if (exactToggle){
+      exactToggle.addEventListener('change', function(){ if (open){ revealWithAnimation(); } });
+    }
+
+    if (replayBtn){
+      replayBtn.addEventListener('click', function(){ if (open){ revealWithAnimation(); } });
+    }
+  }
+
+  var sections = document.querySelectorAll('.rule');
+  sections.forEach(function(section){
+    var idx = parseInt(section.getAttribute('data-rule'), 10);
+    var r = RULES[idx];
+    var mainCard = section.querySelector('.card.readout');
+    var practiceCard = section.querySelector('.card.practice');
+
+    var mainData = {
+      spec: r.main.spec,
+      note: r.main.note,
+      infinite: !!r.infinite
+    };
+    if (r.alt){ mainData.altSpec = r.alt.spec; mainData.altLabel = r.alt.label; }
+    wireReadoutCard(mainCard, mainData);
+
+    wirePracticeCard(practiceCard, r.practice.number);
+  });
+
+  // cheat sheet
+  var cheatBody = document.getElementById('cheatBody');
+  RULES.forEach(function(r, i){
+    var sigCount = 0;
+    r.main.spec.forEach(function(seg){ if (seg[1] === 'sig') sigCount += seg[0].length; });
+    var countLabel = r.infinite ? '∞' : String(sigCount);
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><a href="#rule-' + (i+1) + '" style="color:inherit;text-decoration:none;">' + (i+1) + '. ' + r.title + '</a></td>' +
+      '<td class="ex">' + r.example + '</td>' +
+      '<td class="cnt">' + countLabel + '</td>';
+    cheatBody.appendChild(tr);
+  });
+
+  // progress + tracker
+  var fill = document.getElementById('progressFill');
+  var tracker = document.getElementById('tracker');
+  var trackerText = document.getElementById('trackerText');
+  var hero = document.querySelector('.hero');
+  var ticking = false;
+
+  function updateScrollUI(){
+    ticking = false;
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - doc.clientHeight;
+    var pct = max > 0 ? (doc.scrollTop / max) * 100 : 0;
+    fill.style.width = pct + '%';
+
+    var current = null;
+    sections.forEach(function(sec){
+      var rect = sec.getBoundingClientRect();
+      if (rect.top <= 130) current = sec;
+    });
+    var pastHero = hero.getBoundingClientRect().bottom < 40;
+    if (current && pastHero){
+      trackerText.innerHTML = current.getAttribute('data-tracker').replace(/^(Rule \d+)/, '<b>$1</b>');
+      tracker.classList.add('show');
+    } else {
+      tracker.classList.remove('show');
+    }
+  }
+
+  window.addEventListener('scroll', function(){
+    if (!ticking){ ticking = true; window.requestAnimationFrame(updateScrollUI); }
+  }, { passive:true });
+  updateScrollUI();
+
+})();
+</script>
+</body>
+</html>
