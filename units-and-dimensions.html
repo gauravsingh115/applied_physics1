@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Units &amp; Dimensions — A Guide + Analyzer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%90%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0F1D30;
+    --bg-grid: rgba(255,255,255,0.035);
+    --panel: #16283F;
+    --panel-alt: #1C3350;
+    --panel-raised: #203A5B;
+    --line: rgba(232,230,220,0.10);
+    --line-strong: rgba(232,230,220,0.22);
+    --text: #EDEAE0;
+    --text-dim: rgba(237,234,224,0.66);
+    --text-faint: rgba(237,234,224,0.40);
+    --accent: #CBA050;
+    --accent-bright: #E4BE72;
+    --accent-soft: rgba(203,160,80,0.14);
+
+    --dim-L: #52C7C0;
+    --dim-M: #D6A94C;
+    --dim-T: #8B93E8;
+    --dim-I: #CE72B8;
+    --dim-TH: #E2735A;
+    --dim-N: #8FBE7C;
+    --dim-J: #E7D06E;
+
+    --radius: 10px;
+    --maxw: 1040px;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(0deg, var(--bg-grid) 0 1px, transparent 1px 40px),
+      repeating-linear-gradient(90deg, var(--bg-grid) 0 1px, transparent 1px 40px),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', Georgia, serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3, .display{ font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+  .mono{ font-family: 'IBM Plex Mono', monospace; }
+  a{ color: var(--accent-bright); }
+
+  ::selection{ background: var(--accent-soft); color: var(--text); }
+
+  :focus-visible{ outline: 2px solid var(--accent-bright); outline-offset: 3px; }
+
+  .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- nav ---------- */
+  header.nav{
+    position: sticky; top:0; z-index: 50;
+    background: rgba(15,29,48,0.86);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner{
+    max-width: var(--maxw); margin:0 auto; padding: 14px 28px;
+    display:flex; align-items:center; justify-content:space-between; gap: 16px;
+  }
+  .brand{
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.92rem;
+    letter-spacing:0.04em; text-transform:uppercase; color: var(--text);
+    display:flex; align-items:center; gap:8px;
+  }
+  .brand svg{ display:block; }
+  .navlinks{ display:flex; gap: 22px; flex-wrap: wrap; }
+  .navlinks a{
+    font-family:'IBM Plex Mono',monospace; font-size:0.78rem; letter-spacing:0.03em;
+    text-transform:uppercase; color: var(--text-dim); text-decoration:none;
+    border-bottom: 1px solid transparent; padding-bottom:2px;
+  }
+  .navlinks a:hover{ color: var(--accent-bright); border-color: var(--accent-bright); }
+
+  section{ scroll-margin-top: 76px; }
+
+  /* ---------- hero ---------- */
+  .hero{ padding: 88px 0 56px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.78rem; letter-spacing:0.14em;
+    text-transform:uppercase; color: var(--accent); margin: 0 0 18px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:''; width:22px; height:1px; background: var(--accent); display:inline-block; }
+  h1.hero-title{
+    font-size: clamp(2.1rem, 5vw, 3.4rem); font-weight:700; line-height:1.08;
+    margin: 0 0 22px; max-width: 16ch;
+  }
+  .hero-sub{
+    font-size: clamp(1.02rem, 1.6vw, 1.18rem); color: var(--text-dim); max-width: 62ch; margin: 0 0 40px;
+  }
+
+  .hero-tiles{ display:flex; flex-wrap:wrap; gap:10px; }
+  .mini-tile{
+    flex: 1 1 110px; min-width: 100px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-top: 3px solid var(--dc, var(--accent));
+    border-radius: var(--radius); padding: 12px 12px 10px;
+    opacity:0; transform: translateY(10px);
+    animation: rise 0.6s ease forwards;
+  }
+  .mini-tile .letter{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.3rem; color: var(--dc, var(--accent)); }
+  .mini-tile .label{ font-size:0.72rem; color: var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; margin-top:2px; }
+  @keyframes rise{ to{ opacity:1; transform:none; } }
+  .mini-tile:nth-child(1){ animation-delay: 0.05s; }
+  .mini-tile:nth-child(2){ animation-delay: 0.12s; }
+  .mini-tile:nth-child(3){ animation-delay: 0.19s; }
+  .mini-tile:nth-child(4){ animation-delay: 0.26s; }
+  .mini-tile:nth-child(5){ animation-delay: 0.33s; }
+  .mini-tile:nth-child(6){ animation-delay: 0.40s; }
+  .mini-tile:nth-child(7){ animation-delay: 0.47s; }
+
+  /* ---------- ruler divider ---------- */
+  .ruler{
+    height: 22px; margin: 8px 0 0;
+    background-image: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 20px),
+                       repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 4px);
+    background-position: 0 0, 0 0;
+    background-size: 100% 10px, 100% 5px;
+    background-repeat: no-repeat;
+    opacity:0.8;
+  }
+
+  /* ---------- section shell ---------- */
+  .section{ padding: 64px 0; border-top: 1px solid var(--line); }
+  .section-head{ display:flex; flex-direction:column; gap:8px; margin-bottom: 34px; max-width: 74ch; }
+  .section-title{ font-size: clamp(1.5rem, 3vw, 2rem); font-weight:700; margin:0; }
+  .lede{ color: var(--text-dim); margin: 4px 0 0; }
+  .lede + .lede{ margin-top: 12px; }
+
+  /* ---------- base unit tiles ---------- */
+  .base-grid{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(190px,1fr)); gap:14px;
+  }
+  .base-card{
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 18px 18px 16px; border-left: 4px solid var(--dc);
+  }
+  .base-card .letter{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:2rem; color: var(--dc); line-height:1;
+  }
+  .base-card .qty{ font-size:0.95rem; color: var(--text); margin-top:8px; font-weight:600; font-family:'Space Grotesk',sans-serif;}
+  .base-card .unitline{
+    font-family:'IBM Plex Mono',monospace; font-size:0.86rem; color: var(--text-dim); margin-top:4px;
+  }
+  .base-card .unitline b{ color: var(--text); }
+  .base-card .fact{ font-size:0.82rem; color: var(--text-faint); margin-top:10px; line-height:1.5; }
+
+  /* ---------- derived unit cards ---------- */
+  .derived-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap:14px; }
+  .derived-card{ background: var(--panel); border:1px solid var(--line); border-radius: var(--radius); padding:18px; }
+  .derived-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  .derived-name{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.08rem; }
+  .derived-sym{ font-family:'IBM Plex Mono',monospace; color: var(--accent-bright); font-size:1rem; }
+  .derived-qty{ font-size:0.78rem; text-transform:uppercase; letter-spacing:0.05em; color: var(--text-faint); margin-top:2px; }
+  .equation{
+    margin: 14px 0 10px; font-family:'IBM Plex Mono',monospace; font-size:0.96rem;
+    display:flex; flex-wrap:wrap; align-items:center; gap:6px;
+  }
+  .chip{
+    padding: 2px 8px; border-radius: 6px; font-size:0.86rem;
+    background: color-mix(in srgb, var(--cc) 18%, transparent);
+    color: var(--cc); border: 1px solid color-mix(in srgb, var(--cc) 45%, transparent);
+  }
+  .op{ color: var(--text-faint); }
+  .anchor-fact{ font-size:0.86rem; color: var(--text-dim); margin:0; }
+
+  /* ---------- dimensions table ---------- */
+  .dim-table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius: var(--radius); }
+  table.dim-table{ width:100%; border-collapse:collapse; font-size:0.92rem; min-width:520px; }
+  table.dim-table th, table.dim-table td{ padding: 11px 16px; text-align:left; border-bottom:1px solid var(--line); }
+  table.dim-table th{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em;
+    color: var(--text-faint); background: var(--panel);
+  }
+  table.dim-table td{ background: var(--panel-alt); }
+  table.dim-table tr:last-child td{ border-bottom:none; }
+  table.dim-table td.formula, table.dim-table td.defn{ font-family:'IBM Plex Mono',monospace; }
+  table.dim-table td.qty{ font-family:'Space Grotesk',sans-serif; font-weight:600; }
+
+  .callout{
+    margin-top: 22px; padding: 16px 18px; background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    border-radius: var(--radius); font-size:0.92rem; color: var(--text-dim);
+  }
+  .callout b{ color: var(--text); }
+
+  /* ---------- analyzer ---------- */
+  .analyzer{
+    background: var(--panel); border:1px solid var(--line); border-radius: 14px;
+    padding: 26px 26px 30px;
+  }
+  .analyzer-top{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .input-shell{
+    flex:1 1 280px; display:flex; align-items:center; gap:10px;
+    background: var(--panel-alt); border:1px solid var(--line-strong); border-radius:8px;
+    padding: 4px 6px 4px 14px;
+  }
+  .input-shell .ico{ color: var(--text-faint); font-family:'IBM Plex Mono',monospace; }
+  #unitInput{
+    flex:1; background:transparent; border:none; outline:none; color: var(--text);
+    font-family:'IBM Plex Mono',monospace; font-size:1.05rem; padding: 12px 4px;
+    min-width:0;
+  }
+  #unitInput::placeholder{ color: var(--text-faint); }
+  .analyze-btn{
+    background: var(--accent); color:#1a1305; border:none; border-radius:6px;
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:0.9rem;
+    padding: 12px 18px; cursor:pointer;
+  }
+  .analyze-btn:hover{ background: var(--accent-bright); }
+
+  .examples{ display:flex; gap:8px; flex-wrap:wrap; margin: 14px 0 4px; }
+  .ex-chip{
+    font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color: var(--text-dim);
+    background: var(--panel-alt); border:1px solid var(--line); border-radius:20px;
+    padding: 5px 12px; cursor:pointer;
+  }
+  .ex-chip:hover{ border-color: var(--accent-bright); color: var(--accent-bright); }
+
+  .analyzer-body{
+    margin-top: 26px; padding-top: 24px; border-top: 1px solid var(--line);
+    display:grid; grid-template-columns: 1fr; gap:26px;
+  }
+
+  .faders{ display:flex; flex-wrap:wrap; gap:14px; justify-content:center; }
+  .fader{
+    width: 76px; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .fader .fname{ font-size:0.66rem; text-transform:uppercase; letter-spacing:0.03em; color: var(--text-faint); text-align:center; min-height:2.2em; }
+  .fader .letter{ font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.05rem; color: var(--fc); }
+  .track{
+    width: 26px; height: 150px; background: var(--panel-alt); border-radius: 6px;
+    position:relative; border:1px solid var(--line);
+  }
+  .track::before{
+    content:''; position:absolute; left:0; right:0; top:50%; height:1px; background: var(--line-strong);
+  }
+  .track .fill{
+    position:absolute; left:2px; right:2px; background: var(--fc); border-radius:4px;
+    top:50%; height:0; transition: height 0.35s ease, top 0.35s ease, opacity 0.35s ease;
+    opacity:0.9;
+  }
+  .fader .val{ font-family:'IBM Plex Mono',monospace; font-size:0.86rem; color: var(--text); min-height:1.4em; }
+
+  .readout{
+    background: var(--panel-alt); border:1px solid var(--line); border-radius: 10px;
+    padding: 22px 22px; text-align:center;
+  }
+  .readout .formula{
+    font-family:'IBM Plex Mono',monospace; font-size: clamp(1.4rem, 3.2vw, 1.9rem);
+    color: var(--accent-bright); letter-spacing:0.02em; word-break: break-word;
+  }
+  .readout .equiv{ margin-top:10px; font-size:0.92rem; color: var(--text-dim); min-height:1.4em; }
+  .readout .equiv b{ color: var(--text); }
+  .readout .err{ color: var(--dim-TH); font-family:'IBM Plex Mono',monospace; font-size:0.94rem; }
+
+  .legend{ display:flex; flex-wrap:wrap; gap: 10px 18px; margin-top: 18px; justify-content:center; }
+  .legend span{ font-size:0.74rem; color: var(--text-faint); font-family:'IBM Plex Mono',monospace; display:flex; align-items:center; gap:6px; }
+  .legend i{ width:9px; height:9px; border-radius:2px; display:inline-block; background: var(--lc); }
+
+  .hint{ font-size:0.8rem; color: var(--text-faint); margin-top:16px; line-height:1.6; }
+  .hint code{ background: var(--panel-alt); padding:1px 5px; border-radius:4px; font-family:'IBM Plex Mono',monospace; }
+
+  footer{ padding: 40px 0 60px; }
+  footer p{ font-size:0.82rem; color: var(--text-faint); max-width:60ch; }
+
+  @media (max-width: 640px){
+    .hero{ padding: 60px 0 40px; }
+    .section{ padding: 44px 0; }
+    .analyzer{ padding: 20px 18px 24px; }
+    .fader{ width: 64px; }
+    .track{ width:22px; height:120px; }
+    .navlinks{ display:none; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 21L21 3M8 16l2 2M12 12l2 2M16 8l2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      Units &amp; Dimensions
+    </div>
+    <nav class="navlinks">
+      <a href="#base">Base units</a>
+      <a href="#derived">Derived units</a>
+      <a href="#dimensions">Dimensions</a>
+      <a href="#analyzer">Analyzer</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="eyebrow">The International System of Units</p>
+    <h1 class="hero-title">Seven bricks. Everything else is built from them.</h1>
+    <p class="hero-sub">Every unit you've ever used — newtons, joules, volts, miles per hour — reduces to some combination of seven independent, fundamental units. This page walks through how, then ends with a tool that shows you the breakdown for any unit you type in.</p>
+    <div class="hero-tiles" id="heroTiles">
+      <div class="mini-tile" style="--dc:var(--dim-L)"><div class="letter">L</div><div class="label">Length</div></div>
+      <div class="mini-tile" style="--dc:var(--dim-M)"><div class="letter">M</div><div class="label">Mass</div></div>
+      <div class="mini-tile" style="--dc:var(--dim-T)"><div class="letter">T</div><div class="label">Time</div></div>
+      <div class="mini-tile" style="--dc:var(--dim-I)"><div class="letter">I</div><div class="label">Current</div></div>
+      <div class="mini-tile" style="--dc:var(--dim-TH)"><div class="letter">Θ</div><div class="label">Temperature</div></div>
+      <div class="mini-tile" style="--dc:var(--dim-N)"><div class="letter">N</div><div class="label">Substance</div></div>
+      <div class="mini-tile" style="--dc:var(--dim-J)"><div class="letter">J</div><div class="label">Luminosity</div></div>
+    </div>
+  </section>
+
+  <div class="ruler"></div>
+
+  <!-- SECTION 01 — BASE UNITS -->
+  <section class="section" id="base">
+    <div class="section-head">
+      <p class="eyebrow">01 — Fundamental (base) units</p>
+      <h2 class="section-title">The seven that don't depend on anything else</h2>
+      <p class="lede">A fundamental unit — also called a <b>base unit</b> — measures a quantity that can't be defined in terms of any other unit. It stands on its own. SI recognizes seven of them, one per base physical quantity, and every other unit in physics, chemistry, and engineering is built by multiplying and dividing these seven.</p>
+      <p class="lede">Until 2019, some were tied to physical objects — a platinum-iridium cylinder kept in a vault outside Paris defined the kilogram. Today all seven are defined by fixing the exact numerical value of a constant of nature.</p>
+    </div>
+    <div class="base-grid">
+      <div class="base-card" style="--dc:var(--dim-L)">
+        <div class="letter">L</div>
+        <div class="qty">Length</div>
+        <div class="unitline">metre — <b>m</b></div>
+        <div class="fact">Defined by fixing the speed of light at exactly 299,792,458 m/s.</div>
+      </div>
+      <div class="base-card" style="--dc:var(--dim-M)">
+        <div class="letter">M</div>
+        <div class="qty">Mass</div>
+        <div class="unitline">kilogram — <b>kg</b></div>
+        <div class="fact">Defined by fixing the Planck constant at exactly 6.62607015×10⁻³⁴ J·s.</div>
+      </div>
+      <div class="base-card" style="--dc:var(--dim-T)">
+        <div class="letter">T</div>
+        <div class="qty">Time</div>
+        <div class="unitline">second — <b>s</b></div>
+        <div class="fact">Defined by a caesium-133 atom's hyperfine transition: 9,192,631,770 cycles.</div>
+      </div>
+      <div class="base-card" style="--dc:var(--dim-I)">
+        <div class="letter">I</div>
+        <div class="qty">Electric current</div>
+        <div class="unitline">ampere — <b>A</b></div>
+        <div class="fact">Defined by fixing the elementary charge at exactly 1.602176634×10⁻¹⁹ C.</div>
+      </div>
+      <div class="base-card" style="--dc:var(--dim-TH)">
+        <div class="letter">Θ</div>
+        <div class="qty">Temperature</div>
+        <div class="unitline">kelvin — <b>K</b></div>
+        <div class="fact">Defined by fixing the Boltzmann constant at exactly 1.380649×10⁻²³ J/K.</div>
+      </div>
+      <div class="base-card" style="--dc:var(--dim-N)">
+        <div class="letter">N</div>
+        <div class="qty">Amount of substance</div>
+        <div class="unitline">mole — <b>mol</b></div>
+        <div class="fact">Defined by fixing the Avogadro constant at exactly 6.02214076×10²³ per mole.</div>
+      </div>
+      <div class="base-card" style="--dc:var(--dim-J)">
+        <div class="letter">J</div>
+        <div class="qty">Luminous intensity</div>
+        <div class="unitline">candela — <b>cd</b></div>
+        <div class="fact">Defined by fixing the luminous efficacy of 540 THz green light.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 02 — DERIVED UNITS -->
+  <section class="section" id="derived">
+    <div class="section-head">
+      <p class="eyebrow">02 — Derived units</p>
+      <h2 class="section-title">Combinations that measure everything else</h2>
+      <p class="lede">A <b>derived unit</b> measures any quantity that isn't one of the seven base quantities, and it's built by multiplying and dividing base units, raised to whatever power the physics demands. Speed is metres per second. Acceleration is metres per second, per second. Some combinations come up so often that SI gives them their own name and symbol — a newton isn't a new kind of unit, it's just <span class="mono">kg·m·s⁻²</span> with a nicer name.</p>
+    </div>
+    <div class="derived-grid">
+
+      <div class="derived-card">
+        <div class="derived-head"><span class="derived-name">Newton</span><span class="derived-sym">N</span></div>
+        <div class="derived-qty">Force</div>
+        <div class="equation">
+          <span class="chip" style="--cc:var(--dim-M)">kg</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-L)">m</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-T)">s⁻²</span>
+        </div>
+        <p class="anchor-fact">About the weight of a medium apple resting in your hand.</p>
+      </div>
+
+      <div class="derived-card">
+        <div class="derived-head"><span class="derived-name">Joule</span><span class="derived-sym">J</span></div>
+        <div class="derived-qty">Energy, work, heat</div>
+        <div class="equation">
+          <span class="chip" style="--cc:var(--dim-M)">kg</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-L)">m²</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-T)">s⁻²</span>
+        </div>
+        <p class="anchor-fact">About the energy released dropping that same apple one metre.</p>
+      </div>
+
+      <div class="derived-card">
+        <div class="derived-head"><span class="derived-name">Watt</span><span class="derived-sym">W</span></div>
+        <div class="derived-qty">Power</div>
+        <div class="equation">
+          <span class="chip" style="--cc:var(--dim-M)">kg</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-L)">m²</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-T)">s⁻³</span>
+        </div>
+        <p class="anchor-fact">One joule per second — a phone charger idles around 5 W.</p>
+      </div>
+
+      <div class="derived-card">
+        <div class="derived-head"><span class="derived-name">Pascal</span><span class="derived-sym">Pa</span></div>
+        <div class="derived-qty">Pressure, stress</div>
+        <div class="equation">
+          <span class="chip" style="--cc:var(--dim-M)">kg</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-L)">m⁻¹</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-T)">s⁻²</span>
+        </div>
+        <p class="anchor-fact">Sea-level atmospheric pressure is about 101,325 Pa.</p>
+      </div>
+
+      <div class="derived-card">
+        <div class="derived-head"><span class="derived-name">Coulomb</span><span class="derived-sym">C</span></div>
+        <div class="derived-qty">Electric charge</div>
+        <div class="equation">
+          <span class="chip" style="--cc:var(--dim-I)">A</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-T)">s</span>
+        </div>
+        <p class="anchor-fact">A lightning bolt moves roughly 15 C to the ground.</p>
+      </div>
+
+      <div class="derived-card">
+        <div class="derived-head"><span class="derived-name">Volt</span><span class="derived-sym">V</span></div>
+        <div class="derived-qty">Electric potential</div>
+        <div class="equation">
+          <span class="chip" style="--cc:var(--dim-M)">kg</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-L)">m²</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-T)">s⁻³</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-I)">A⁻¹</span>
+        </div>
+        <p class="anchor-fact">A standard AA battery pushes about 1.5 V.</p>
+      </div>
+
+      <div class="derived-card">
+        <div class="derived-head"><span class="derived-name">Ohm</span><span class="derived-sym">Ω</span></div>
+        <div class="derived-qty">Electrical resistance</div>
+        <div class="equation">
+          <span class="chip" style="--cc:var(--dim-M)">kg</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-L)">m²</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-T)">s⁻³</span><span class="op">·</span>
+          <span class="chip" style="--cc:var(--dim-I)">A⁻²</span>
+        </div>
+        <p class="anchor-fact">A metre of copper wire has roughly 0.02 Ω of resistance.</p>
+      </div>
+
+      <div class="derived-card">
+        <div class="derived-head"><span class="derived-name">Hertz</span><span class="derived-sym">Hz</span></div>
+        <div class="derived-qty">Frequency</div>
+        <div class="equation">
+          <span class="chip" style="--cc:var(--dim-T)">s⁻¹</span>
+        </div>
+        <p class="anchor-fact">Middle C on a piano rings at about 262 Hz.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 03 — DIMENSIONS -->
+  <section class="section" id="dimensions">
+    <div class="section-head">
+      <p class="eyebrow">03 — Dimensions</p>
+      <h2 class="section-title">What kind of quantity, not what unit</h2>
+      <p class="lede">A <b>dimension</b> describes what kind of quantity something is — length, mass, time — independent of the particular unit used to measure it. A length has dimension <span class="mono">L</span> whether you write it in metres, feet, or light-years; the unit changes, the dimension never does.</p>
+      <p class="lede">Physicists write a quantity's <b>dimensional formula</b> in brackets, using the seven base symbols raised to whatever power the definition demands. Force is <span class="mono">[M L T⁻²]</span>, because <span class="mono">F = ma</span> multiplies a mass by a length divided by a time squared. Two sides of a real physical equation must always match, dimension for dimension — a rule called <b>dimensional homogeneity</b>, and a fast way to catch a wrong formula before you've even plugged in numbers.</p>
+    </div>
+
+    <div class="dim-table-wrap">
+      <table class="dim-table">
+        <thead>
+          <tr><th>Quantity</th><th>Defining relation</th><th>Dimensional formula</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="qty">Velocity</td><td class="defn">v = d / t</td><td class="formula">[<span style="color:var(--dim-L)">L</span> <span style="color:var(--dim-T)">T⁻¹</span>]</td></tr>
+          <tr><td class="qty">Acceleration</td><td class="defn">a = v / t</td><td class="formula">[<span style="color:var(--dim-L)">L</span> <span style="color:var(--dim-T)">T⁻²</span>]</td></tr>
+          <tr><td class="qty">Force</td><td class="defn">F = m · a</td><td class="formula">[<span style="color:var(--dim-M)">M</span> <span style="color:var(--dim-L)">L</span> <span style="color:var(--dim-T)">T⁻²</span>]</td></tr>
+          <tr><td class="qty">Energy</td><td class="defn">E = F · d</td><td class="formula">[<span style="color:var(--dim-M)">M</span> <span style="color:var(--dim-L)">L²</span> <span style="color:var(--dim-T)">T⁻²</span>]</td></tr>
+          <tr><td class="qty">Pressure</td><td class="defn">p = F / A</td><td class="formula">[<span style="color:var(--dim-M)">M</span> <span style="color:var(--dim-L)">L⁻¹</span> <span style="color:var(--dim-T)">T⁻²</span>]</td></tr>
+          <tr><td class="qty">Density</td><td class="defn">ρ = m / V</td><td class="formula">[<span style="color:var(--dim-M)">M</span> <span style="color:var(--dim-L)">L⁻³</span>]</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <b>Units vs. dimensions, in one line:</b> the dimension tells you the <i>kind</i> of quantity (a length); the unit tells you the <i>scale</i> you're measuring it on (metres, or miles). Different units, same dimension.
+    </div>
+  </section>
+
+  <!-- SECTION 04 — ANALYZER -->
+  <section class="section" id="analyzer">
+    <div class="section-head">
+      <p class="eyebrow">04 — Try it</p>
+      <h2 class="section-title">Dimension Analyzer</h2>
+      <p class="lede">Type any unit — simple or compound — and this breaks it into its seven base dimensions. It understands multiplication (<span class="mono">*</span> or <span class="mono">·</span>), division (<span class="mono">/</span>), exponents (<span class="mono">^2</span> or <span class="mono">²</span>, <span class="mono">-2</span> or <span class="mono">⁻²</span>), and common SI prefixes (<span class="mono">k, m, µ, M, G…</span>).</p>
+    </div>
+
+    <div class="analyzer">
+      <div class="analyzer-top">
+        <div class="input-shell">
+          <span class="ico">[ ]</span>
+          <input id="unitInput" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="e.g. N, kg*m/s^2, km/h, J/(kg·K)" value="N" aria-label="Unit expression">
+        </div>
+        <button class="analyze-btn" id="analyzeBtn">Analyze</button>
+      </div>
+
+      <div class="examples" id="examples">
+        <button class="ex-chip" data-ex="N">N</button>
+        <button class="ex-chip" data-ex="J">J</button>
+        <button class="ex-chip" data-ex="W">W</button>
+        <button class="ex-chip" data-ex="Pa">Pa</button>
+        <button class="ex-chip" data-ex="V">V</button>
+        <button class="ex-chip" data-ex="kg*m/s^2">kg·m/s²</button>
+        <button class="ex-chip" data-ex="km/h">km/h</button>
+        <button class="ex-chip" data-ex="J/(kg*K)">J/(kg·K)</button>
+        <button class="ex-chip" data-ex="mol/L">mol/L</button>
+      </div>
+
+      <div class="analyzer-body">
+        <div class="readout" id="readout" aria-live="polite">
+          <div class="formula" id="formulaOut">—</div>
+          <div class="equiv" id="equivOut"></div>
+        </div>
+
+        <div class="faders" id="faders"><!-- filled by JS --></div>
+
+        <div class="legend" id="legend"><!-- filled by JS --></div>
+
+        <p class="hint">Prefixes don't change a dimension, only its scale — <code>km</code> and <code>mm</code> both come back as pure length. If a symbol isn't recognized, the analyzer will tell you which one.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>A quick reference for base units, derived units, and dimensional analysis in SI. Built for exploring the seven base dimensions — not a substitute for the official BIPM SI Brochure.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var DIMS = ['L','M','T','I','Θ','N','J'];
+  var DIM_NAMES = ['Length','Mass','Time','Current','Temp.','Substance','Luminosity'];
+  var DIM_COLORS = ['var(--dim-L)','var(--dim-M)','var(--dim-T)','var(--dim-I)','var(--dim-TH)','var(--dim-N)','var(--dim-J)'];
+
+  var UNITS = {
+    m:   {v:[1,0,0,0,0,0,0], name:'metre', qty:'length'},
+    g:   {v:[0,1,0,0,0,0,0], name:'kilogram', qty:'mass'},
+    kg:  {v:[0,1,0,0,0,0,0], name:'kilogram', qty:'mass'},
+    s:   {v:[0,0,1,0,0,0,0], name:'second', qty:'time'},
+    A:   {v:[0,0,0,1,0,0,0], name:'ampere', qty:'electric current'},
+    K:   {v:[0,0,0,0,1,0,0], name:'kelvin', qty:'temperature'},
+    mol: {v:[0,0,0,0,0,1,0], name:'mole', qty:'amount of substance'},
+    cd:  {v:[0,0,0,0,0,0,1], name:'candela', qty:'luminous intensity'},
+
+    N:   {v:[1,1,-2,0,0,0,0], name:'newton', qty:'force'},
+    J:   {v:[2,1,-2,0,0,0,0], name:'joule', qty:'energy'},
+    W:   {v:[2,1,-3,0,0,0,0], name:'watt', qty:'power'},
+    Pa:  {v:[-1,1,-2,0,0,0,0], name:'pascal', qty:'pressure'},
+    C:   {v:[0,0,1,1,0,0,0], name:'coulomb', qty:'electric charge'},
+    V:   {v:[2,1,-3,-1,0,0,0], name:'volt', qty:'electric potential'},
+    F:   {v:[-2,-1,4,2,0,0,0], name:'farad', qty:'capacitance'},
+    'Ω': {v:[2,1,-3,-2,0,0,0], name:'ohm', qty:'resistance'},
+    ohm: {v:[2,1,-3,-2,0,0,0], name:'ohm', qty:'resistance'},
+    S:   {v:[-2,-1,3,2,0,0,0], name:'siemens', qty:'conductance'},
+    Wb:  {v:[2,1,-2,-1,0,0,0], name:'weber', qty:'magnetic flux'},
+    T:   {v:[0,1,-2,-1,0,0,0], name:'tesla', qty:'magnetic flux density'},
+    H:   {v:[2,1,-2,-2,0,0,0], name:'henry', qty:'inductance'},
+    Hz:  {v:[0,0,-1,0,0,0,0], name:'hertz', qty:'frequency'},
+    lm:  {v:[0,0,0,0,0,0,1], name:'lumen', qty:'luminous flux'},
+    lx:  {v:[-2,0,0,0,0,0,1], name:'lux', qty:'illuminance'},
+    Gy:  {v:[2,0,-2,0,0,0,0], name:'gray', qty:'absorbed dose'},
+    Sv:  {v:[2,0,-2,0,0,0,0], name:'sievert', qty:'dose equivalent'},
+    kat: {v:[0,0,-1,0,0,1,0], name:'katal', qty:'catalytic activity'},
+    rad: {v:[0,0,0,0,0,0,0], name:'radian', qty:'plane angle (dimensionless)'},
+    sr:  {v:[0,0,0,0,0,0,0], name:'steradian', qty:'solid angle (dimensionless)'},
+    L:   {v:[3,0,0,0,0,0,0], name:'litre', qty:'volume'},
+    l:   {v:[3,0,0,0,0,0,0], name:'litre', qty:'volume'},
+    min: {v:[0,0,1,0,0,0,0], name:'minute', qty:'time'},
+    h:   {v:[0,0,1,0,0,0,0], name:'hour', qty:'time'},
+    d:   {v:[0,0,1,0,0,0,0], name:'day', qty:'time'},
+    eV:  {v:[2,1,-2,0,0,0,0], name:'electronvolt', qty:'energy'},
+    bar: {v:[-1,1,-2,0,0,0,0], name:'bar', qty:'pressure'},
+    atm: {v:[-1,1,-2,0,0,0,0], name:'atmosphere', qty:'pressure'},
+    '°C':{v:[0,0,0,0,1,0,0], name:'degree Celsius', qty:'temperature'}
+  };
+
+  // preferred order for "equivalent to..." lookups (coherent SI units first)
+  var EQUIV_ORDER = ['N','J','W','Pa','C','V','F','Ω','S','Wb','T','H','Hz','lm','lx','Gy','kat',
+                      'kg','m','s','A','K','mol','cd','rad','sr','L','min','h','bar'];
+
+  var PREFIXES = ['da','Y','Z','E','P','T','G','M','k','h','d','c','m','µ','μ','n','p','f','a','z','y'];
+  var SORTED_PREFIXES = PREFIXES.slice().sort(function(a,b){ return b.length - a.length; });
+
+  function lookupUnit(sym){
+    if (UNITS.hasOwnProperty(sym)) return { def: UNITS[sym], prefixed:false };
+    for (var i=0;i<SORTED_PREFIXES.length;i++){
+      var p = SORTED_PREFIXES[i];
+      if (sym.indexOf(p) === 0 && sym.length > p.length){
+        var rest = sym.slice(p.length);
+        if (UNITS.hasOwnProperty(rest)) return { def: UNITS[rest], prefixed:true, prefix:p };
+      }
+    }
+    return null;
+  }
+
+  function normalize(input){
+    var s = input.trim();
+    var supMap = {'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'-'};
+    s = s.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+/g, function(m){
+      var conv = m.split('').map(function(c){ return supMap[c]; }).join('');
+      return '^' + conv;
+    });
+    s = s.replace(/[·×⋅]/g, '*');
+    s = s.replace(/÷/g, '/');
+    s = s.replace(/[()]/g, '');
+    s = s.replace(/\s+/g, '*');
+    s = s.replace(/\*+/g, '*');
+    s = s.replace(/^\*/, '');
+    return s;
+  }
+
+  function parseExpression(raw){
+    var s = normalize(raw);
+    if (!s) return { error:'empty' };
+    var tokenRe = /([*\/])?([A-Za-zΩ°µμ]+)(\^-?\d+|-?\d+)?/g;
+    var match, vec = [0,0,0,0,0,0,0], parts = [], unknown = [], matchedLen = 0;
+    while ((match = tokenRe.exec(s)) !== null){
+      matchedLen += match[0].length;
+      var op = match[1], sym = match[2], expRaw = match[3];
+      var sign = (op === '/') ? -1 : 1;
+      var exp = expRaw ? parseInt(expRaw.replace('^',''),10) : 1;
+      var totalExp = sign * exp;
+      var found = lookupUnit(sym);
+      if (!found){ unknown.push(sym); continue; }
+      for (var i=0;i<7;i++) vec[i] += found.def.v[i]*totalExp;
+      parts.push({ sym: sym, exp: totalExp, name: found.def.name, prefixed: found.prefixed });
+    }
+    if (unknown.length) return { error:'unknown', unknown: unknown };
+    if (parts.length === 0) return { error:'empty' };
+    return { vec: vec, parts: parts };
+  }
+
+  var SUP_DIGITS = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+  function toSup(n){ return String(n).split('').map(function(c){ return SUP_DIGITS[c] || c; }).join(''); }
+
+  function formatFormula(vec){
+    var out = [];
+    for (var i=0;i<7;i++){
+      if (vec[i] !== 0) out.push(DIMS[i] + (vec[i]===1 ? '' : toSup(vec[i])));
+    }
+    return out.length ? ('[' + out.join(' ') + ']') : '[dimensionless]';
+  }
+
+  function findEquivalent(vec){
+    for (var i=0;i<EQUIV_ORDER.length;i++){
+      var sym = EQUIV_ORDER[i];
+      var def = UNITS[sym];
+      var match = true;
+      for (var j=0;j<7;j++){ if (def.v[j] !== vec[j]){ match = false; break; } }
+      if (match) return { sym: sym, name: def.name, qty: def.qty };
+    }
+    return null;
+  }
+
+  // ---- build faders + legend ----
+  var fadersEl = document.getElementById('faders');
+  var legendEl = document.getElementById('legend');
+  var fillEls = [], valEls = [];
+
+  for (var d=0; d<7; d++){
+    var col = DIM_COLORS[d];
+
+    var fader = document.createElement('div');
+    fader.className = 'fader';
+
+    var letter = document.createElement('div');
+    letter.className = 'letter';
+    letter.style.setProperty('--fc', col);
+    letter.textContent = DIMS[d];
+
+    var track = document.createElement('div');
+    track.className = 'track';
+    var fill = document.createElement('div');
+    fill.className = 'fill';
+    fill.style.setProperty('--fc', col);
+    track.appendChild(fill);
+
+    var val = document.createElement('div');
+    val.className = 'val';
+    val.textContent = '0';
+
+    var fname = document.createElement('div');
+    fname.className = 'fname';
+    fname.textContent = DIM_NAMES[d];
+
+    fader.appendChild(letter);
+    fader.appendChild(track);
+    fader.appendChild(val);
+    fader.appendChild(fname);
+    fadersEl.appendChild(fader);
+
+    fillEls.push(fill);
+    valEls.push(val);
+
+    var leg = document.createElement('span');
+    var dot = document.createElement('i');
+    dot.style.setProperty('--lc', col);
+    leg.appendChild(dot);
+    leg.appendChild(document.createTextNode(DIMS[d] + ' — ' + DIM_NAMES[d]));
+    legendEl.appendChild(leg);
+  }
+
+  var TRACK_PX = 150;
+  var SCALE_MAX = 4; // exponent value that reaches the edge of the track
+
+  function renderFaders(vec){
+    for (var i=0;i<7;i++){
+      var exp = vec ? vec[i] : 0;
+      var clamped = Math.max(-SCALE_MAX, Math.min(SCALE_MAX, exp));
+      var px = (Math.abs(clamped)/SCALE_MAX) * (TRACK_PX/2 - 3);
+      if (exp === 0){
+        fillEls[i].style.height = '0px';
+        fillEls[i].style.top = '50%';
+        fillEls[i].style.opacity = '0.25';
+      } else if (exp > 0){
+        fillEls[i].style.top = (TRACK_PX/2 - px) + 'px';
+        fillEls[i].style.height = px + 'px';
+        fillEls[i].style.opacity = '0.95';
+      } else {
+        fillEls[i].style.top = '50%';
+        fillEls[i].style.height = px + 'px';
+        fillEls[i].style.opacity = '0.95';
+      }
+      valEls[i].textContent = exp === 0 ? '0' : (exp > 0 ? '+'+exp : String(exp));
+    }
+  }
+
+  var formulaOut = document.getElementById('formulaOut');
+  var equivOut = document.getElementById('equivOut');
+  var input = document.getElementById('unitInput');
+
+  function runAnalysis(){
+    var raw = input.value;
+    var result = parseExpression(raw);
+
+    if (result.error === 'empty'){
+      renderFaders(null);
+      formulaOut.innerHTML = '—';
+      formulaOut.classList.remove('err');
+      equivOut.innerHTML = 'Type a unit above, or try one of the examples.';
+      return;
+    }
+    if (result.error === 'unknown'){
+      renderFaders(null);
+      formulaOut.innerHTML = '<span class="err">?</span>';
+      var list = result.unknown.map(function(u){ return '<code>'+escapeHtml(u)+'</code>'; }).join(', ');
+      equivOut.innerHTML = 'Not recognized: ' + list + '. Check spelling or try a supported prefix (k, m, µ, M, G…).';
+      return;
+    }
+
+    renderFaders(result.vec);
+    formulaOut.textContent = formatFormula(result.vec);
+
+    var eq = findEquivalent(result.vec);
+    var isTrivial = result.parts.length === 1 && !result.parts[0].prefixed && result.parts[0].exp === 1;
+    if (eq && !isTrivial){
+      equivOut.innerHTML = 'Matches the <b>' + eq.name + '</b> (' + eq.sym + ') — SI unit of ' + eq.qty + '.';
+    } else if (eq && isTrivial){
+      equivOut.innerHTML = 'A base measure of <b>' + eq.qty + '</b>.';
+    } else {
+      equivOut.innerHTML = 'No single named SI unit shares this exact combination.';
+    }
+  }
+
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
+  input.addEventListener('input', runAnalysis);
+  input.addEventListener('keydown', function(e){ if (e.key === 'Enter') runAnalysis(); });
+
+  document.querySelectorAll('.ex-chip').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      input.value = btn.getAttribute('data-ex');
+      runAnalysis();
+      input.focus();
+    });
+  });
+
+  runAnalysis();
+})();
+</script>
+
+</body>
+</html>
