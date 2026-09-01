@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breaking Down Multi-D Motion</title>
+<style>
+  :root{ --ink:#111; --sub:#666; --line:#ddd; --good:#1a7f37; --bad:#c1373f; }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink); max-width:720px; margin:0 auto; padding:2.5rem 1.25rem 5rem;
+    line-height:1.55;
+  }
+  nav.pagenav{ font-size: 13px; color: var(--sub); margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: ui-monospace,Menlo,monospace; }
+  nav.pagenav a{ color: var(--sub); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--ink); border-bottom-color: var(--ink); }
+  nav.pagenav a:hover{ color: var(--ink); }
+  h1{font-size:1.5rem; margin:0 0 .8rem;}
+  h2{font-size:1.05rem; margin:2.4rem 0 .8rem; border-top:1px solid var(--line); padding-top:1.5rem;}
+  p{color:#333; margin:0 0 1rem; max-width:62ch;}
+  canvas{width:100%; display:block; border:1px solid var(--line); margin:1rem 0;}
+  label{display:flex; justify-content:space-between; font-size:.85rem; color:var(--sub); margin-bottom:.3rem;}
+  label span.v{color:var(--ink); font-family:ui-monospace,Menlo,monospace;}
+  input[type=range]{width:100%;}
+  .controls{display:flex; gap:2rem; flex-wrap:wrap; margin:1.2rem 0;}
+  .controls > div{flex:1; min-width:200px;}
+  .readout{font-family:ui-monospace,Menlo,monospace; font-size:.85rem; color:#333; margin:.75rem 0 0; display:flex; gap:1.5rem; flex-wrap:wrap;}
+  .btnRow{display:flex; gap:.6rem; margin-top:1rem;}
+  button{font-family:inherit; font-size:.85rem; padding:.4rem .9rem; border:1px solid var(--ink); background:#fff; color:var(--ink); cursor:pointer;}
+  button:hover{background:#f2f2f2;}
+  .exercise{margin:1.4rem 0;}
+  .exercise p{margin-bottom:.6rem;}
+  .er{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;}
+  input[type=number]{font-family:inherit; padding:.35rem .5rem; border:1px solid var(--line); width:100px;}
+  .fb{margin-top:.5rem; font-size:.85rem; min-height:1.1em;}
+  .fb.good{color:var(--good);} .fb.bad{color:var(--bad);}
+</style>
+</head>
+<body>
+
+<nav class="pagenav">
+  <a href="distance-displacement.html">Distance &amp; Displacement</a>
+  <a href="speed-velocity.html">Speed &amp; Velocity</a>
+  <a href="acceleration.html">Acceleration</a>
+  <a href="jerk.html">Jerk</a>
+  <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+  <a href="equations-of-motion.html">Equations of Motion</a>
+  <a href="relative-motion.html">Relative Motion</a>
+  <a href="projectile-motion.html">Projectile Motion</a>
+  <a class="here" href="multi-d-motion.html">Multi-D Motion</a>
+</nav>
+
+<h1>Breaking Down Multi-D Motion</h1>
+<p>Any motion in a plane splits into two independent 1-D problems: one along x, one along y. Solve each separately, then recombine: |v| = &radic;(v<sub>x</sub>² + v<sub>y</sub>²), and &theta; = atan2(v<sub>y</sub>, v<sub>x</sub>).</p>
+
+<h2>1. Decomposing a vector</h2>
+<canvas id="vecCanvas" style="height:260px"></canvas>
+<div class="readout" id="vecReadout"></div>
+
+<div class="controls">
+  <div>
+    <label>Magnitude <span class="v" id="magLabel">14</span></label>
+    <input type="range" id="mag" min="1" max="20" step="0.5" value="14">
+  </div>
+  <div>
+    <label>Angle &theta; <span class="v" id="angLabel">35°</span></label>
+    <input type="range" id="ang" min="0" max="360" step="1" value="35">
+  </div>
+</div>
+
+<h2>2. Independence of x and y — drop vs. launch</h2>
+<p>One ball drops straight down. The other launches sideways from the same height at the same instant. Their heights match at every moment, even though only one moves sideways.</p>
+<canvas id="indepCanvas" style="height:220px"></canvas>
+
+<div class="controls">
+  <div>
+    <label>Sideways launch speed <span class="v" id="ivxLabel">7 m/s</span></label>
+    <input type="range" id="ivx" min="1" max="15" step="1" value="7">
+  </div>
+  <div>
+    <label>Drop height <span class="v" id="ihLabel">12 m</span></label>
+    <input type="range" id="ih" min="4" max="20" step="1" value="12">
+  </div>
+</div>
+<div class="btnRow">
+  <button id="playBtn">Drop both</button>
+  <button id="resetBtn">Reset</button>
+</div>
+
+<h2>Exercises</h2>
+
+<div class="exercise" id="ex1">
+  <p id="ex1q"></p>
+  <div class="er">
+    <input type="number" id="ex1i1" step="any" placeholder="magnitude">
+    <input type="number" id="ex1i2" step="any" placeholder="angle (deg)">
+    <button id="ex1c">Check</button>
+    <button id="ex1n">New numbers</button>
+  </div>
+  <div class="fb" id="ex1f"></div>
+</div>
+
+<div class="exercise" id="ex2">
+  <p id="ex2q"></p>
+  <div class="er">
+    <input type="number" id="ex2i1" step="any" placeholder="vx">
+    <input type="number" id="ex2i2" step="any" placeholder="vy">
+    <button id="ex2c">Check</button>
+    <button id="ex2n">New numbers</button>
+  </div>
+  <div class="fb" id="ex2f"></div>
+</div>
+
+<div class="exercise" id="ex3">
+  <p id="ex3q"></p>
+  <div class="er">
+    <input type="number" id="ex3i" step="any"><span style="font-size:.82rem;color:var(--sub)">s</span>
+    <button id="ex3c">Check</button>
+    <button id="ex3n">New numbers</button>
+  </div>
+  <div class="fb" id="ex3f"></div>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+function rand(min,max){ return Math.round(Math.random()*(max-min))+min; }
+function nonZeroRand(min,max){ let v; do{ v=rand(min,max); }while(v===0); return v; }
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2){
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ang = Math.atan2(y2-y1, x2-x1), hs=6;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+}
+
+/* ---------- vector decomposition ---------- */
+const vecCanvas = makeCanvas('vecCanvas', 260);
+let mag = parseFloat(document.getElementById('mag').value);
+let ang = parseFloat(document.getElementById('ang').value);
+document.getElementById('mag').addEventListener('input', e=>{ mag=parseFloat(e.target.value); document.getElementById('magLabel').textContent=mag; });
+document.getElementById('ang').addEventListener('input', e=>{ ang=parseFloat(e.target.value); document.getElementById('angLabel').textContent=ang+'°'; });
+
+function drawVec(){
+  const ctx = vecCanvas.ctx, w = vecCanvas.w, h = vecCanvas.h;
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h/2;
+  const scale = Math.min(w,h)/2/22;
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.moveTo(cx,0); ctx.lineTo(cx,h); ctx.stroke();
+
+  const th = ang*Math.PI/180;
+  const vx = mag*Math.cos(th), vy = mag*Math.sin(th);
+  const px = cx+vx*scale, py = cy-vy*scale;
+
+  ctx.setLineDash([4,4]); ctx.strokeStyle='#999';
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(px,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px,cy); ctx.lineTo(px,py); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle='#111'; ctx.fillStyle='#111'; ctx.lineWidth=1.75;
+  arrow(ctx, cx,cy,px,py);
+
+  ctx.font='600 11px ui-monospace,monospace'; ctx.textAlign='left';
+  ctx.fillText('vx = '+fmt(vx,1), 8, 16);
+  ctx.fillText('vy = '+fmt(vy,1), 8, 32);
+
+  document.getElementById('vecReadout').innerHTML =
+    'v<sub>x</sub> = '+fmt(vx,2)+' &nbsp; &nbsp; v<sub>y</sub> = '+fmt(vy,2)+' &nbsp; &nbsp; |v| = '+fmt(mag,2);
+}
+
+/* ---------- independence demo ---------- */
+const indepCanvas = makeCanvas('indepCanvas', 220);
+const G = 9.8;
+let ivx = parseFloat(document.getElementById('ivx').value);
+let ih = parseFloat(document.getElementById('ih').value);
+let it = 0, iplaying = false;
+
+document.getElementById('ivx').addEventListener('input', e=>{ ivx=parseFloat(e.target.value); document.getElementById('ivxLabel').textContent=ivx+' m/s'; resetIndep(); });
+document.getElementById('ih').addEventListener('input', e=>{ ih=parseFloat(e.target.value); document.getElementById('ihLabel').textContent=ih+' m'; resetIndep(); });
+function resetIndep(){ it=0; iplaying=false; document.getElementById('playBtn').textContent='Drop both'; }
+document.getElementById('playBtn').addEventListener('click', e=>{
+  const T = Math.sqrt(2*ih/G);
+  if(!iplaying){
+    if(it>=T-1e-9) it=0;
+    iplaying=true;
+  } else {
+    iplaying=false;
+  }
+  e.target.textContent = iplaying?'Pause':'Drop both';
+});
+document.getElementById('resetBtn').addEventListener('click', resetIndep);
+
+function updateIndep(dt){
+  if(!iplaying) return;
+  const T = Math.sqrt(2*ih/G);
+  it += dt;
+  if(it>=T){ it=T; iplaying=false; document.getElementById('playBtn').textContent='Drop both'; }
+}
+
+function drawIndep(){
+  const ctx = indepCanvas.ctx, w = indepCanvas.w, h = indepCanvas.h;
+  ctx.clearRect(0,0,w,h);
+  const marginB=30, marginT=20;
+  const scale = (h-marginB-marginT)/ih;
+  const groundY = h-marginB;
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,groundY); ctx.lineTo(w,groundY); ctx.stroke();
+
+  const y = ih - 0.5*G*it*it;
+  const yClamped = Math.max(y,0);
+  const x1 = w*0.22;
+  const x2Start = w*0.5;
+  const maxTravelPx = w*0.42;
+  const T = Math.sqrt(2*ih/G);
+  const travelFrac = T>0 ? Math.min(it/T,1) : 0;
+  const x2 = x2Start + travelFrac*maxTravelPx;
+
+  const py = groundY - yClamped*scale;
+
+  ctx.setLineDash([3,4]); ctx.strokeStyle='#bbb';
+  ctx.beginPath(); ctx.moveTo(x1,py); ctx.lineTo(x2,py); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle='#111';
+  ctx.beginPath(); ctx.arc(x1,py,8,0,Math.PI*2); ctx.fill();
+  ctx.lineWidth=2; ctx.strokeStyle='#111'; ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(x2,py,8,0,Math.PI*2); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle='#666'; ctx.font='11px -apple-system,sans-serif'; ctx.textAlign='center';
+  ctx.fillText('dropped', x1, groundY+18);
+  ctx.fillText('launched sideways', x2, groundY+18);
+  ctx.textAlign='left';
+  ctx.fillText('height = '+fmt(yClamped,2)+' m    t = '+fmt(it,2)+' s', 8, 16);
+}
+
+document.getElementById('magLabel').textContent = mag;
+document.getElementById('angLabel').textContent = ang+'°';
+document.getElementById('ivxLabel').textContent = ivx+' m/s';
+document.getElementById('ihLabel').textContent = ih+' m';
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min((now-last)/1000, 0.05);
+  last = now;
+  updateIndep(dt);
+  drawVec();
+  drawIndep();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- exercises ---------- */
+function checkOne(inputEl, correct, tol, fbEl){
+  const v = parseFloat(inputEl.value);
+  if(isNaN(v)) return null;
+  return Math.abs(v-correct)<=tol;
+}
+
+let e1vx,e1vy;
+function newEx1(){
+  e1vx = nonZeroRand(-15,15); e1vy = nonZeroRand(-15,15);
+  document.getElementById('ex1q').textContent =
+    'A velocity has components vx = '+e1vx+' and vy = '+e1vy+' (same units). Find its magnitude and its angle from the +x axis (0-360°, counterclockwise).';
+  document.getElementById('ex1i1').value=''; document.getElementById('ex1i2').value='';
+  document.getElementById('ex1f').textContent=''; document.getElementById('ex1f').className='fb';
+}
+document.getElementById('ex1c').addEventListener('click', ()=>{
+  const magIn = parseFloat(document.getElementById('ex1i1').value);
+  const angIn = parseFloat(document.getElementById('ex1i2').value);
+  const correctMag = Math.sqrt(e1vx*e1vx+e1vy*e1vy);
+  let correctAng = Math.atan2(e1vy,e1vx)*180/Math.PI;
+  if(correctAng<0) correctAng+=360;
+  const fb = document.getElementById('ex1f');
+  if(isNaN(magIn)||isNaN(angIn)){ fb.textContent='Enter both values.'; fb.className='fb bad'; return; }
+  const magOk = Math.abs(magIn-correctMag)<=0.5;
+  let angDiff = Math.abs(angIn-correctAng); angDiff = Math.min(angDiff, 360-angDiff);
+  const angOk = angDiff<=3;
+  if(magOk && angOk){
+    fb.textContent = 'Correct — |v| = '+fmt(correctMag,2)+', θ = '+fmt(correctAng,1)+'°.';
+    fb.className='fb good';
+  } else {
+    fb.textContent = 'Not quite. |v| = '+fmt(correctMag,2)+', θ = '+fmt(correctAng,1)+'°.';
+    fb.className='fb bad';
+  }
+});
+document.getElementById('ex1n').addEventListener('click', newEx1);
+
+let e2mag,e2ang;
+function newEx2(){
+  e2mag = rand(5,20); e2ang = rand(0,360);
+  document.getElementById('ex2q').textContent =
+    'A velocity has magnitude '+e2mag+' and points at '+e2ang+'° from the +x axis. Find its vx and vy components.';
+  document.getElementById('ex2i1').value=''; document.getElementById('ex2i2').value='';
+  document.getElementById('ex2f').textContent=''; document.getElementById('ex2f').className='fb';
+}
+document.getElementById('ex2c').addEventListener('click', ()=>{
+  const vxIn = parseFloat(document.getElementById('ex2i1').value);
+  const vyIn = parseFloat(document.getElementById('ex2i2').value);
+  const th = e2ang*Math.PI/180;
+  const correctVx = e2mag*Math.cos(th), correctVy = e2mag*Math.sin(th);
+  const fb = document.getElementById('ex2f');
+  if(isNaN(vxIn)||isNaN(vyIn)){ fb.textContent='Enter both values.'; fb.className='fb bad'; return; }
+  const ok = Math.abs(vxIn-correctVx)<=0.5 && Math.abs(vyIn-correctVy)<=0.5;
+  if(ok){
+    fb.textContent = 'Correct — vx = '+fmt(correctVx,2)+', vy = '+fmt(correctVy,2)+'.';
+    fb.className='fb good';
+  } else {
+    fb.textContent = 'Not quite. vx = '+fmt(correctVx,2)+', vy = '+fmt(correctVy,2)+'.';
+    fb.className='fb bad';
+  }
+});
+document.getElementById('ex2n').addEventListener('click', newEx2);
+
+let e3h;
+function newEx3(){
+  e3h = rand(5,40);
+  document.getElementById('ex3q').textContent =
+    'Ball 1 is dropped from '+e3h+' m. At the same instant, ball 2 is launched horizontally from the same height at 12 m/s. How long does ball 1 take to hit the ground? (g = 9.8 m/s²)';
+  document.getElementById('ex3i').value=''; document.getElementById('ex3f').textContent=''; document.getElementById('ex3f').className='fb';
+}
+document.getElementById('ex3c').addEventListener('click', ()=>{
+  const correct = Math.sqrt(2*e3h/9.8);
+  const v = parseFloat(document.getElementById('ex3i').value);
+  const fb = document.getElementById('ex3f');
+  if(isNaN(v)){ fb.textContent='Enter a number first.'; fb.className='fb bad'; return; }
+  if(Math.abs(v-correct)<=0.2){
+    fb.textContent = 'Correct — '+fmt(correct,2)+' s. Notice the horizontal speed never entered the calculation.';
+    fb.className='fb good';
+  } else {
+    fb.textContent = 'Not quite. The answer is '+fmt(correct,2)+' s — horizontal speed does not affect fall time.';
+    fb.className='fb bad';
+  }
+});
+document.getElementById('ex3n').addEventListener('click', newEx3);
+
+newEx1(); newEx2(); newEx3();
+</script>
+</body>
+</html>

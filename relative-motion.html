@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relative Motion</title>
+<style>
+  :root{ --ink:#111; --sub:#666; --line:#ddd; --good:#1a7f37; --bad:#c1373f; }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink); max-width:720px; margin:0 auto; padding:2.5rem 1.25rem 5rem;
+    line-height:1.55;
+  }
+  nav.pagenav{ font-size: 13px; color: var(--sub); margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: ui-monospace,Menlo,monospace; }
+  nav.pagenav a{ color: var(--sub); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--ink); border-bottom-color: var(--ink); }
+  nav.pagenav a:hover{ color: var(--ink); }
+  h1{font-size:1.5rem; margin:0 0 .8rem;}
+  h2{font-size:1.05rem; margin:2.4rem 0 .8rem; border-top:1px solid var(--line); padding-top:1.5rem;}
+  p{color:#333; margin:0 0 1rem; max-width:62ch;}
+  canvas{width:100%; display:block; border:1px solid var(--line); margin:1rem 0;}
+  label{display:flex; justify-content:space-between; font-size:.85rem; color:var(--sub); margin-bottom:.3rem;}
+  label span.v{color:var(--ink); font-family:ui-monospace,Menlo,monospace;}
+  input[type=range]{width:100%;}
+  .controls{display:flex; gap:2rem; flex-wrap:wrap; margin:1.2rem 0;}
+  .controls > div{flex:1; min-width:200px;}
+  .frameChoice{display:flex; gap:1rem; font-size:.85rem;}
+  .frameChoice label{display:flex; align-items:center; gap:.35rem; color:var(--ink);}
+  .readout{font-family:ui-monospace,Menlo,monospace; font-size:.85rem; color:#333; margin:.75rem 0 0; display:flex; gap:1.5rem; flex-wrap:wrap;}
+  .btnRow{display:flex; gap:.6rem; margin-top:1rem;}
+  button{font-family:inherit; font-size:.85rem; padding:.4rem .9rem; border:1px solid var(--ink); background:#fff; color:var(--ink); cursor:pointer;}
+  button:hover{background:#f2f2f2;}
+  .exercise{margin:1.4rem 0;}
+  .exercise p{margin-bottom:.6rem;}
+  .er{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;}
+  input[type=number]{font-family:inherit; padding:.35rem .5rem; border:1px solid var(--line); width:100px;}
+  .fb{margin-top:.5rem; font-size:.85rem; min-height:1.1em;}
+  .fb.good{color:var(--good);} .fb.bad{color:var(--bad);}
+</style>
+</head>
+<body>
+
+<nav class="pagenav">
+  <a href="distance-displacement.html">Distance &amp; Displacement</a>
+  <a href="speed-velocity.html">Speed &amp; Velocity</a>
+  <a href="acceleration.html">Acceleration</a>
+  <a href="jerk.html">Jerk</a>
+  <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+  <a href="equations-of-motion.html">Equations of Motion</a>
+  <a class="here" href="relative-motion.html">Relative Motion</a>
+  <a href="projectile-motion.html">Projectile Motion</a>
+  <a href="multi-d-motion.html">Multi-D Motion</a>
+</nav>
+
+<h1>Relative Motion</h1>
+<p>Velocity depends on who is measuring it. A train's speed on the ground differs from its speed as seen by someone riding a second train. The rule is vector subtraction: velocity of A relative to B equals v<sub>A</sub> − v<sub>B</sub>.</p>
+<p>Everything below lives on a single line with a fixed origin and a positive direction (east). A position is just one signed number — negative means on the other side of the origin, not "less distance" — and each train's position at time t is x(t) = x<sub>0</sub> + vt.</p>
+
+<canvas id="sim" style="height:180px"></canvas>
+
+<div class="readout" id="readout"></div>
+
+<div class="controls">
+  <div>
+    <label>Train A velocity (east +) <span class="v" id="vaLabel">6 m/s</span></label>
+    <input type="range" id="va" min="-20" max="20" step="1" value="6">
+  </div>
+  <div>
+    <label>Train B velocity (east +) <span class="v" id="vbLabel">-4 m/s</span></label>
+    <input type="range" id="vb" min="-20" max="20" step="1" value="-4">
+  </div>
+</div>
+
+<div class="frameChoice">
+  <span style="color:var(--sub); font-size:.85rem;">View from:</span>
+  <label><input type="radio" name="frame" value="ground" checked>ground</label>
+  <label><input type="radio" name="frame" value="A">train A</label>
+  <label><input type="radio" name="frame" value="B">train B</label>
+</div>
+
+<div class="btnRow">
+  <button id="playBtn">Pause</button>
+  <button id="resetBtn">Reset positions</button>
+</div>
+
+<h2>Exercises</h2>
+
+<div class="exercise" id="ex1">
+  <p id="ex1q"></p>
+  <div class="er">
+    <input type="number" id="ex1i" step="any"><span style="font-size:.82rem;color:var(--sub)">m/s</span>
+    <button id="ex1c">Check</button>
+    <button id="ex1n">New numbers</button>
+  </div>
+  <div class="fb" id="ex1f"></div>
+</div>
+
+<div class="exercise" id="ex2">
+  <p id="ex2q"></p>
+  <div class="er">
+    <input type="number" id="ex2i" step="any"><span style="font-size:.82rem;color:var(--sub)">m/s</span>
+    <button id="ex2c">Check</button>
+    <button id="ex2n">New numbers</button>
+  </div>
+  <div class="fb" id="ex2f"></div>
+</div>
+
+<div class="exercise" id="ex3">
+  <p id="ex3q"></p>
+  <div class="er">
+    <input type="number" id="ex3i" step="any"><span style="font-size:.82rem;color:var(--sub)">m/s</span>
+    <button id="ex3c">Check</button>
+    <button id="ex3n">New numbers</button>
+  </div>
+  <div class="fb" id="ex3f"></div>
+</div>
+
+<div class="exercise" id="ex4">
+  <p id="ex4q"></p>
+  <div class="er">
+    <input type="number" id="ex4i" step="any"><span style="font-size:.82rem;color:var(--sub)">s</span>
+    <button id="ex4c">Check</button>
+    <button id="ex4n">New numbers</button>
+  </div>
+  <div class="fb" id="ex4f"></div>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+function rand(min,max){ return Math.round(Math.random()*(max-min))+min; }
+
+// ---------- canvas setup (sized once, resized only on window resize) ----------
+const canvas = document.getElementById('sim');
+const ctx = canvas.getContext('2d');
+let cw = 0, ch = 180;
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cw = rect.width;
+  canvas.width = Math.max(1, Math.round(cw*dpr));
+  canvas.height = Math.max(1, Math.round(ch*dpr));
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ---------- state ----------
+let vA = parseFloat(document.getElementById('va').value);
+let vB = parseFloat(document.getElementById('vb').value);
+let posA = -20, posB = 20;
+let frame = 'ground';
+let playing = true;
+const scale = 6; // px per meter
+
+document.getElementById('va').addEventListener('input', e=>{
+  vA = parseFloat(e.target.value);
+  document.getElementById('vaLabel').textContent = vA + ' m/s';
+});
+document.getElementById('vb').addEventListener('input', e=>{
+  vB = parseFloat(e.target.value);
+  document.getElementById('vbLabel').textContent = vB + ' m/s';
+});
+document.querySelectorAll('input[name=frame]').forEach(r=>{
+  r.addEventListener('change', e=>{ frame = e.target.value; });
+});
+document.getElementById('playBtn').addEventListener('click', e=>{
+  playing = !playing;
+  e.target.textContent = playing ? 'Pause' : 'Play';
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{ posA=-20; posB=20; });
+
+function arrow(x1,y1,x2,y2){
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ang = Math.atan2(y2-y1, x2-x1), hs=6;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+}
+
+function update(dt){
+  if(!playing) return;
+  posA += vA*dt;
+  posB += vB*dt;
+  if(Math.abs(posA)>400) posA = -posA*0.1;
+  if(Math.abs(posB)>400) posB = -posB*0.1;
+}
+
+function draw(){
+  ctx.clearRect(0,0,cw,ch);
+  const vFrame = frame==='ground' ? 0 : (frame==='A' ? vA : vB);
+  const camera = frame==='ground' ? (posA+posB)/2 : (frame==='A' ? posA : posB);
+  const cx = cw/2;
+  const trackY = ch*0.72;
+
+  ctx.strokeStyle = '#ddd'; ctx.fillStyle = '#666'; ctx.font='11px -apple-system,sans-serif'; ctx.lineWidth=1;
+  const startTick = Math.floor((camera - cw/(2*scale))/10)*10;
+  for(let tkm=startTick; tkm<=camera+cw/(2*scale)+10; tkm+=10){
+    const sx = cx + (tkm-camera)*scale;
+    ctx.beginPath(); ctx.moveTo(sx, trackY); ctx.lineTo(sx, trackY+6); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillText(tkm+'m', sx, trackY+18);
+  }
+  ctx.beginPath(); ctx.moveTo(0,trackY); ctx.lineTo(cw,trackY); ctx.stroke();
+
+  const laneA = ch*0.32, laneB = trackY - 10;
+  const sxA = cx + (posA-camera)*scale;
+  const sxB = cx + (posB-camera)*scale;
+
+  // train A: solid black
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(sxA, laneA, 12, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.textAlign='center'; ctx.font='600 11px -apple-system,sans-serif';
+  ctx.fillText('A', sxA, laneA+4);
+  const dispVA = vA - vFrame;
+  if(Math.abs(dispVA)>0.05){
+    ctx.strokeStyle = '#111'; ctx.fillStyle='#111'; ctx.lineWidth=2;
+    arrow(sxA, laneA-20, sxA+Math.sign(dispVA)*Math.min(Math.abs(dispVA)*3,60), laneA-20);
+  }
+
+  // train B: outline only
+  ctx.lineWidth = 2; ctx.strokeStyle = '#111'; ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(sxB, laneB, 12, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#111'; ctx.font='600 11px -apple-system,sans-serif';
+  ctx.fillText('B', sxB, laneB+4);
+  const dispVB = vB - vFrame;
+  if(Math.abs(dispVB)>0.05){
+    ctx.lineWidth=2;
+    arrow(sxB, laneB-20, sxB+Math.sign(dispVB)*Math.min(Math.abs(dispVB)*3,60), laneB-20);
+  }
+
+  ctx.fillStyle = '#666'; ctx.textAlign='left'; ctx.font='12px -apple-system,sans-serif';
+  ctx.fillText('viewing from: '+(frame==='ground'?'ground':'train '+frame), 8, 16);
+
+  document.getElementById('readout').innerHTML =
+    'v<sub>A</sub> (ground) = '+fmt(vA,1)+' m/s &nbsp; &nbsp; '+
+    'v<sub>B</sub> (ground) = '+fmt(vB,1)+' m/s &nbsp; &nbsp; '+
+    'v<sub>A rel B</sub> = '+fmt(vA-vB,1)+' m/s &nbsp; &nbsp; '+
+    'v<sub>B rel A</sub> = '+fmt(vB-vA,1)+' m/s';
+}
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min((now-last)/1000, 0.05);
+  last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ---------- exercises ----------
+function checkNumeric(inputEl, correct, tol, fbEl, correctMsg, unit){
+  unit = unit || 'm/s';
+  const v = parseFloat(inputEl.value);
+  if(isNaN(v)){ fbEl.textContent='Enter a number first.'; fbEl.className='fb bad'; return; }
+  if(Math.abs(v-correct)<=tol){
+    fbEl.textContent = correctMsg || ('Correct — '+fmt(correct,1)+' '+unit+'.');
+    fbEl.className = 'fb good';
+  } else {
+    fbEl.textContent = 'Not quite. The answer is '+fmt(correct,1)+' '+unit+'.';
+    fbEl.className = 'fb bad';
+  }
+}
+
+let e1a, e1b;
+function newEx1(){
+  e1a = rand(-15,15); e1b = rand(-15,15);
+  document.getElementById('ex1q').textContent =
+    'Car A moves at '+e1a+' m/s and car B moves at '+e1b+' m/s (east positive, ground frame). What is the velocity of A as measured by someone in car B?';
+  document.getElementById('ex1i').value=''; document.getElementById('ex1f').textContent=''; document.getElementById('ex1f').className='fb';
+}
+document.getElementById('ex1c').addEventListener('click', ()=> checkNumeric(document.getElementById('ex1i'), e1a-e1b, 0.5, document.getElementById('ex1f')));
+document.getElementById('ex1n').addEventListener('click', newEx1);
+
+let e2a, e2b;
+function newEx2(){
+  e2a = rand(-15,15); e2b = rand(-15,15);
+  document.getElementById('ex2q').textContent =
+    'Car A moves at '+e2a+' m/s and car B moves at '+e2b+' m/s (east positive, ground frame). What is the velocity of B as measured by someone in car A?';
+  document.getElementById('ex2i').value=''; document.getElementById('ex2f').textContent=''; document.getElementById('ex2f').className='fb';
+}
+document.getElementById('ex2c').addEventListener('click', ()=> checkNumeric(document.getElementById('ex2i'), e2b-e2a, 0.5, document.getElementById('ex2f')));
+document.getElementById('ex2n').addEventListener('click', newEx2);
+
+let e3g, e3w;
+function newEx3(){
+  e3g = rand(60,120); e3w = rand(5,40);
+  document.getElementById('ex3q').textContent =
+    'A plane travels at '+e3g+' m/s relative to the ground, flying straight into a headwind of '+e3w+' m/s (wind blows opposite to the plane, so treat it as '+(-e3w)+' m/s in the plane\'s direction). What is the plane\'s velocity relative to the air itself?';
+  document.getElementById('ex3i').value=''; document.getElementById('ex3f').textContent=''; document.getElementById('ex3f').className='fb';
+}
+document.getElementById('ex3c').addEventListener('click', ()=> checkNumeric(document.getElementById('ex3i'), e3g-(-e3w), 0.5, document.getElementById('ex3f')));
+document.getElementById('ex3n').addEventListener('click', newEx3);
+
+let e4xA0, e4vA, e4xB0, e4vB;
+function newEx4(){
+  e4xA0 = rand(-15,-3); e4vA = rand(2,8);
+  e4xB0 = rand(3,15); e4vB = -rand(2,8);
+  document.getElementById('ex4q').textContent =
+    'Car A starts at x = '+e4xA0+' m moving at '+e4vA+' m/s. Car B starts at x = '+e4xB0+' m moving at '+e4vB+' m/s (same line, east positive). At what time do they meet?';
+  document.getElementById('ex4i').value=''; document.getElementById('ex4f').textContent=''; document.getElementById('ex4f').className='fb';
+}
+document.getElementById('ex4c').addEventListener('click', ()=>{
+  const correct = (e4xB0-e4xA0)/(e4vA-e4vB);
+  checkNumeric(document.getElementById('ex4i'), correct, 0.3, document.getElementById('ex4f'),
+    'Correct — '+fmt(correct,2)+' s. Set x_A(t) = x_B(t): '+e4xA0+' + '+e4vA+'t = '+e4xB0+' + ('+e4vB+')t, and solve for t.', 's');
+});
+document.getElementById('ex4n').addEventListener('click', newEx4);
+
+newEx1(); newEx2(); newEx3(); newEx4();
+</script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projectile Motion</title>
+<style>
+  :root{ --ink:#111; --sub:#666; --line:#ddd; --good:#1a7f37; --bad:#c1373f; }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink); max-width:720px; margin:0 auto; padding:2.5rem 1.25rem 5rem;
+    line-height:1.55;
+  }
+  nav.pagenav{ font-size: 13px; color: var(--sub); margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: ui-monospace,Menlo,monospace; }
+  nav.pagenav a{ color: var(--sub); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--ink); border-bottom-color: var(--ink); }
+  nav.pagenav a:hover{ color: var(--ink); }
+  h1{font-size:1.5rem; margin:0 0 .8rem;}
+  h2{font-size:1.05rem; margin:2.4rem 0 .8rem; border-top:1px solid var(--line); padding-top:1.5rem;}
+  p{color:#333; margin:0 0 1rem; max-width:62ch;}
+  canvas{width:100%; display:block; border:1px solid var(--line); margin:1rem 0;}
+  label{display:flex; justify-content:space-between; font-size:.85rem; color:var(--sub); margin-bottom:.3rem;}
+  label span.v{color:var(--ink); font-family:ui-monospace,Menlo,monospace;}
+  input[type=range]{width:100%;}
+  select{font-family:inherit; font-size:.85rem; padding:.35rem .5rem; border:1px solid var(--line); background:#fff; width:100%;}
+  .controls{display:flex; gap:2rem; flex-wrap:wrap; margin:1.2rem 0;}
+  .controls > div{flex:1; min-width:200px;}
+  .readout{font-family:ui-monospace,Menlo,monospace; font-size:.85rem; color:#333; margin:.75rem 0 0; display:flex; gap:1.5rem; flex-wrap:wrap;}
+  .btnRow{display:flex; gap:.6rem; margin-top:1rem;}
+  button{font-family:inherit; font-size:.85rem; padding:.4rem .9rem; border:1px solid var(--ink); background:#fff; color:var(--ink); cursor:pointer;}
+  button:hover{background:#f2f2f2;}
+  .exercise{margin:1.4rem 0;}
+  .exercise p{margin-bottom:.6rem;}
+  .er{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;}
+  input[type=number]{font-family:inherit; padding:.35rem .5rem; border:1px solid var(--line); width:100px;}
+  .fb{margin-top:.5rem; font-size:.85rem; min-height:1.1em;}
+  .fb.good{color:var(--good);} .fb.bad{color:var(--bad);}
+</style>
+</head>
+<body>
+
+<nav class="pagenav">
+  <a href="distance-displacement.html">Distance &amp; Displacement</a>
+  <a href="speed-velocity.html">Speed &amp; Velocity</a>
+  <a href="acceleration.html">Acceleration</a>
+  <a href="jerk.html">Jerk</a>
+  <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+  <a href="equations-of-motion.html">Equations of Motion</a>
+  <a href="relative-motion.html">Relative Motion</a>
+  <a class="here" href="projectile-motion.html">Projectile Motion</a>
+  <a href="multi-d-motion.html">Multi-D Motion</a>
+</nav>
+
+<h1>Projectile Motion</h1>
+<p>Horizontal and vertical motion happen independently. Horizontally there is no acceleration; vertically, gravity pulls down at a constant rate: x(t) = v<sub>0</sub>cos&theta;&middot;t, and y(t) = v<sub>0</sub>sin&theta;&middot;t − ½gt².</p>
+
+<canvas id="sim" style="height:300px"></canvas>
+
+<div class="readout" id="readout"></div>
+
+<div class="controls">
+  <div>
+    <label>Launch speed v<sub>0</sub> <span class="v" id="v0Label">28 m/s</span></label>
+    <input type="range" id="v0" min="5" max="50" step="1" value="28">
+  </div>
+  <div>
+    <label>Launch angle &theta; <span class="v" id="angLabel">45°</span></label>
+    <input type="range" id="ang" min="1" max="89" step="1" value="45">
+  </div>
+</div>
+<div class="controls">
+  <div>
+    <label style="margin-bottom:.4rem;">World</label>
+    <select id="world">
+      <option value="9.8">Earth (g = 9.8 m/s²)</option>
+      <option value="1.62">Moon (g = 1.62 m/s²)</option>
+      <option value="3.71">Mars (g = 3.71 m/s²)</option>
+    </select>
+  </div>
+</div>
+
+<div class="btnRow">
+  <button id="playBtn">Launch</button>
+  <button id="resetBtn">Reset</button>
+</div>
+
+<h2>Exercises</h2>
+
+<div class="exercise" id="ex1">
+  <p id="ex1q"></p>
+  <div class="er">
+    <input type="number" id="ex1i" step="any"><span style="font-size:.82rem;color:var(--sub)">m</span>
+    <button id="ex1c">Check</button>
+    <button id="ex1n">New numbers</button>
+  </div>
+  <div class="fb" id="ex1f"></div>
+</div>
+
+<div class="exercise" id="ex2">
+  <p id="ex2q"></p>
+  <div class="er">
+    <input type="number" id="ex2i" step="any"><span style="font-size:.82rem;color:var(--sub)">m</span>
+    <button id="ex2c">Check</button>
+    <button id="ex2n">New numbers</button>
+  </div>
+  <div class="fb" id="ex2f"></div>
+</div>
+
+<div class="exercise" id="ex3">
+  <p id="ex3q"></p>
+  <div class="er">
+    <input type="number" id="ex3i" step="any"><span style="font-size:.82rem;color:var(--sub)">s</span>
+    <button id="ex3c">Check</button>
+    <button id="ex3n">New numbers</button>
+  </div>
+  <div class="fb" id="ex3f"></div>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+function rand(min,max){ return Math.round(Math.random()*(max-min))+min; }
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+const sim = makeCanvas('sim', 300);
+
+function arrow(ctx,x1,y1,x2,y2){
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ang = Math.atan2(y2-y1, x2-x1), hs=6;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+}
+
+let v0 = parseFloat(document.getElementById('v0').value);
+let angDeg = parseFloat(document.getElementById('ang').value);
+let g = parseFloat(document.getElementById('world').value);
+let t = 0, playing = false;
+
+function derived(){
+  const th = angDeg*Math.PI/180;
+  const T = 2*v0*Math.sin(th)/g;
+  const H = (v0*Math.sin(th))**2/(2*g);
+  const R = v0*v0*Math.sin(2*th)/g;
+  return {th,T,H,R};
+}
+
+function resetFlight(){ t=0; playing=false; document.getElementById('playBtn').textContent='Launch'; }
+
+document.getElementById('v0').addEventListener('input', e=>{ v0=parseFloat(e.target.value); document.getElementById('v0Label').textContent=v0+' m/s'; resetFlight(); });
+document.getElementById('ang').addEventListener('input', e=>{ angDeg=parseFloat(e.target.value); document.getElementById('angLabel').textContent=angDeg+'°'; resetFlight(); });
+document.getElementById('world').addEventListener('change', e=>{ g=parseFloat(e.target.value); resetFlight(); });
+document.getElementById('playBtn').addEventListener('click', e=>{
+  const {T} = derived();
+  if(!playing){
+    if(t>=T-1e-9) t=0;
+    playing=true;
+  } else {
+    playing=false;
+  }
+  e.target.textContent = playing?'Pause':'Launch';
+});
+document.getElementById('resetBtn').addEventListener('click', resetFlight);
+
+function update(dt){
+  if(!playing) return;
+  const {T} = derived();
+  t += dt;
+  if(t>=T){ t=T; playing=false; document.getElementById('playBtn').textContent='Launch'; }
+}
+
+function draw(){
+  const ctx = sim.ctx, w = sim.w, h = sim.h;
+  ctx.clearRect(0,0,w,h);
+  const {th,T,H,R} = derived();
+  const marginL=42, marginB=30, marginT=20, marginR=20;
+  const plotW = w-marginL-marginR, plotH = h-marginT-marginB;
+  const scale = Math.min(plotW/(R*1.15||1), plotH/(H*1.6||1));
+  const groundY = h-marginB;
+
+  ctx.strokeStyle = '#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(marginL,groundY); ctx.lineTo(w-marginR,groundY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(marginL,marginT); ctx.lineTo(marginL,groundY); ctx.stroke();
+
+  ctx.strokeStyle = '#bbb'; ctx.lineWidth=1.25; ctx.setLineDash([3,3]);
+  ctx.beginPath();
+  const n=60;
+  for(let i=0;i<=n;i++){
+    const tt = i/n*T;
+    const x = v0*Math.cos(th)*tt, y = v0*Math.sin(th)*tt-0.5*g*tt*tt;
+    const px = marginL + x*scale, py = groundY - Math.max(y,0)*scale;
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  const curX = v0*Math.cos(th)*t;
+  const curY = Math.max(v0*Math.sin(th)*t - 0.5*g*t*t, 0);
+  const px = marginL+curX*scale, py = groundY-curY*scale;
+  const vx = v0*Math.cos(th);
+  const vy = v0*Math.sin(th) - g*t;
+
+  ctx.strokeStyle = '#111'; ctx.fillStyle='#111'; ctx.lineWidth=1.75;
+  if(Math.abs(vx)>0.01) arrow(ctx, px,py, px+Math.sign(vx)*Math.min(Math.abs(vx)*2.2,50), py);
+  if(Math.abs(vy)>0.01) arrow(ctx, px,py, px, py-Math.sign(vy)*Math.min(Math.abs(vy)*2.2,50));
+
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fill();
+
+  const hxAtPeak = v0*Math.cos(th)*(T/2);
+  ctx.strokeStyle = '#ddd'; ctx.setLineDash([2,3]);
+  ctx.beginPath(); ctx.moveTo(marginL+hxAtPeak*scale, groundY-H*scale); ctx.lineTo(marginL+hxAtPeak*scale, groundY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  document.getElementById('readout').innerHTML =
+    'time of flight = '+fmt(T,2)+' s &nbsp; &nbsp; max height = '+fmt(H,2)+' m &nbsp; &nbsp; range = '+fmt(R,2)+' m &nbsp; &nbsp; '+
+    'v<sub>x</sub> = '+fmt(vx,2)+' m/s &nbsp; &nbsp; v<sub>y</sub> = '+fmt(vy,2)+' m/s';
+}
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min((now-last)/1000, 0.05);
+  last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ---------- exercises (Earth gravity, g = 9.8) ----------
+function checkNumeric(inputEl, correct, tol, fbEl, unit){
+  const v = parseFloat(inputEl.value);
+  if(isNaN(v)){ fbEl.textContent='Enter a number first.'; fbEl.className='fb bad'; return; }
+  if(Math.abs(v-correct)<=tol){
+    fbEl.textContent = 'Correct — '+fmt(correct,2)+' '+unit+'.';
+    fbEl.className = 'fb good';
+  } else {
+    fbEl.textContent = 'Not quite. The answer is '+fmt(correct,2)+' '+unit+'.';
+    fbEl.className = 'fb bad';
+  }
+}
+const G = 9.8;
+
+let e1v0, e1ang;
+function newEx1(){
+  e1v0=rand(15,40); e1ang=rand(15,75);
+  document.getElementById('ex1q').textContent =
+    'On Earth, a ball launches at '+e1v0+' m/s at '+e1ang+'° above the ground. What is its range?';
+  document.getElementById('ex1i').value=''; document.getElementById('ex1f').textContent=''; document.getElementById('ex1f').className='fb';
+}
+document.getElementById('ex1c').addEventListener('click', ()=>{
+  const th = e1ang*Math.PI/180;
+  const correct = e1v0*e1v0*Math.sin(2*th)/G;
+  checkNumeric(document.getElementById('ex1i'), correct, Math.max(0.5,correct*0.06), document.getElementById('ex1f'), 'm');
+});
+document.getElementById('ex1n').addEventListener('click', newEx1);
+
+let e2v0, e2ang;
+function newEx2(){
+  e2v0=rand(15,40); e2ang=rand(15,75);
+  document.getElementById('ex2q').textContent =
+    'On Earth, a ball launches at '+e2v0+' m/s at '+e2ang+'° above the ground. What is its maximum height?';
+  document.getElementById('ex2i').value=''; document.getElementById('ex2f').textContent=''; document.getElementById('ex2f').className='fb';
+}
+document.getElementById('ex2c').addEventListener('click', ()=>{
+  const th = e2ang*Math.PI/180;
+  const correct = (e2v0*Math.sin(th))**2/(2*G);
+  checkNumeric(document.getElementById('ex2i'), correct, Math.max(0.3,correct*0.06), document.getElementById('ex2f'), 'm');
+});
+document.getElementById('ex2n').addEventListener('click', newEx2);
+
+let e3v0, e3ang;
+function newEx3(){
+  e3v0=rand(15,40); e3ang=rand(15,75);
+  document.getElementById('ex3q').textContent =
+    'On Earth, a ball launches at '+e3v0+' m/s at '+e3ang+'° above the ground. How long is it in the air?';
+  document.getElementById('ex3i').value=''; document.getElementById('ex3f').textContent=''; document.getElementById('ex3f').className='fb';
+}
+document.getElementById('ex3c').addEventListener('click', ()=>{
+  const th = e3ang*Math.PI/180;
+  const correct = 2*e3v0*Math.sin(th)/G;
+  checkNumeric(document.getElementById('ex3i'), correct, 0.3, document.getElementById('ex3f'), 's');
+});
+document.getElementById('ex3n').addEventListener('click', newEx3);
+
+newEx1(); newEx2(); newEx3();
+</script>
+</body>
+</html>
