@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Distance &amp; Displacement — Walk the Path</title>
+<style>
+  :root{
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #ffffff;
+    --border: #ddd;
+    --border-soft: #eee;
+    --text: #111111;
+    --text-muted: #666666;
+    --text-dim: #999999;
+    --distance: #111111;
+    --distance-dim: #eeeeee;
+    --displacement: #666666;
+    --displacement-dim: #eeeeee;
+    --bad: #c1373f;
+    --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ max-width: 1180px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+
+  /* ---------- header ---------- */
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin: 0 0 12px;
+    letter-spacing: 0.02em;
+  }
+  h1{
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.08;
+    margin: 0 0 14px;
+    letter-spacing: -0.015em;
+  }
+  header p{
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ---------- section shell ---------- */
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 21px;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .section-head p{
+    color: var(--text-muted);
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0;
+    max-width: 620px;
+  }
+
+  /* ---------- concept cards ---------- */
+  .concepts{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .concept-card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    padding: 22px 22px 20px;
+  }
+  .concept-card.distance{ border-top: 2px solid var(--distance); }
+  .concept-card.displacement{ border-top: 2px solid var(--displacement); }
+  .concept-card .icon{ margin-bottom: 14px; }
+  .concept-card h3{
+    font-family: var(--font-display);
+    font-size: 18px;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .concept-card .kind{
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+  .concept-card.distance .kind{ color: var(--distance); }
+  .concept-card.displacement .kind{ color: var(--displacement); }
+  .concept-card p{
+    color: var(--text-muted);
+    font-size: 14.5px;
+    line-height: 1.6;
+    margin: 8px 0 0;
+  }
+  .concept-card strong{ color: var(--text); font-weight: 600; }
+
+  /* ---------- simulator ---------- */
+  .sim-wrap{
+    display: grid;
+    grid-template-columns: 1.55fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  .map-panel{
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    padding: 16px 16px 14px;
+  }
+  .map-toolbar{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .map-toolbar .hint{
+    font-size: 13px;
+    color: var(--text-dim);
+    align-self: center;
+    margin-right: auto;
+    font-family: var(--font-mono);
+  }
+  button{
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 0;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    padding: 7px 13px;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  button:hover{ border-color: rgba(0,0,0,0.32); background: #f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button:focus-visible{ outline: 2px solid var(--displacement); outline-offset: 2px; }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background: #333; }
+  button.ghost{ background: transparent; }
+  .preset-row{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .preset-row button{ font-weight: 500; font-size: 12.5px; padding: 6px 11px; color: var(--text-muted); }
+
+  svg#mapSvg{
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--bg);
+    border-radius: 0;
+    cursor: crosshair;
+    touch-action: manipulation;
+  }
+  .grid-line{ stroke: rgba(0,0,0,0.07); stroke-width: 1; }
+  .axis-line{ stroke: rgba(0,0,0,0.22); stroke-width: 1.2; }
+  .path-line{ fill: none; stroke: var(--distance); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .disp-line{ stroke: var(--displacement); stroke-width: 2.4; stroke-dasharray: 2 6; stroke-linecap: round; }
+  .waypoint{ fill: var(--bg-2); stroke: var(--distance); stroke-width: 2; }
+  .start-pin{ fill: var(--panel-2); stroke: var(--text-muted); stroke-width: 2; }
+  .walker-dot{ fill: var(--distance); }
+  .walker-glow{ fill: var(--distance); opacity: 0.22; }
+  #walkerGroup{ transition: transform 0.45s cubic-bezier(.4,0,.2,1); }
+  .map-label{ font-family: var(--font-mono); font-size: 11px; fill: var(--text-dim); }
+
+  .side-col{ display: flex; flex-direction: column; gap: 14px; }
+  .stat-card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    padding: 16px 18px;
+  }
+  .stat-row{ display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 3px; }
+  .stat-label{ font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  .stat-value{ font-family: var(--font-mono); font-size: 21px; font-weight: 600; }
+  .stat-value.distance{ color: var(--distance); }
+  .stat-value.displacement{ color: var(--displacement); }
+  .stat-sub{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .bars{ margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .bar-row .bar-top{ display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; font-family: var(--font-mono); }
+  .bar-track{ height: 10px; border-radius: 0; background: var(--border-soft); overflow: hidden; }
+  .bar-fill{ height: 100%; border-radius: 0; transition: width 0.45s ease; }
+  .bar-fill.distance{ background: var(--distance); width: 100%; }
+  .bar-fill.displacement{ background: var(--displacement); width: 0%; }
+  .ratio-line{ font-size: 12.5px; color: var(--text-dim); margin-top: 8px; font-family: var(--font-mono); }
+  .ratio-line b{ color: var(--text); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce){
+    #walkerGroup, .bar-fill{ transition: none; }
+  }
+
+  /* ---------- chart ---------- */
+  .chart-panel{
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    padding: 18px 18px 10px;
+  }
+  .chart-legend{ display: flex; gap: 18px; margin-bottom: 8px; font-size: 12.5px; font-family: var(--font-mono); color: var(--text-muted); }
+  .chart-legend span{ display: inline-flex; align-items: center; gap: 6px; }
+  .dot{ width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.distance{ background: var(--distance); }
+  .dot.displacement{ background: var(--displacement); }
+  svg#chartSvg{ width: 100%; height: auto; display: block; }
+  .chart-axis{ stroke: rgba(0,0,0,0.18); stroke-width: 1; }
+  .chart-grid{ stroke: rgba(0,0,0,0.06); stroke-width: 1; }
+  .chart-tick{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-dim); }
+  .chart-line.distance{ fill:none; stroke: var(--distance); stroke-width: 2.2; }
+  .chart-line.displacement{ fill:none; stroke: var(--displacement); stroke-width: 2.2; }
+
+  /* ---------- practice problems ---------- */
+  .problems{ display: flex; flex-direction: column; gap: 14px; }
+  .problem{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    padding: 18px 20px;
+  }
+  .problem .pnum{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 0 0 8px;
+  }
+  .problem .ptext{ font-size: 15px; line-height: 1.55; margin: 0 0 14px; }
+  .problem .ptext em{ color: var(--text); font-style: normal; font-weight: 600; }
+
+  .mcq-opts{ display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .mcq-opt{
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 0;
+    cursor: pointer;
+    font-size: 14px;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,0.3); }
+  .mcq-opt input{ margin-top: 3px; accent-color: var(--displacement); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,0.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,0.08); }
+
+  .answer-row{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .answer-field{ display: flex; align-items: center; gap: 6px; }
+  .answer-field label{ font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{
+    width: 96px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 6px 9px;
+  }
+  .answer-field input:focus-visible{ outline: 2px solid var(--displacement); outline-offset: 1px; }
+  .answer-field .unit{ font-size: 12.5px; color: var(--text-dim); }
+
+  .feedback{ font-size: 13.5px; margin-top: 8px; line-height: 1.55; display: none; padding: 10px 12px; border-radius: 0; }
+  .feedback.show{ display: block; }
+  .feedback.ok{ background: rgba(107,222,142,0.08); color: var(--good); border: 1px solid rgba(107,222,142,0.25); }
+  .feedback.no{ background: rgba(255,122,107,0.08); color: var(--bad); border: 1px solid rgba(255,122,107,0.25); }
+
+  details.solution{ margin-top: 6px; }
+  details.solution summary{
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--displacement);
+    font-weight: 600;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  details.solution summary::-webkit-details-marker{ display: none; }
+  details.solution summary::before{ content: '›'; display: inline-block; transition: transform .15s ease; font-size: 16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-soft);
+  }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+
+  .challenge{
+    border: 1px dashed var(--border);
+    background: transparent;
+    border-radius: 0;
+    padding: 16px 20px;
+  }
+  .challenge .ptext{ margin-bottom: 4px; }
+  .challenge .pnum{ color: var(--displacement); }
+
+  footer{ margin-top: 40px; text-align: center; color: var(--text-dim); font-size: 12.5px; font-family: var(--font-mono); }
+
+  @media (max-width: 900px){
+    .concepts{ grid-template-columns: 1fr; }
+    .sim-wrap{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a class="here" href="distance-displacement.html">Distance &amp; Displacement</a>
+    <a href="speed-velocity.html">Speed &amp; Velocity</a>
+    <a href="acceleration.html">Acceleration</a>
+    <a href="jerk.html">Jerk</a>
+    <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+    <a href="motion-in-a-straight-line.html">Motion in a Straight Line</a>
+    <a href="equations-of-motion.html">Equations of Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">kinematics — distance &amp; displacement</p>
+    <h1>How far you went vs. where you ended up</h1>
+    <p>Walk a path on the grid below. One number tracks every step your feet actually took. The other only cares about the straight line from where you started to where you are now. They are rarely the same number.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card distance">
+        <div class="icon">
+          <svg width="64" height="40" viewBox="0 0 64 40" fill="none">
+            <path d="M4 34 C 14 8, 22 36, 32 18 S 50 4, 60 20" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="4" cy="34" r="3" fill="#fff" stroke="#111" stroke-width="2"/>
+            <circle cx="60" cy="20" r="3" fill="#111"/>
+          </svg>
+        </div>
+        <h3>Distance <span class="kind">scalar</span></h3>
+        <p>The total length of the path actually travelled, measuring every twist and backtrack. It only ever <strong>increases</strong> as you move — it has a size, but no direction.</p>
+      </div>
+      <div class="concept-card displacement">
+        <div class="icon">
+          <svg width="64" height="40" viewBox="0 0 64 40" fill="none">
+            <defs>
+              <marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#666"/>
+              </marker>
+            </defs>
+            <line x1="4" y1="34" x2="53" y2="14" stroke="#666" stroke-width="2.5" marker-end="url(#ah)"/>
+            <circle cx="4" cy="34" r="3" fill="#fff" stroke="#666" stroke-width="2"/>
+          </svg>
+        </div>
+        <h3>Displacement <span class="kind">vector</span></h3>
+        <p>The straight-line change from start to end position — a single arrow with a <strong>magnitude and a direction</strong>. It can shrink, vanish, or even point backward as you keep walking.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulator">
+    <div class="section-head">
+      <h2>Walk it yourself</h2>
+      <p>Click anywhere on the grid to take a step there. Each grid square is 1 metre. Watch the solid trail (distance) and the dashed arrow (displacement) update as you go.</p>
+    </div>
+
+    <div class="sim-wrap">
+      <div class="map-panel">
+        <div class="map-toolbar">
+          <span class="hint">click the grid to walk →</span>
+          <button id="undoBtn" class="ghost">Undo step</button>
+          <button id="resetBtn" class="ghost">Reset</button>
+        </div>
+        <div class="preset-row">
+          <button data-preset="straight">Straight walk</button>
+          <button data-preset="thereback">There &amp; back</button>
+          <button data-preset="rightangle">Right-angle turn</button>
+          <button data-preset="square">Square loop</button>
+          <button data-preset="circle">Circular lap</button>
+        </div>
+        <svg id="mapSvg" viewBox="0 0 640 420" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <div class="side-col">
+        <div class="stat-card">
+          <div class="stat-row">
+            <span class="stat-label">Distance travelled</span>
+            <span class="stat-value distance" id="statDistance">0.0 m</span>
+          </div>
+          <div class="stat-sub" id="statDistSub">sum of every step's length</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-row">
+            <span class="stat-label">Displacement</span>
+            <span class="stat-value displacement" id="statDisp">0.0 m</span>
+          </div>
+          <div class="stat-sub" id="statDispSub">straight line, start → now</div>
+
+          <div class="bars">
+            <div class="bar-row">
+              <div class="bar-top"><span>distance</span><span id="barDistLabel">0.0 m</span></div>
+              <div class="bar-track"><div class="bar-fill distance" id="barDist"></div></div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-top"><span>displacement</span><span id="barDispLabel">0.0 m</span></div>
+              <div class="bar-track"><div class="bar-fill displacement" id="barDisp"></div></div>
+            </div>
+          </div>
+          <div class="ratio-line" id="ratioLine">Take a step to compare them.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="chart">
+    <div class="chart-panel">
+      <div class="chart-legend">
+        <span><i class="dot distance"></i>distance (always climbs)</span>
+        <span><i class="dot displacement"></i>displacement (rises and falls)</span>
+      </div>
+      <svg id="chartSvg" viewBox="0 0 1100 260" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">A particle moves along <em>any</em> path from point A to point B. Which statement is always true?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> Distance is greater than or equal to the magnitude of displacement.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> Distance always equals the magnitude of displacement.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> Distance is always less than the magnitude of displacement.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> Distance and displacement always point in the same direction.</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">An athlete runs one full lap around a circular track of radius <em>63 m</em> and stops back at the starting line. Find the distance covered and the magnitude of the displacement.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">distance =</label><input type="text" id="q2a" placeholder="?"><span class="unit">m</span></div>
+          <div class="answer-field"><label for="q2b">displacement =</label><input type="text" id="q2b" placeholder="?"><span class="unit">m</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Distance is the full circumference: <code>2πr = 2π(63) ≈ 395.8 m</code>. Since the athlete returns exactly to the start, the displacement is <code>0 m</code> — no matter how long the run, start and end coincide.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A hiker walks <em>6 km due east</em>, then <em>8 km due north</em>. Find the total distance walked and the magnitude of the displacement.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">distance =</label><input type="text" id="q3a" placeholder="?"><span class="unit">km</span></div>
+          <div class="answer-field"><label for="q3b">displacement =</label><input type="text" id="q3b" placeholder="?"><span class="unit">km</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Distance is just the sum of the legs: <code>6 + 8 = 14 km</code>. Displacement is the straight line from start to end, found with Pythagoras: <code>√(6² + 8²) = √100 = 10 km</code>, directed roughly 53.1° north of east.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A train moves <em>240 m forward</em> along a straight track, then reverses and moves <em>90 m back</em>. Taking the forward direction as positive, find the distance travelled and the displacement.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">distance =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m</span></div>
+          <div class="answer-field"><label for="q4b">displacement =</label><input type="text" id="q4b" placeholder="?"><span class="unit">m</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Distance adds both legs regardless of direction: <code>240 + 90 = 330 m</code>. Displacement is the net change in position: <code>240 − 90 = +150 m</code> (forward). On a straight line, distance and displacement can differ even without ever leaving the line.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Build a path above with a distance of at least 10 m but a displacement of exactly 0 m. Then try the opposite: the largest displacement you can reach using only 10 m of walking. What shape gets you there?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>1 grid square = 1 metre</footer>
+</div>
+
+<script>
+(function(){
+  // ---------------- map setup ----------------
+  const svg = document.getElementById('mapSvg');
+  const W = 640, H = 420;
+  const unit = 34;                 // px per metre
+  const originX = W/2, originY = H/2 + 20;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  let points = [];                 // in metres, {x,y} with +y = north
+
+  function toScreen(p){ return { sx: originX + p.x*unit, sy: originY - p.y*unit }; }
+  function nearestUnit(v){ return Math.round(v); }
+
+  function screenToSVGPoint(evt){
+    const pt = svg.createSVGPoint();
+    const t = evt.touches ? evt.touches[0] : evt;
+    pt.x = t.clientX; pt.y = t.clientY;
+    const ctm = svg.getScreenCTM().inverse();
+    return pt.matrixTransform(ctm);
+  }
+
+  function buildGrid(){
+    let s = '';
+    const cols = Math.floor(W/unit), rows = Math.floor(H/unit);
+    for(let i=-cols;i<=cols;i++){
+      const x = originX + i*unit;
+      if(x<0||x>W) continue;
+      s += `<line class="grid-line" x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;
+    }
+    for(let j=-rows;j<=rows;j++){
+      const y = originY + j*unit;
+      if(y<0||y>H) continue;
+      s += `<line class="grid-line" x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;
+    }
+    s += `<line class="axis-line" x1="0" y1="${originY}" x2="${W}" y2="${originY}"/>`;
+    s += `<line class="axis-line" x1="${originX}" y1="0" x2="${originX}" y2="${H}"/>`;
+    return s;
+  }
+
+  // persistent layers: bgLayer is rebuilt every render, walkerGroup keeps its
+  // own identity so its CSS transform transition actually animates
+  svg.innerHTML = '<g id="bgLayer"></g><g id="walkerGroup"><circle class="walker-glow" r="11"/><circle class="walker-dot" r="5"/></g>';
+  const bgLayer = document.getElementById('bgLayer');
+  const walkerGroup = document.getElementById('walkerGroup');
+
+  function render(){
+    let inner = buildGrid();
+
+    // path segments
+    if(points.length){
+      let d = points.map((p,i)=>{
+        const {sx,sy} = toScreen(p);
+        return (i===0?'M':'L') + sx.toFixed(1) + ' ' + sy.toFixed(1);
+      }).join(' ');
+      inner += `<path class="path-line" d="${d}"/>`;
+
+      // waypoint dots
+      points.forEach((p,i)=>{
+        const {sx,sy} = toScreen(p);
+        if(i===0){
+          inner += `<circle class="start-pin" cx="${sx}" cy="${sy}" r="6"/>`;
+        } else if(i<points.length-1){
+          inner += `<circle class="waypoint" cx="${sx}" cy="${sy}" r="4"/>`;
+        }
+      });
+
+      // displacement vector
+      if(points.length>1){
+        const s0 = toScreen(points[0]), s1 = toScreen(points[points.length-1]);
+        inner += `<defs><marker id="dispHead" markerWidth="9" markerHeight="9" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#666"/></marker></defs>`;
+        inner += `<line class="disp-line" x1="${s0.sx}" y1="${s0.sy}" x2="${s1.sx}" y2="${s1.sy}" marker-end="url(#dispHead)"/>`;
+      }
+    }
+
+    inner += `<text class="map-label" x="8" y="16">N ↑</text>`;
+    bgLayer.innerHTML = inner;
+
+    const last = points.length ? points[points.length-1] : {x:0,y:0};
+    const {sx,sy} = toScreen(last);
+    walkerGroup.style.transform = `translate(${sx}px, ${sy}px)`;
+
+    updateStats();
+    updateChart();
+  }
+
+  function dist(a,b){ return Math.hypot(b.x-a.x, b.y-a.y); }
+
+  function computeSeries(){
+    let d = 0;
+    const distSeries = [0], dispSeries = [0];
+    for(let i=1;i<points.length;i++){
+      d += dist(points[i-1], points[i]);
+      distSeries.push(d);
+      dispSeries.push(dist(points[0], points[i]));
+    }
+    return { distSeries, dispSeries, totalDist: d };
+  }
+
+  function updateStats(){
+    const { distSeries, dispSeries, totalDist } = computeSeries();
+    const dispMag = points.length ? dispSeries[dispSeries.length-1] : 0;
+
+    document.getElementById('statDistance').textContent = totalDist.toFixed(1) + ' m';
+    document.getElementById('statDisp').textContent = dispMag.toFixed(1) + ' m';
+
+    if(points.length>1){
+      const dx = points[points.length-1].x - points[0].x;
+      const dy = points[points.length-1].y - points[0].y;
+      const ang = (Math.atan2(dy,dx)*180/Math.PI + 360) % 360;
+      document.getElementById('statDispSub').textContent = `bearing ${ang.toFixed(0)}° from east`;
+    } else {
+      document.getElementById('statDispSub').textContent = 'straight line, start → now';
+    }
+
+    document.getElementById('barDistLabel').textContent = totalDist.toFixed(1) + ' m';
+    document.getElementById('barDispLabel').textContent = dispMag.toFixed(1) + ' m';
+    document.getElementById('barDist').style.width = '100%';
+    document.getElementById('barDisp').style.width = totalDist>0 ? Math.min(100,(dispMag/totalDist*100)) + '%' : '0%';
+
+    const ratioEl = document.getElementById('ratioLine');
+    if(totalDist === 0){
+      ratioEl.textContent = 'Take a step to compare them.';
+    } else {
+      const ratio = dispMag/totalDist;
+      let note = ratio > 0.98 ? '— a straight path, the maximum possible.' :
+                 ratio < 0.02 ? '— you\'re back near where you started.' :
+                 '— displacement is always ≤ distance.';
+      ratioEl.innerHTML = `<b>${ratio.toFixed(2)}</b> = displacement ⁄ distance ${note}`;
+    }
+  }
+
+  function updateChart(){
+    const chartSvg = document.getElementById('chartSvg');
+    const cw = 1100, ch = 260;
+    const padL = 46, padR = 20, padT = 16, padB = 30;
+    const plotW = cw - padL - padR, plotH = ch - padT - padB;
+
+    const { distSeries, dispSeries, totalDist } = computeSeries();
+    const n = distSeries.length;
+    const maxY = Math.max(totalDist, Math.max(...dispSeries), 1) * 1.15;
+
+    let s = '';
+    // gridlines
+    const yTicks = 4;
+    for(let i=0;i<=yTicks;i++){
+      const y = padT + plotH - (i/yTicks)*plotH;
+      const val = (i/yTicks)*maxY;
+      s += `<line class="chart-grid" x1="${padL}" y1="${y}" x2="${cw-padR}" y2="${y}"/>`;
+      s += `<text class="chart-tick" x="${padL-8}" y="${y+3}" text-anchor="end">${val.toFixed(0)}</text>`;
+    }
+    s += `<line class="chart-axis" x1="${padL}" y1="${padT}" x2="${padL}" y2="${ch-padB}"/>`;
+    s += `<line class="chart-axis" x1="${padL}" y1="${ch-padB}" x2="${cw-padR}" y2="${ch-padB}"/>`;
+    s += `<text class="chart-tick" x="${padL}" y="${ch-8}">step 0</text>`;
+    if(n>1) s += `<text class="chart-tick" x="${cw-padR}" y="${ch-8}" text-anchor="end">step ${n-1}</text>`;
+
+    function xAt(i){ return n>1 ? padL + (i/(n-1))*plotW : padL; }
+    function yAt(v){ return padT + plotH - (v/maxY)*plotH; }
+
+    if(n>1){
+      const dPath = distSeries.map((v,i)=> (i===0?'M':'L')+xAt(i).toFixed(1)+' '+yAt(v).toFixed(1)).join(' ');
+      const pPath = dispSeries.map((v,i)=> (i===0?'M':'L')+xAt(i).toFixed(1)+' '+yAt(v).toFixed(1)).join(' ');
+      s += `<path class="chart-line distance" d="${dPath}"/>`;
+      s += `<path class="chart-line displacement" d="${pPath}"/>`;
+    }
+
+    chartSvg.innerHTML = s;
+  }
+
+  function addPoint(x,y){
+    points.push({x,y});
+    render();
+  }
+
+  svg.addEventListener('click', function(evt){
+    const p = screenToSVGPoint(evt);
+    const mx = nearestUnit((p.x - originX)/unit);
+    const my = nearestUnit(-(p.y - originY)/unit);
+    if(points.length && points[points.length-1].x===mx && points[points.length-1].y===my) return;
+    addPoint(mx,my);
+  });
+
+  document.getElementById('undoBtn').addEventListener('click', ()=>{ points.pop(); render(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ points = []; render(); });
+
+  const presets = {
+    straight:   [[0,0],[5,0]],
+    thereback:  [[0,0],[5,0],[0,0]],
+    rightangle: [[0,0],[3,0],[3,4]],
+    square:     [[0,0],[3,0],[3,3],[0,3],[0,0]],
+    circle:     (()=>{
+      const r = 2.6, N = 20, pts=[];
+      for(let k=0;k<=N;k++){
+        const th = (k/N)*2*Math.PI;
+        pts.push([+(r - r*Math.cos(th)).toFixed(2), +(r*Math.sin(th)).toFixed(2)]);
+      }
+      return pts;
+    })()
+  };
+
+  document.querySelectorAll('[data-preset]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const seq = presets[btn.dataset.preset];
+      points = [];
+      let i = 0;
+      const step = () => {
+        if(i>=seq.length){ return; }
+        points.push({x:seq[i][0], y:seq[i][1]});
+        render();
+        i++;
+        setTimeout(step, 90);
+      };
+      step();
+    });
+  });
+
+  render();
+
+  // ---------------- practice problems ----------------
+  document.querySelectorAll('#mcq1 input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+      const fb = document.getElementById('fb1');
+      const chosen = document.querySelector('#mcq1 input:checked');
+      const label = chosen.closest('.mcq-opt');
+      if(chosen.value === 'a'){
+        label.classList.add('correct');
+        fb.className = 'feedback show ok';
+        fb.textContent = 'Correct. The straight line between two points is always the shortest possible path, so distance can equal displacement (a straight walk) but never fall below it.';
+      } else {
+        label.classList.add('incorrect');
+        fb.className = 'feedback show no';
+        fb.textContent = 'Not quite. Distance ≥ |displacement| always — the straight-line path is the shortest one, so any detour only adds to the distance while displacement stays fixed by the endpoints.';
+      }
+    });
+  });
+
+  function checkPair(idA, idB, expA, expB, fbId, tolFrac, note){
+    const a = parseFloat(document.getElementById(idA).value);
+    const b = parseFloat(document.getElementById(idB).value);
+    const fb = document.getElementById(fbId);
+    if(isNaN(a) || isNaN(b)){
+      fb.className = 'feedback show no';
+      fb.textContent = 'Enter both values first.';
+      return;
+    }
+    const okA = Math.abs(a-expA) <= Math.max(tolFrac*Math.abs(expA), 0.5);
+    const okB = Math.abs(b-expB) <= Math.max(tolFrac*Math.abs(expB), 0.5);
+    if(okA && okB){
+      fb.className = 'feedback show ok';
+      fb.textContent = 'Correct — ' + note;
+    } else {
+      fb.className = 'feedback show no';
+      let msg = 'Not quite yet. ';
+      if(!okA) msg += 'Check your distance calculation. ';
+      if(!okB) msg += 'Check your displacement calculation. ';
+      msg += 'Open "Show solution" if you want a walkthrough.';
+      fb.textContent = msg;
+    }
+  }
+
+  document.getElementById('check2').addEventListener('click', ()=>{
+    checkPair('q2a','q2b', 2*Math.PI*63, 0, 'fb2', 0.02, 'the runner returns exactly to the start, so displacement is zero regardless of the distance covered.');
+  });
+  document.getElementById('check3').addEventListener('click', ()=>{
+    checkPair('q3a','q3b', 14, 10, 'fb3', 0.02, 'distance simply adds the legs (6 + 8), while displacement uses the straight-line hypotenuse (√(6²+8²)).');
+  });
+  document.getElementById('check4').addEventListener('click', ()=>{
+    checkPair('q4a','q4b', 330, 150, 'fb4', 0.02, 'distance sums both legs (240 + 90), while displacement is the signed net change (240 − 90).');
+  });
+})();
+</script>
+</body>
+</html>

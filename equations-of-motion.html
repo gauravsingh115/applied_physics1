@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equations of Motion — The SUVAT Solver</title>
+<style>
+  :root{
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #ffffff;
+    --border: #ddd;
+    --border-soft: #eee;
+    --text: #111111;
+    --text-muted: #666666;
+    --text-dim: #999999;
+    --u: #111111;
+    --v: #111111;
+    --a: #111111;
+    --v-dim: #eeeeee;
+    --a-dim: #eeeeee;
+    --bad: #c1373f;
+    --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ max-width: 1180px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+
+  header{ margin-bottom: 30px; max-width: 780px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; }
+  h1{
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em;
+  }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 660px; }
+
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .concept-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 18px 18px 16px; }
+  .concept-card.c1{ border-top: 2px solid var(--v); }
+  .concept-card.c2{ border-top: 2px solid var(--a); }
+  .concept-card.c3{ border-top: 2px solid var(--u); }
+  .concept-card .icon{ margin-bottom: 10px; }
+  .concept-card h3{ font-family: var(--font-display); font-size: 15.5px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 13px; line-height: 1.55; margin: 6px 0 0; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 14px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 0; padding: 8px 11px; margin-top: 10px; display: block; text-align: center; font-weight: 600; }
+
+  .solver-panel{ background: var(--panel-2); border: 1px solid var(--border); border-radius: 0; padding: 20px 20px 18px; }
+  .preset-row{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  button{
+    font-family: var(--font-body); font-weight: 600; font-size: 13px; border-radius: 0;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    padding: 7px 13px; cursor: pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  button:hover{ border-color: rgba(0,0,0,0.32); background: #f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button:focus-visible{ outline: 2px solid var(--v); outline-offset: 2px; }
+  button:disabled{ opacity: 0.5; cursor: default; }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background: #333; }
+  button.ghost{ background: transparent; font-weight: 500; font-size: 12.5px; padding: 6px 11px; color: var(--text-muted); }
+
+  .field-grid{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+  .var-field{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 10px 12px; }
+  .var-field label{ display: block; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .var-field label b{ color: var(--text); font-size: 14px; }
+  .var-field input{ width: 100%; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 14px; padding: 6px 8px; }
+  .var-field input:focus-visible{ outline: 2px solid var(--v); outline-offset: 1px; }
+  .var-field .unit{ font-size: 10.5px; color: var(--text-dim); display: block; margin-top: 4px; }
+  .var-field.solved input{ border-color: var(--text); background: var(--border-soft); color: var(--text); font-weight: 600; }
+
+  .solve-row{ display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+
+  .result-box{ margin-top: 14px; padding: 14px 16px; border-radius: 0; font-size: 13.5px; line-height: 1.6; display: none; }
+  .result-box.show{ display: block; }
+  .result-box.ok{ background: var(--border-soft); border: 1px solid var(--border); }
+  .result-box.err{ background: rgba(193,55,63,0.06); border: 1px solid rgba(193,55,63,0.25); color: var(--bad); }
+  .result-box .steps{ font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+  .result-box .steps code{ color: var(--text); }
+
+  .multi-solutions{ display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .sol-card{ background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; padding: 10px 13px; font-family: var(--font-mono); font-size: 12.5px; cursor: pointer; }
+  .sol-card:hover{ border-color: var(--text); }
+  .sol-card.active{ border-color: var(--text); background: var(--border-soft); }
+
+  .viz-block{ margin-top: 18px; }
+  svg#trackSvg{ width: 100%; height: auto; display: block; background: var(--bg); border-radius: 0; margin-bottom: 10px; }
+  .track-tick{ stroke: rgba(0,0,0,0.18); stroke-width: 1; }
+  .track-line{ stroke: rgba(0,0,0,0.28); stroke-width: 1.5; }
+  .tick-label{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-dim); }
+  .path-trail{ stroke: var(--v); stroke-width: 4; stroke-linecap: round; opacity: 0.5; }
+  .car-body{ fill: var(--v); }
+  .car-glow{ fill: var(--v); opacity: 0.2; }
+  #carGroup{ transition: transform 0.4s cubic-bezier(.4,0,.2,1); }
+  #carGroup.playing{ transition: none; }
+  @media (prefers-reduced-motion: reduce){ #carGroup{ transition: none; } }
+  .end-label{ font-family: var(--font-mono); font-size: 11px; fill: var(--text-muted); }
+
+  svg#vgSvg{ width: 100%; height: auto; display: block; background: var(--bg); border: 1px solid var(--border); border-radius: 0; }
+  .vg-grid{ stroke: rgba(0,0,0,0.06); stroke-width: 1; }
+  .vg-zero{ stroke: rgba(0,0,0,0.3); stroke-width: 1; stroke-dasharray: 3 3; }
+  .vg-axis{ stroke: rgba(0,0,0,0.2); stroke-width: 1; }
+  .vg-tick{ font-family: var(--font-mono); font-size: 10px; fill: var(--text-dim); }
+  .vg-line{ fill:none; stroke: var(--v); stroke-width: 2.4; }
+  .vg-area{ fill: var(--v); opacity: 0.2; }
+  .vg-label{ font-family: var(--font-mono); font-size: 11px; fill: var(--text-muted); }
+
+  .problems{ display: flex; flex-direction: column; gap: 14px; }
+  .problem{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin: 0 0 8px; }
+  .problem .ptext{ font-size: 15px; line-height: 1.55; margin: 0 0 14px; }
+  .problem .ptext em{ color: var(--text); font-style: normal; font-weight: 600; }
+
+  .answer-row{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .answer-field{ display: flex; align-items: center; gap: 6px; }
+  .answer-field label{ font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width: 96px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 14px; padding: 6px 9px; }
+  .answer-field input:focus-visible{ outline: 2px solid var(--v); outline-offset: 1px; }
+  .answer-field .unit{ font-size: 12.5px; color: var(--text-dim); }
+
+  .feedback{ font-size: 13.5px; margin-top: 8px; line-height: 1.55; display: none; padding: 10px 12px; border-radius: 0; }
+  .feedback.show{ display: block; }
+  .feedback.ok{ background: rgba(107,222,142,0.08); color: var(--good); border: 1px solid rgba(107,222,142,0.25); }
+  .feedback.no{ background: rgba(255,122,107,0.08); color: var(--bad); border: 1px solid rgba(255,122,107,0.25); }
+
+  details.solution{ margin-top: 6px; }
+  details.solution summary{ cursor: pointer; font-size: 13px; color: var(--v); font-weight: 600; list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.solution summary::-webkit-details-marker{ display: none; }
+  details.solution summary::before{ content: '›'; display: inline-block; transition: transform .15s ease; font-size: 16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+
+  .challenge{ border: 1px dashed var(--border); background: transparent; border-radius: 0; padding: 16px 20px; }
+  .challenge .ptext{ margin-bottom: 4px; }
+  .challenge .pnum{ color: var(--text); }
+
+  footer{ margin-top: 40px; text-align: center; color: var(--text-dim); font-size: 12.5px; font-family: var(--font-mono); }
+
+  @media (max-width: 900px){
+    .concepts{ grid-template-columns: 1fr; }
+    .field-grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="distance-displacement.html">Distance &amp; Displacement</a>
+    <a href="speed-velocity.html">Speed &amp; Velocity</a>
+    <a href="acceleration.html">Acceleration</a>
+    <a href="jerk.html">Jerk</a>
+    <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+    <a href="motion-in-a-straight-line.html">Motion in a Straight Line</a>
+    <a class="here" href="equations-of-motion.html">Equations of Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">kinematics — equations of motion</p>
+    <h1>Five quantities, two equations, endless problems</h1>
+    <p>Whenever acceleration is constant, initial velocity, final velocity, acceleration, time, and displacement are all locked together. Know any three, and the other two are no longer a mystery — just algebra. Fill in three values below and let the solver find the rest.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card c1">
+        <div class="icon">
+          <svg width="60" height="34" viewBox="0 0 60 34" fill="none">
+            <line x1="4" y1="30" x2="4" y2="4" stroke="#999" stroke-width="1"/>
+            <line x1="4" y1="30" x2="56" y2="30" stroke="#999" stroke-width="1"/>
+            <line x1="8" y1="24" x2="48" y2="8" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>Velocity is a straight line</h3>
+        <p>With steady acceleration, v-t is a straight line: start height u, slope a.</p>
+        <span class="formula">v = u + at</span>
+      </div>
+      <div class="concept-card c2">
+        <div class="icon">
+          <svg width="60" height="34" viewBox="0 0 60 34" fill="none">
+            <polygon points="8,30 8,20 48,8 48,30" fill="#999" opacity="0.28"/>
+            <line x1="8" y1="30" x2="8" y2="20" stroke="#111" stroke-width="2"/>
+            <line x1="8" y1="20" x2="48" y2="8" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="4" y1="30" x2="52" y2="30" stroke="#999" stroke-width="1"/>
+          </svg>
+        </div>
+        <h3>Displacement is the area</h3>
+        <p>The area under that line splits into a rectangle (ut) and a triangle (½at²).</p>
+        <span class="formula">s = ut + ½at²</span>
+      </div>
+      <div class="concept-card c3">
+        <div class="icon">
+          <svg width="60" height="34" viewBox="0 0 60 34" fill="none">
+            <path d="M10 26 Q 30 4 50 26" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <circle cx="10" cy="26" r="2.5" fill="#111"/>
+            <circle cx="50" cy="26" r="2.5" fill="#111"/>
+          </svg>
+        </div>
+        <h3>Eliminate time entirely</h3>
+        <p>Combine the two equations above and t cancels out completely.</p>
+        <span class="formula">v² = u² + 2as</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="solver">
+    <div class="section-head">
+      <h2>Solve for the rest</h2>
+      <p>Fill in exactly three of the five fields — u, v, a, t, s — and leave two blank. The solver picks whichever equations apply and fills them in, showing its working.</p>
+    </div>
+
+    <div class="solver-panel">
+      <div class="preset-row">
+        <button data-preset="basic">From 5 m/s, accelerating</button>
+        <button data-preset="brake">Braking to a stop</button>
+        <button data-preset="fromrest">Starting from rest</button>
+        <button data-preset="twice">Thrown ball — two answers</button>
+        <button id="clearBtn" class="ghost">Clear all</button>
+      </div>
+
+      <div class="field-grid">
+        <div class="var-field" id="field-u"><label>initial velocity <b>u</b></label><input type="text" id="u" placeholder="?"><span class="unit">m/s</span></div>
+        <div class="var-field" id="field-v"><label>final velocity <b>v</b></label><input type="text" id="v" placeholder="?"><span class="unit">m/s</span></div>
+        <div class="var-field" id="field-a"><label>acceleration <b>a</b></label><input type="text" id="a" placeholder="?"><span class="unit">m/s²</span></div>
+        <div class="var-field" id="field-t"><label>time <b>t</b></label><input type="text" id="t" placeholder="?"><span class="unit">s</span></div>
+        <div class="var-field" id="field-s"><label>displacement <b>s</b></label><input type="text" id="s" placeholder="?"><span class="unit">m</span></div>
+      </div>
+
+      <div class="solve-row">
+        <button id="solveBtn" class="primary">Solve</button>
+        <button id="playBtn" style="display:none;">▶ Play the motion</button>
+      </div>
+
+      <div class="result-box" id="resultBox"></div>
+
+      <div class="viz-block" id="vizBlock" style="display:none;">
+        <svg id="trackSvg" viewBox="0 0 1100 130" xmlns="http://www.w3.org/2000/svg"></svg>
+        <svg id="vgSvg" viewBox="0 0 1100 190" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself — or verify with the solver above.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1</p>
+        <p class="ptext">A car moving at <em>5 m/s</em> accelerates at <em>2 m/s²</em> for <em>4 s</em>. Find its final velocity and the distance it covers.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q1a">v =</label><input type="text" id="q1a" placeholder="?"><span class="unit">m/s</span></div>
+          <div class="answer-field"><label for="q1b">s =</label><input type="text" id="q1b" placeholder="?"><span class="unit">m</span></div>
+          <button id="check1">Check</button>
+        </div>
+        <div class="feedback" id="fb1"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>v = u + at = 5 + (2)(4) = 13 m/s</code>. <code>s = ut + ½at² = 5(4) + ½(2)(16) = 20 + 16 = 36 m</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">Something is dropped so it moves downward at <em>4 m/s</em> already, then accelerates downward at <em>10 m/s²</em>. How far does it fall in the next <em>3 s</em>?</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">s =</label><input type="text" id="q2a" placeholder="?"><span class="unit">m</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>s = ut + ½at² = 4(3) + ½(10)(9) = 12 + 45 = 57 m</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A car moving at <em>20 m/s</em> brakes, decelerating at <em>5 m/s²</em>. How far does it travel before stopping?</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">s =</label><input type="text" id="q3a" placeholder="?"><span class="unit">m</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">No time is given, so eliminate it: <code>v² = u² + 2as → 0 = 400 + 2(−5)s → s = 40 m</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4 — two answers</p>
+        <p class="ptext">A ball is thrown straight up at <em>20 m/s</em>, with gravity giving it <em>−10 m/s²</em>. At what time(s) is it at a height of <em>15 m</em>?</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">t =</label><input type="text" id="q4a" placeholder="?"><span class="unit">s</span></div>
+          <div class="answer-field"><label for="q4b">and t =</label><input type="text" id="q4b" placeholder="?"><span class="unit">s</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>15 = 20t − 5t²</code> rearranges to <code>5t² − 20t + 15 = 0</code>, or <code>t² − 4t + 3 = 0</code>, giving <code>t = 1 s</code> and <code>t = 3 s</code> — once on the way up, once on the way down.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the solver</p>
+        <p class="ptext">Load "Thrown ball — two answers" above and hit Solve. You'll get the same t = 1 s and t = 3 s from Problem 4. Then try changing the height to something above the ball's actual peak — what does the solver tell you, and why does that make sense?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>positive direction points right / up, unless stated otherwise</footer>
+</div>
+
+<script>
+(function(){
+  const EPS = 1e-9;
+  const fields = ['u','v','a','t','s'];
+
+  function solveSUVAT(known){
+    const missing = fields.filter(k=>known[k]===null);
+    if(missing.length!==2) return {error:'Fill in exactly three values, and leave exactly two blank.'};
+    const key = missing.slice().sort().join(',');
+    const {u,v,a,t,s} = known;
+    switch(key){
+      case 'a,v': {
+        if(Math.abs(t)<EPS) return {error:'Need t ≠ 0 to solve for these — try a different pair of blanks.'};
+        const aa = 2*(s-u*t)/(t*t);
+        return {a:aa, v:u+aa*t, eq:'a = 2(s − ut) ⁄ t²,  then  v = u + at'};
+      }
+      case 'a,s': {
+        if(Math.abs(t)<EPS) return {error:'Need t ≠ 0 to solve for these.'};
+        const aa=(v-u)/t;
+        return {a:aa, s:(u+v)/2*t, eq:'a = (v − u) ⁄ t,  then  s = ½(u + v)t'};
+      }
+      case 'a,t': {
+        if(Math.abs(s)<EPS) return {error:'Need s ≠ 0 to solve for these.'};
+        const aa=(v*v-u*u)/(2*s);
+        if(Math.abs(aa)<EPS) return {error:'These values give zero acceleration with an undetermined time — try different values.'};
+        const tt=(v-u)/aa;
+        if(tt<-EPS) return {error:'These values give a negative time — check your signs.'};
+        return {a:aa, t:Math.max(0,tt), eq:'a = (v² − u²) ⁄ 2s,  then  t = (v − u) ⁄ a'};
+      }
+      case 'a,u': {
+        if(Math.abs(t)<EPS) return {error:'Need t ≠ 0 to solve for these.'};
+        const aa=2*(v*t-s)/(t*t);
+        return {a:aa, u:v-aa*t, eq:'a = 2(vt − s) ⁄ t²,  then  u = v − at'};
+      }
+      case 's,v': {
+        return {v:u+a*t, s:u*t+0.5*a*t*t, eq:'v = u + at,  then  s = ut + ½at²'};
+      }
+      case 't,v': {
+        if(Math.abs(a)<EPS){
+          if(Math.abs(u)<EPS) return {error:'Zero acceleration and zero initial velocity cannot cover a distance.'};
+          const tt=s/u;
+          if(tt<-EPS) return {error:'These values give a negative time — check your signs.'};
+          return {t:Math.max(0,tt), v:u, eq:'a = 0, so v = u and t = s ⁄ u'};
+        }
+        const A=0.5*a, B=u, C=-s;
+        const disc=B*B-4*A*C;
+        if(disc<-EPS) return {error:'No real solution — this combination is not physically possible.'};
+        const sq=Math.sqrt(Math.max(0,disc));
+        const roots=[(-B+sq)/(2*A),(-B-sq)/(2*A)].filter(r=>r>=-EPS).map(r=>Math.max(0,r));
+        const uniq=[...new Set(roots.map(r=>r.toFixed(6)))].map(Number);
+        if(uniq.length===0) return {error:'No non-negative time solves this — check your values.'};
+        if(uniq.length===1) return {t:uniq[0], v:u+a*uniq[0], eq:'s = ut + ½at² solved for t (quadratic),  then  v = u + at'};
+        return {multiple: uniq.sort((x,y)=>x-y).map(tt=>({u,a,s,t:tt, v:u+a*tt})), eq:'s = ut + ½at² solved for t — two valid times'};
+      }
+      case 'u,v': {
+        if(Math.abs(t)<EPS) return {error:'Need t ≠ 0 to solve for these.'};
+        const uu=(s-0.5*a*t*t)/t;
+        return {u:uu, v:uu+a*t, eq:'u = (s − ½at²) ⁄ t,  then  v = u + at'};
+      }
+      case 's,t': {
+        if(Math.abs(a)<EPS){
+          if(Math.abs(v-u)<EPS) return {error:'With a = 0 and u = v, time cannot be determined from these values alone.'};
+          return {error:'Zero acceleration requires u = v — these values are inconsistent.'};
+        }
+        const tt=(v-u)/a;
+        if(tt<-EPS) return {error:'These values give a negative time — check your signs.'};
+        return {t:Math.max(0,tt), s:(u+v)/2*Math.max(0,tt), eq:'t = (v − u) ⁄ a,  then  s = ½(u + v)t'};
+      }
+      case 't,u': {
+        if(Math.abs(a)<EPS){
+          if(Math.abs(v)<EPS) return {error:'Zero acceleration and zero final velocity cannot cover a distance.'};
+          const tt=s/v;
+          if(tt<-EPS) return {error:'These values give a negative time — check your signs.'};
+          return {t:Math.max(0,tt), u:v, eq:'a = 0, so u = v and t = s ⁄ v'};
+        }
+        const A=0.5*a, B=-v, C=s;
+        const disc=B*B-4*A*C;
+        if(disc<-EPS) return {error:'No real solution — this combination is not physically possible.'};
+        const sq=Math.sqrt(Math.max(0,disc));
+        const roots=[(-B+sq)/(2*A),(-B-sq)/(2*A)].filter(r=>r>=-EPS).map(r=>Math.max(0,r));
+        const uniq=[...new Set(roots.map(r=>r.toFixed(6)))].map(Number);
+        if(uniq.length===0) return {error:'No non-negative time solves this — check your values.'};
+        if(uniq.length===1) return {t:uniq[0], u:v-a*uniq[0], eq:'s = vt − ½at² solved for t (quadratic),  then  u = v − at'};
+        return {multiple: uniq.sort((x,y)=>x-y).map(tt=>({v,a,s,t:tt, u:v-a*tt})), eq:'s = vt − ½at² solved for t — two valid times'};
+      }
+      case 's,u': {
+        const uu=v-a*t;
+        return {u:uu, s:(uu+v)/2*t, eq:'u = v − at,  then  s = ½(u + v)t'};
+      }
+      default: return {error:'Could not determine which values to solve for.'};
+    }
+  }
+
+  // -------- UI wiring --------
+  const inputs = {}; fields.forEach(f=> inputs[f]=document.getElementById(f));
+  const resultBox = document.getElementById('resultBox');
+  const vizBlock = document.getElementById('vizBlock');
+  const playBtn = document.getElementById('playBtn');
+  let currentFull = null; // {u,v,a,t,s} fully resolved, used for viz
+
+  function readKnown(){
+    const known = {};
+    fields.forEach(f=>{
+      const raw = inputs[f].value.trim();
+      known[f] = raw==='' ? null : parseFloat(raw);
+      document.getElementById('field-'+f).classList.remove('solved');
+    });
+    return known;
+  }
+
+  function fmt(n){ return (Math.round(n*1000)/1000).toString(); }
+
+  function showResult(known, res){
+    if(res.error){
+      resultBox.className='result-box show err';
+      resultBox.textContent = res.error;
+      vizBlock.style.display='none'; playBtn.style.display='none';
+      currentFull=null;
+      return;
+    }
+    if(res.multiple){
+      resultBox.className='result-box show ok';
+      resultBox.innerHTML = `Two valid solutions exist for these values: <div class="steps">${res.eq}</div>` +
+        `<div class="multi-solutions" id="multiSol"></div>`;
+      const wrap = document.getElementById('multiSol');
+      res.multiple.forEach((sol,i)=>{
+        const div = document.createElement('div');
+        div.className='sol-card'+(i===0?' active':'');
+        const missing = fields.filter(f=>known[f]===null);
+        div.textContent = missing.map(f=>f+' = '+fmt(sol[f])).join(',  ');
+        div.addEventListener('click', ()=>{
+          document.querySelectorAll('.sol-card').forEach(c=>c.classList.remove('active'));
+          div.classList.add('active');
+          const full = {u:sol.u, v:sol.v, a:sol.a, t:sol.t, s:sol.s};
+          currentFull = full;
+          renderViz(full);
+        });
+        wrap.appendChild(div);
+      });
+      const first = res.multiple[0];
+      currentFull = {u:first.u, v:first.v, a:first.a, t:first.t, s:first.s};
+      vizBlock.style.display='block'; playBtn.style.display='inline-block';
+      renderViz(currentFull);
+      return;
+    }
+    // single solution: merge known + solved
+    const full = {...known, ...res};
+    delete full.eq;
+    resultBox.className='result-box show ok';
+    const missing = fields.filter(f=>known[f]===null);
+    resultBox.innerHTML = `Solved: ${missing.map(f=>'<b>'+f+' = '+fmt(full[f])+'</b>').join(', ')}<div class="steps">${res.eq}</div>`;
+    missing.forEach(f=>{
+      inputs[f].value = fmt(full[f]);
+      document.getElementById('field-'+f).classList.add('solved');
+    });
+    currentFull = full;
+    vizBlock.style.display='block'; playBtn.style.display='inline-block';
+    renderViz(full);
+  }
+
+  document.getElementById('solveBtn').addEventListener('click', ()=>{
+    stopPlaying();
+    const known = readKnown();
+    const res = solveSUVAT(known);
+    showResult(known, res);
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', ()=>{
+    stopPlaying();
+    fields.forEach(f=>{ inputs[f].value=''; document.getElementById('field-'+f).classList.remove('solved'); });
+    resultBox.className='result-box'; resultBox.innerHTML='';
+    vizBlock.style.display='none'; playBtn.style.display='none';
+    currentFull=null;
+  });
+
+  const presets = {
+    basic:   {u:5, a:2, t:4},
+    brake:   {u:20, a:-5, v:0},
+    fromrest:{u:0, a:3, t:5},
+    twice:   {u:20, a:-10, s:15},
+  };
+  document.querySelectorAll('[data-preset]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      stopPlaying();
+      fields.forEach(f=>{ inputs[f].value=''; document.getElementById('field-'+f).classList.remove('solved'); });
+      const p = presets[btn.dataset.preset];
+      Object.keys(p).forEach(k=> inputs[k].value = p[k]);
+      const known = readKnown();
+      const res = solveSUVAT(known);
+      showResult(known, res);
+    });
+  });
+
+  // -------- visualization: track + v-t graph for a single constant-acceleration motion --------
+  const trackSvg = document.getElementById('trackSvg');
+  const TW=1100, TH=130, padL=40, padR=40, trackY=70;
+  trackSvg.innerHTML = '<g id="trackBg"></g><g id="carGroup"><circle class="car-glow" r="13"/><circle class="car-body" r="7"/></g>';
+  const trackBg = document.getElementById('trackBg');
+  const carGroup = document.getElementById('carGroup');
+  let scrX = x=>TW/2+x*10;
+
+  function niceStep(range){
+    const raw=Math.max(range,0.001)/6;
+    const mag=Math.pow(10,Math.floor(Math.log10(raw)));
+    const options=[1,2,5,10].map(m=>m*mag);
+    return options.reduce((best,o)=>Math.abs(o-raw)<Math.abs(best-raw)?o:best, options[0]);
+  }
+  function xOfT(F,t){ return F.u*t + 0.5*F.a*t*t; }
+  function vOfT(F,t){ return F.u + F.a*t; }
+
+  function renderViz(F){
+    if(!F || F.t<=0){ vizBlock.style.display='none'; return; }
+    // track
+    const x0=0, x1=xOfT(F,F.t);
+    let minX=Math.min(x0,x1), maxX=Math.max(x0,x1);
+    if(maxX-minX<2){ const mid=(maxX+minX)/2; minX=mid-1; maxX=mid+1; }
+    const pad=(maxX-minX)*0.2; minX-=pad; maxX+=pad;
+    const pxPerM=(TW-padL-padR)/(maxX-minX);
+    scrX = x => padL+(x-minX)*pxPerM;
+
+    let s='';
+    const step = niceStep(maxX-minX);
+    for(let v2=Math.ceil(minX/step)*step; v2<=maxX; v2+=step){
+      const x=scrX(v2);
+      s += `<line class="track-tick" x1="${x.toFixed(1)}" y1="${trackY-8}" x2="${x.toFixed(1)}" y2="${trackY+8}"/>`;
+      s += `<text class="tick-label" x="${x.toFixed(1)}" y="${trackY+24}" text-anchor="middle">${v2.toFixed(step<1?1:0)}</text>`;
+    }
+    s += `<line class="track-line" x1="${padL}" y1="${trackY}" x2="${TW-padR}" y2="${trackY}"/>`;
+    s += `<line class="path-trail" x1="${scrX(x0).toFixed(1)}" y1="${trackY}" x2="${scrX(x1).toFixed(1)}" y2="${trackY}"/>`;
+    s += `<text class="end-label" x="${scrX(x0).toFixed(1)}" y="${trackY-16}" text-anchor="middle">start</text>`;
+    s += `<text class="end-label" x="${scrX(x1).toFixed(1)}" y="${trackY-16}" text-anchor="middle">t = ${fmt(F.t)}s</text>`;
+    trackBg.innerHTML = s;
+    carGroup.style.transform = `translate(${scrX(x0).toFixed(1)}px, ${trackY}px)`;
+
+    // v-t graph with shaded area = s
+    const vgSvg = document.getElementById('vgSvg');
+    const cw=1100, ch=190, cpadL=52, cpadR=20, cpadT=16, cpadB=30;
+    const plotW=cw-cpadL-cpadR, plotH=ch-cpadT-cpadB;
+    const v0=F.u, v1=vOfT(F,F.t);
+    let minV=Math.min(0,v0,v1), maxV=Math.max(0,v0,v1);
+    if(maxV-minV<2){ minV-=1; maxV+=1; }
+    const padV=(maxV-minV)*0.14; minV-=padV; maxV+=padV;
+    function xC(t){ return cpadL+(t/F.t)*plotW; }
+    function yC(v2){ return cpadT+plotH-(v2-minV)/(maxV-minV)*plotH; }
+
+    let g='';
+    const yTicks=4;
+    for(let k=0;k<=yTicks;k++){
+      const val=minV+(k/yTicks)*(maxV-minV), y=yC(val);
+      g += `<line class="vg-grid" x1="${cpadL}" y1="${y}" x2="${cw-cpadR}" y2="${y}"/>`;
+      g += `<text class="vg-tick" x="${cpadL-8}" y="${y+3}" text-anchor="end">${val.toFixed(1)}</text>`;
+    }
+    if(minV<0 && maxV>0) g += `<line class="vg-zero" x1="${cpadL}" y1="${yC(0)}" x2="${cw-cpadR}" y2="${yC(0)}"/>`;
+    g += `<line class="vg-axis" x1="${cpadL}" y1="${cpadT}" x2="${cpadL}" y2="${ch-cpadB}"/>`;
+    g += `<line class="vg-axis" x1="${cpadL}" y1="${ch-cpadB}" x2="${cw-cpadR}" y2="${ch-cpadB}"/>`;
+    g += `<text class="vg-tick" x="${cpadL}" y="${ch-8}">0s</text>`;
+    g += `<text class="vg-tick" x="${cw-cpadR}" y="${ch-8}" text-anchor="end">${fmt(F.t)}s</text>`;
+    g += `<text class="vg-label" x="${cpadL+8}" y="${cpadT+14}">shaded area = s = ${fmt(F.s)} m</text>`;
+    g += `<path class="vg-area" d="M${xC(0).toFixed(1)} ${yC(0).toFixed(1)} L${xC(0).toFixed(1)} ${yC(v0).toFixed(1)} L${xC(F.t).toFixed(1)} ${yC(v1).toFixed(1)} L${xC(F.t).toFixed(1)} ${yC(0).toFixed(1)} Z"/>`;
+    g += `<path class="vg-line" d="M${xC(0).toFixed(1)} ${yC(v0).toFixed(1)} L${xC(F.t).toFixed(1)} ${yC(v1).toFixed(1)}"/>`;
+    vgSvg.innerHTML = g;
+
+    vizBlock._scale = {xOfT:(t)=>xOfT(F,t), scrX};
+    vizBlock.style.display='block';
+  }
+
+  // -------- play animation --------
+  let playing=false, rafId=null, playStartTs=null;
+  function stopPlaying(){
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId=null; playing=false; playStartTs=null;
+    carGroup.classList.remove('playing');
+    playBtn.disabled=false; playBtn.textContent='▶ Play the motion';
+  }
+  playBtn.addEventListener('click', ()=>{
+    if(!currentFull || currentFull.t<=0 || playing) return;
+    const F = currentFull;
+    playing=true; playStartTs=null;
+    carGroup.classList.add('playing');
+    playBtn.disabled=true; playBtn.textContent='● Playing…';
+    const MS_PER_SEC = 500;
+    function frame(ts){
+      if(!playStartTs) playStartTs=ts;
+      const t=(ts-playStartTs)/MS_PER_SEC;
+      if(t<F.t){
+        carGroup.style.transform = `translate(${scrX(xOfT(F,t)).toFixed(1)}px, ${trackY}px)`;
+        rafId=requestAnimationFrame(frame);
+      } else {
+        carGroup.style.transform = `translate(${scrX(xOfT(F,F.t)).toFixed(1)}px, ${trackY}px)`;
+        playing=false; rafId=null;
+        carGroup.classList.remove('playing');
+        playBtn.disabled=false; playBtn.textContent='▶ Replay';
+      }
+    }
+    rafId=requestAnimationFrame(frame);
+  });
+
+  // -------- practice problems --------
+  function checkOne(id, exp, fbId, tol, note){
+    const val=parseFloat(document.getElementById(id).value);
+    const fb=document.getElementById(fbId);
+    if(isNaN(val)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+    const ok=Math.abs(val-exp)<=tol;
+    fb.className='feedback show '+(ok?'ok':'no');
+    fb.textContent = ok?('Correct — '+note):'Not quite yet. Open "Show solution" for a walkthrough.';
+  }
+  function checkPair(idA,idB,expA,expB,fbId,tol,note){
+    const a=parseFloat(document.getElementById(idA).value), b=parseFloat(document.getElementById(idB).value);
+    const fb=document.getElementById(fbId);
+    if(isNaN(a)||isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+    const okA=Math.abs(a-expA)<=tol, okB=Math.abs(b-expB)<=tol;
+    if(okA&&okB){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+    else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" for a walkthrough.'; }
+  }
+  function checkEitherOrder(idA,idB,exp1,exp2,fbId,tol,note){
+    const a=parseFloat(document.getElementById(idA).value), b=parseFloat(document.getElementById(idB).value);
+    const fb=document.getElementById(fbId);
+    if(isNaN(a)||isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+    const forward = Math.abs(a-exp1)<=tol && Math.abs(b-exp2)<=tol;
+    const backward = Math.abs(a-exp2)<=tol && Math.abs(b-exp1)<=tol;
+    if(forward||backward){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+    else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" for a walkthrough.'; }
+  }
+
+  document.getElementById('check1').addEventListener('click', ()=>checkPair('q1a','q1b', 13, 36, 'fb1', 0.2, 'v = u + at, then s = ut + ½at².'));
+  document.getElementById('check2').addEventListener('click', ()=>checkOne('q2a', 57, 'fb2', 0.5, 's = ut + ½at² with u = 4, a = 10, t = 3.'));
+  document.getElementById('check3').addEventListener('click', ()=>checkOne('q3a', 40, 'fb3', 0.5, 'v² = u² + 2as with v = 0.'));
+  document.getElementById('check4').addEventListener('click', ()=>checkEitherOrder('q4a','q4b', 1, 3, 'fb4', 0.15, 'the ball passes 15 m once on the way up (t = 1 s) and once on the way down (t = 3 s).'));
+})();
+</script>
+</body>
+</html>

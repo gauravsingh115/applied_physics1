@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motion in a Straight Line — Two Travelers</title>
+<style>
+  :root{
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #ffffff;
+    --border: #ddd;
+    --border-soft: #eee;
+    --text: #111111;
+    --text-muted: #666666;
+    --text-dim: #999999;
+    --colorA: #111111;
+    --colorA-dim: #eeeeee;
+    --colorB: #666666;
+    --colorB-dim: #eeeeee;
+    --rel: #111111;
+    --rel-dim: #eeeeee;
+    --bad: #c1373f;
+    --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ max-width: 1180px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+
+  header{ margin-bottom: 30px; max-width: 780px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; }
+  h1{
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em;
+  }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 660px; }
+
+  .concepts{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .concept-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 22px 22px 20px; }
+  .concept-card.pos{ border-top: 2px solid var(--colorA); }
+  .concept-card.rel{ border-top: 2px solid var(--rel); }
+  .concept-card .icon{ margin-bottom: 14px; }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card strong{ color: var(--text); font-weight: 600; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 0; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+
+  .sim-wrap{ display: grid; grid-template-columns: 1.55fr 1fr; gap: 18px; align-items: start; }
+  .track-panel{ background: var(--panel-2); border: 1px solid var(--border); border-radius: 0; padding: 16px 16px 14px; }
+  .traveler-rows{ display: flex; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 12px; }
+  .traveler-row{ display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 8px 12px; }
+  .traveler-row .badge{ font-family: var(--font-mono); font-weight: 700; font-size: 12.5px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg); flex-shrink: 0; }
+  .traveler-row.a .badge{ background: var(--colorA); }
+  .traveler-row.b .badge{ background: var(--colorB); }
+  .traveler-row label{ font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
+  .traveler-row input[type="number"]{ width: 60px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 4px 6px; }
+  .traveler-row .unit{ font-size: 11.5px; color: var(--text-dim); }
+
+  button{
+    font-family: var(--font-body); font-weight: 600; font-size: 13px; border-radius: 0;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    padding: 7px 13px; cursor: pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  button:hover{ border-color: rgba(0,0,0,0.32); background: #f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button:focus-visible{ outline: 2px solid var(--rel); outline-offset: 2px; }
+  button:disabled{ opacity: 0.5; cursor: default; }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background: #333; }
+  button.ghost{ background: transparent; font-weight: 500; font-size: 12.5px; padding: 6px 11px; color: var(--text-muted); }
+  .preset-row{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+
+  svg#trackSvg{ width: 100%; height: auto; display: block; background: var(--bg); border-radius: 0; }
+  .track-tick{ stroke: rgba(0,0,0,0.18); stroke-width: 1; }
+  .track-line{ stroke: rgba(0,0,0,0.28); stroke-width: 1.5; }
+  .tick-label{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-dim); }
+  .origin-label{ font-family: var(--font-mono); font-size: 11.5px; fill: var(--text-muted); font-weight: 600; }
+  .path-a{ stroke: var(--text); stroke-width: 2.5; opacity: 0.6; }
+  .path-b{ stroke: var(--text); stroke-width: 2.5; opacity: 0.6; stroke-dasharray: 4 4; }
+  .marker-a{ fill: var(--text); }
+  .marker-b{ fill: #fff; stroke: var(--text); stroke-width: 1.5; }
+  .marker-glow-a{ fill: var(--text); opacity: 0.15; }
+  .marker-glow-b{ fill: var(--text); opacity: 0.1; }
+  .marker-label{ font-family: var(--font-mono); font-size: 11px; font-weight: 700; }
+  #dotA, #dotB{ transition: transform 0.4s cubic-bezier(.4,0,.2,1); }
+  #dotA.playing, #dotB.playing{ transition: none; }
+  @media (prefers-reduced-motion: reduce){ #dotA, #dotB{ transition: none; } }
+  .meet-marker line{ stroke: var(--text); stroke-width: 1.6; stroke-dasharray: 3 3; }
+  .meet-marker text{ font-family: var(--font-mono); font-size: 11px; fill: var(--text); font-weight: 600; }
+
+  .side-col{ display: flex; flex-direction: column; gap: 14px; }
+  .stat-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 16px 18px; }
+  .stat-card .card-title{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin: 0 0 12px; }
+  .stat-row{ display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 3px; }
+  .stat-label{ font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  .stat-value{ font-family: var(--font-mono); font-size: 18px; font-weight: 600; }
+  .stat-value.a{ color: var(--colorA); }
+  .stat-value.b{ color: var(--colorB); }
+  .stat-value.rel{ color: var(--rel); font-size: 21px; }
+  .stat-sub{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .rel-block{ margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-soft); }
+  .elapsed-line{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-muted); margin-top: 10px; }
+  .elapsed-line b{ color: var(--text); }
+
+  .meet-callout{ margin-top: 12px; padding: 10px 12px; border-radius: 0; font-size: 13px; line-height: 1.5; border: 1px solid var(--border); }
+  .meet-callout.yes{ background: var(--border-soft); color: var(--text); border-color: var(--text); }
+  .meet-callout.no{ background: transparent; color: var(--text-muted); border-color: var(--border-soft); }
+
+  .chart-panel{ background: var(--panel-2); border: 1px solid var(--border); border-radius: 0; padding: 18px 18px 10px; }
+  .chart-legend{ display: flex; gap: 18px; margin-bottom: 8px; font-size: 12.5px; font-family: var(--font-mono); color: var(--text-muted); }
+  .chart-legend span{ display: inline-flex; align-items: center; gap: 6px; }
+  .dot{ width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--rel); }
+  svg#chartSvg{ width: 100%; height: auto; display: block; }
+  .chart-axis{ stroke: rgba(0,0,0,0.18); stroke-width: 1; }
+  .chart-grid{ stroke: rgba(0,0,0,0.06); stroke-width: 1; }
+  .chart-zero{ stroke: rgba(0,0,0,0.3); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart-tick{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-dim); }
+  .chart-line{ fill:none; stroke: var(--rel); stroke-width: 2.4; }
+  .chart-marker{ stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; }
+
+  .problems{ display: flex; flex-direction: column; gap: 14px; }
+  .problem{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin: 0 0 8px; }
+  .problem .ptext{ font-size: 15px; line-height: 1.55; margin: 0 0 14px; }
+  .problem .ptext em{ color: var(--text); font-style: normal; font-weight: 600; }
+
+  .mcq-opts{ display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .mcq-opt{ display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 0; cursor: pointer; font-size: 14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,0.3); }
+  .mcq-opt input{ margin-top: 3px; accent-color: var(--rel); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,0.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,0.08); }
+
+  .answer-row{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .answer-field{ display: flex; align-items: center; gap: 6px; }
+  .answer-field label{ font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width: 96px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 14px; padding: 6px 9px; }
+  .answer-field input:focus-visible{ outline: 2px solid var(--rel); outline-offset: 1px; }
+  .answer-field .unit{ font-size: 12.5px; color: var(--text-dim); }
+
+  .feedback{ font-size: 13.5px; margin-top: 8px; line-height: 1.55; display: none; padding: 10px 12px; border-radius: 0; }
+  .feedback.show{ display: block; }
+  .feedback.ok{ background: rgba(107,222,142,0.08); color: var(--good); border: 1px solid rgba(107,222,142,0.25); }
+  .feedback.no{ background: rgba(255,122,107,0.08); color: var(--bad); border: 1px solid rgba(255,122,107,0.25); }
+
+  details.solution{ margin-top: 6px; }
+  details.solution summary{ cursor: pointer; font-size: 13px; color: var(--rel); font-weight: 600; list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.solution summary::-webkit-details-marker{ display: none; }
+  details.solution summary::before{ content: '›'; display: inline-block; transition: transform .15s ease; font-size: 16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+
+  .challenge{ border: 1px dashed var(--border); background: transparent; border-radius: 0; padding: 16px 20px; }
+  .challenge .ptext{ margin-bottom: 4px; }
+  .challenge .pnum{ color: var(--rel); }
+
+  footer{ margin-top: 40px; text-align: center; color: var(--text-dim); font-size: 12.5px; font-family: var(--font-mono); }
+
+  @media (max-width: 900px){
+    .concepts{ grid-template-columns: 1fr; }
+    .sim-wrap{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="distance-displacement.html">Distance &amp; Displacement</a>
+    <a href="speed-velocity.html">Speed &amp; Velocity</a>
+    <a href="acceleration.html">Acceleration</a>
+    <a href="jerk.html">Jerk</a>
+    <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+    <a class="here" href="motion-in-a-straight-line.html">Motion in a Straight Line</a>
+    <a href="equations-of-motion.html">Equations of Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">kinematics — motion in a straight line</p>
+    <h1>Everything happens on one number line</h1>
+    <p>Restrict motion to a single line and two ideas take over: where you are relative to a fixed origin, and how fast you're closing in on — or pulling away from — someone else on that same line. Set two travelers moving and watch whether, and when, their paths actually cross.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card pos">
+        <div class="icon">
+          <svg width="70" height="34" viewBox="0 0 70 34" fill="none">
+            <line x1="4" y1="17" x2="66" y2="17" stroke="#999" stroke-width="1.5"/>
+            <circle cx="35" cy="17" r="3" fill="#111"/>
+            <text x="35" y="9" font-family="IBM Plex Mono, monospace" font-size="10" fill="#999" text-anchor="middle">O</text>
+            <path d="M50 17 L60 17 M56 13 L60 17 L56 21" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20 17 L10 17 M14 13 L10 17 L14 21" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+          </svg>
+        </div>
+        <h3>Position on a line</h3>
+        <p>Pick an origin and a positive direction. Every position is then just <strong>one signed number</strong> — negative means on the other side of the origin, not "less distance."</p>
+        <span class="formula">x(t) = x₀ + vt</span>
+      </div>
+      <div class="concept-card rel">
+        <div class="icon">
+          <svg width="70" height="34" viewBox="0 0 70 34" fill="none">
+            <defs><marker id="mah" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#111"/></marker></defs>
+            <line x1="6" y1="17" x2="64" y2="17" stroke="#999" stroke-width="1.5"/>
+            <circle cx="16" cy="17" r="4" fill="#111"/>
+            <circle cx="52" cy="17" r="4" fill="#666"/>
+            <line x1="24" y1="17" x2="44" y2="17" stroke="#111" stroke-width="2.2" marker-end="url(#mah)"/>
+          </svg>
+        </div>
+        <h3>Relative velocity</h3>
+        <p>How fast the gap between two travelers is closing, seen from either one. It's just the difference of their velocities — and if it's zero, the gap never changes at all.</p>
+        <span class="formula">v(A rel. to B) = v<sub>A</sub> − v<sub>B</sub></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulator">
+    <div class="section-head">
+      <h2>Two travelers on a line</h2>
+      <p>Give A and B a starting position and a constant velocity — negative values move left of the origin. Press Play to watch them move, and see whether their paths cross.</p>
+    </div>
+
+    <div class="sim-wrap">
+      <div class="track-panel">
+        <div class="traveler-rows">
+          <div class="traveler-row a">
+            <span class="badge">A</span>
+            <label for="xA0">x₀</label><input type="number" id="xA0" value="-4" step="0.5"><span class="unit">m</span>
+            <label for="vA">v</label><input type="number" id="vA" value="3" step="0.5"><span class="unit">m/s</span>
+          </div>
+          <div class="traveler-row b">
+            <span class="badge">B</span>
+            <label for="xB0">x₀</label><input type="number" id="xB0" value="10" step="0.5"><span class="unit">m</span>
+            <label for="vB">v</label><input type="number" id="vB" value="-1" step="0.5"><span class="unit">m/s</span>
+          </div>
+          <div class="traveler-row">
+            <label for="durInput">watch for</label><input type="number" id="durInput" value="8" min="2" max="30" step="1"><span class="unit">s</span>
+          </div>
+        </div>
+
+        <div class="preset-row">
+          <button data-preset="catchup">Catch-up</button>
+          <button data-preset="headon">Head-on approach</button>
+          <button data-preset="apart">Moving apart</button>
+          <button data-preset="parallel">Parallel (never meet)</button>
+          <button data-preset="crossed">Already crossed</button>
+          <button id="playBtn" class="primary" style="margin-left:auto;">▶ Play</button>
+        </div>
+
+        <svg id="trackSvg" viewBox="0 0 640 190" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <div class="side-col">
+        <div class="stat-card">
+          <p class="card-title">positions</p>
+          <div class="stat-row"><span class="stat-label">A is at</span><span class="stat-value a" id="xAVal">–</span></div>
+          <div class="stat-row"><span class="stat-label">B is at</span><span class="stat-value b" id="xBVal">–</span></div>
+
+          <div class="rel-block">
+            <div class="stat-row"><span class="stat-label">separation (B − A)</span><span class="stat-value rel" id="sepVal">–</span></div>
+            <div class="stat-row"><span class="stat-label">v(A rel. to B)</span><span class="stat-value rel" id="relVal">–</span></div>
+            <div class="stat-sub">constant, since both move at steady speed</div>
+          </div>
+
+          <div class="elapsed-line">elapsed time: <b id="elapsedVal">0.0 s</b></div>
+          <div class="meet-callout no" id="meetCallout">Set velocities to see if they meet.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="chart">
+    <div class="chart-panel">
+      <div class="chart-legend"><span><i class="dot"></i>separation, x<sub>B</sub>(t) − x<sub>A</sub>(t)</span></div>
+      <svg id="chartSvg" viewBox="0 0 1100 220" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">Two cars travel in the <em>same direction</em> on a straight highway. Car A moves at 25 m/s, and Car B — ahead of it — moves at 18 m/s. What is the velocity of car A relative to car B?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> 43 m/s</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> 7 m/s, closing in on B</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> −7 m/s, falling behind B</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> 18 m/s</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">Two trains are <em>120 km</em> apart on the same straight track, moving toward each other — one at <em>60 km/h</em>, the other at <em>40 km/h</em>. How long until they meet?</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">t =</label><input type="text" id="q2a" placeholder="?"><span class="unit">h</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Moving toward each other, their closing speed adds: <code>60 + 40 = 100 km/h</code>. Time to close a 120 km gap: <code>120 ⁄ 100 = 1.2 h</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">Particle A starts at <em>x = −5 m</em> moving at <em>+3 m/s</em>. Particle B starts at <em>x = +10 m</em> moving at <em>−2 m/s</em>. Find the time and position at which they meet.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">t =</label><input type="text" id="q3a" placeholder="?"><span class="unit">s</span></div>
+          <div class="answer-field"><label for="q3b">x =</label><input type="text" id="q3b" placeholder="?"><span class="unit">m</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Set positions equal: <code>−5 + 3t = 10 − 2t</code>, so <code>5t = 15</code>, giving <code>t = 3 s</code>. Substituting back: <code>x = −5 + 3(3) = 4 m</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">Two cyclists ride in the same direction, both at <em>5 m/s</em>, one always <em>8 m</em> ahead of the other. What is their relative velocity, and does the 8 m gap ever change?</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">relative v =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m/s</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Relative velocity is <code>5 − 5 = 0 m/s</code>. With zero relative velocity the gap never changes — the two cyclists stay exactly 8 m apart forever, even though both keep moving.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Set up A behind B, moving faster than B, so A is clearly catching up — but choose numbers so they don't meet within the 8-second window. What's the smallest change to either velocity that makes them meet before time runs out?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>positive direction points right along the line</footer>
+</div>
+
+<script>
+(function(){
+  const PLAYBACK_MS_PER_SEC = 550;
+
+  const xA0In=document.getElementById('xA0'), vAIn=document.getElementById('vA');
+  const xB0In=document.getElementById('xB0'), vBIn=document.getElementById('vB');
+  const durIn=document.getElementById('durInput');
+
+  let playing=false, rafId=null, playStartTs=null, currentT=0;
+
+  function fmtSigned(v,d){ return (v>=0?'+':'')+v.toFixed(d); }
+
+  function getParams(){
+    return {
+      xA0: parseFloat(xA0In.value)||0, vA: parseFloat(vAIn.value)||0,
+      xB0: parseFloat(xB0In.value)||0, vB: parseFloat(vBIn.value)||0,
+      T: Math.max(1, parseFloat(durIn.value)||8)
+    };
+  }
+  function xAAt(P,t){ return P.xA0 + P.vA*t; }
+  function xBAt(P,t){ return P.xB0 + P.vB*t; }
+  function meetTime(P){
+    if(P.vA === P.vB) return null;
+    const t = (P.xB0 - P.xA0)/(P.vA - P.vB);
+    return (t >= -1e-9 && t <= P.T+1e-9) ? Math.max(0,t) : null;
+  }
+
+  // -------- track --------
+  const trackSvg = document.getElementById('trackSvg');
+  const TW=640, TH=190, padL=34, padR=34, trackY=110;
+  trackSvg.innerHTML = '<g id="trackBg"></g>' +
+    '<g id="dotA"><circle class="marker-glow-a" r="12"/><circle class="marker-a" r="7"/><text class="marker-label" y="-14" text-anchor="middle" fill="#111">A</text></g>' +
+    '<g id="dotB"><circle class="marker-glow-b" r="12"/><circle class="marker-b" r="7"/><text class="marker-label" y="-14" text-anchor="middle" fill="#666">B</text></g>';
+  const trackBg = document.getElementById('trackBg');
+  const dotA = document.getElementById('dotA'), dotB = document.getElementById('dotB');
+
+  function niceStep(range){
+    const raw = Math.max(range,0.001)/6;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const options=[1,2,5,10].map(m=>m*mag);
+    return options.reduce((best,o)=>Math.abs(o-raw)<Math.abs(best-raw)?o:best, options[0]);
+  }
+
+  let scrX = x=>TW/2+x*10;
+
+  function renderTrack(P){
+    const xs = [P.xA0, xAAt(P,P.T), P.xB0, xBAt(P,P.T), 0];
+    let minX=Math.min(...xs), maxX=Math.max(...xs);
+    if(maxX-minX<4){ const mid=(maxX+minX)/2; minX=mid-2; maxX=mid+2; }
+    const pad=(maxX-minX)*0.18; minX-=pad; maxX+=pad;
+    const pxPerM=(TW-padL-padR)/(maxX-minX);
+    scrX = x => padL + (x-minX)*pxPerM;
+
+    let s='';
+    const step = niceStep(maxX-minX);
+    for(let v=Math.ceil(minX/step)*step; v<=maxX; v+=step){
+      const x=scrX(v);
+      s += `<line class="track-tick" x1="${x.toFixed(1)}" y1="${trackY-8}" x2="${x.toFixed(1)}" y2="${trackY+8}"/>`;
+      s += `<text class="tick-label" x="${x.toFixed(1)}" y="${trackY+24}" text-anchor="middle">${v.toFixed(step<1?1:0)}</text>`;
+    }
+    s += `<line class="track-line" x1="${padL}" y1="${trackY}" x2="${TW-padR}" y2="${trackY}"/>`;
+    const ox = scrX(0);
+    s += `<line class="track-tick" x1="${ox.toFixed(1)}" y1="${trackY-14}" x2="${ox.toFixed(1)}" y2="${trackY+14}" stroke="rgba(0,0,0,0.4)"/>`;
+    s += `<text class="origin-label" x="${ox.toFixed(1)}" y="${trackY-20}" text-anchor="middle">O</text>`;
+
+    // faint path lines showing each traveler's full trip
+    s += `<line class="path-a" x1="${scrX(P.xA0).toFixed(1)}" y1="${trackY-30}" x2="${scrX(xAAt(P,P.T)).toFixed(1)}" y2="${trackY-30}"/>`;
+    s += `<line class="path-b" x1="${scrX(P.xB0).toFixed(1)}" y1="${trackY+30}" x2="${scrX(xBAt(P,P.T)).toFixed(1)}" y2="${trackY+30}"/>`;
+
+    const tm = meetTime(P);
+    if(tm !== null){
+      const mx = scrX(xAAt(P,tm));
+      s += `<g class="meet-marker"><line x1="${mx.toFixed(1)}" y1="${trackY-40}" x2="${mx.toFixed(1)}" y2="${trackY+40}"/><text x="${mx.toFixed(1)}" y="${trackY-44}" text-anchor="middle">meet at t=${tm.toFixed(1)}s</text></g>`;
+    }
+
+    trackBg.innerHTML = s;
+  }
+
+  // -------- chart (separation vs time) --------
+  let chartXAt=null;
+  function renderChart(P){
+    const chartSvg = document.getElementById('chartSvg');
+    const cw=1100, ch=220, cpadL=56, cpadR=20, cpadT=16, cpadB=30;
+    const plotW=cw-cpadL-cpadR, plotH=ch-cpadT-cpadB;
+
+    const sep0 = P.xB0-P.xA0, sepT = xBAt(P,P.T)-xAAt(P,P.T);
+    let minS=Math.min(0,sep0,sepT), maxS=Math.max(0,sep0,sepT);
+    if(maxS-minS<2){ minS-=1; maxS+=1; }
+    const padS=(maxS-minS)*0.14; minS-=padS; maxS+=padS;
+
+    function xAtC(t){ return cpadL+(t/P.T)*plotW; }
+    function yAtC(v){ return cpadT+plotH-(v-minS)/(maxS-minS)*plotH; }
+    chartXAt = xAtC;
+
+    let s='';
+    const yTicks=4;
+    for(let k=0;k<=yTicks;k++){
+      const val=minS+(k/yTicks)*(maxS-minS), y=yAtC(val);
+      s += `<line class="chart-grid" x1="${cpadL}" y1="${y}" x2="${cw-cpadR}" y2="${y}"/>`;
+      s += `<text class="chart-tick" x="${cpadL-8}" y="${y+3}" text-anchor="end">${val.toFixed(1)}</text>`;
+    }
+    if(minS<0 && maxS>0) s += `<line class="chart-zero" x1="${cpadL}" y1="${yAtC(0)}" x2="${cw-cpadR}" y2="${yAtC(0)}"/>`;
+    s += `<line class="chart-axis" x1="${cpadL}" y1="${cpadT}" x2="${cpadL}" y2="${ch-cpadB}"/>`;
+    s += `<line class="chart-axis" x1="${cpadL}" y1="${ch-cpadB}" x2="${cw-cpadR}" y2="${ch-cpadB}"/>`;
+    s += `<text class="chart-tick" x="${cpadL}" y="${ch-8}">t = 0s</text>`;
+    s += `<text class="chart-tick" x="${cw-cpadR}" y="${ch-8}" text-anchor="end">t = ${P.T.toFixed(1)}s</text>`;
+
+    s += `<path class="chart-line" d="M${xAtC(0).toFixed(1)} ${yAtC(sep0).toFixed(1)} L${xAtC(P.T).toFixed(1)} ${yAtC(sepT).toFixed(1)}"/>`;
+
+    const tm = meetTime(P);
+    if(tm!==null){
+      const mx=xAtC(tm), my=yAtC(0);
+      s += `<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="4.5" fill="#111"/>`;
+    }
+    s += `<line class="chart-marker" id="chartMarker" x1="${cpadL}" y1="${cpadT}" x2="${cpadL}" y2="${ch-cpadB}"/>`;
+    chartSvg.innerHTML = s;
+  }
+
+  // -------- stats + meet callout --------
+  function updateStats(t, P){
+    const xa = xAAt(P,t), xb = xBAt(P,t);
+    document.getElementById('xAVal').textContent = fmtSigned(xa,2)+' m';
+    document.getElementById('xBVal').textContent = fmtSigned(xb,2)+' m';
+    document.getElementById('sepVal').textContent = fmtSigned(xb-xa,2)+' m';
+    document.getElementById('relVal').textContent = fmtSigned(P.vA-P.vB,2)+' m/s';
+    document.getElementById('elapsedVal').textContent = t.toFixed(1)+' s';
+
+    dotA.style.transform = `translate(${scrX(xa).toFixed(1)}px, ${trackY-30}px)`;
+    dotB.style.transform = `translate(${scrX(xb).toFixed(1)}px, ${trackY+30}px)`;
+
+    const marker = document.getElementById('chartMarker');
+    if(marker && chartXAt){ const mx=chartXAt(t); marker.setAttribute('x1',mx); marker.setAttribute('x2',mx); marker.setAttribute('opacity',1); }
+
+    const tm = meetTime(P);
+    const cal = document.getElementById('meetCallout');
+    if(tm===null){
+      cal.className='meet-callout no';
+      cal.textContent = P.vA===P.vB ? 'Same velocity — the gap between them never changes.' : 'They do not meet within this time window.';
+    } else {
+      cal.className='meet-callout yes';
+      cal.textContent = `They meet at t = ${tm.toFixed(2)} s, at position x = ${xAAt(P,tm).toFixed(2)} m.`;
+    }
+  }
+
+  function renderAll(preserveT){
+    const P = getParams();
+    renderTrack(P);
+    renderChart(P);
+    if(!preserveT) currentT = 0;
+    currentT = Math.min(currentT, P.T);
+    updateStats(currentT, P);
+    return P;
+  }
+
+  [xA0In,vAIn,xB0In,vBIn,durIn].forEach(el=> el.addEventListener('change', ()=>{ stopPlaying(); renderAll(false); }));
+
+  const presets = {
+    catchup:  {xA0:-4, vA:3,  xB0:10, vB:-1, T:8},
+    headon:   {xA0:-8, vA:2,  xB0:8,  vB:-2, T:6},
+    apart:    {xA0:0,  vA:-2, xB0:2,  vB:2,  T:6},
+    parallel: {xA0:-3, vA:2,  xB0:5,  vB:2,  T:8},
+    crossed:  {xA0:6,  vA:2,  xB0:-4, vB:1,  T:8},
+  };
+  document.querySelectorAll('[data-preset]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      stopPlaying();
+      const p = presets[btn.dataset.preset];
+      xA0In.value=p.xA0; vAIn.value=p.vA; xB0In.value=p.xB0; vBIn.value=p.vB; durIn.value=p.T;
+      renderAll(false);
+    });
+  });
+
+  const playBtn = document.getElementById('playBtn');
+  function stopPlaying(){
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId=null; playing=false; playStartTs=null;
+    dotA.classList.remove('playing'); dotB.classList.remove('playing');
+    playBtn.disabled=false; playBtn.textContent='▶ Play';
+  }
+  playBtn.addEventListener('click', ()=>{
+    const P = getParams();
+    if(playing) return;
+    playing=true; playStartTs=null;
+    dotA.classList.add('playing'); dotB.classList.add('playing');
+    playBtn.disabled=true; playBtn.textContent='● Playing…';
+
+    function frame(ts){
+      if(!playStartTs) playStartTs=ts;
+      const t=(ts-playStartTs)/PLAYBACK_MS_PER_SEC;
+      if(t < P.T){
+        currentT=t; updateStats(t,P);
+        rafId=requestAnimationFrame(frame);
+      } else {
+        currentT=P.T; updateStats(P.T,P);
+        playing=false; rafId=null;
+        dotA.classList.remove('playing'); dotB.classList.remove('playing');
+        playBtn.disabled=false; playBtn.textContent='▶ Replay';
+      }
+    }
+    rafId=requestAnimationFrame(frame);
+  });
+
+  renderAll(false);
+
+  // -------- practice problems --------
+  document.querySelectorAll('#mcq1 input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+      const fb=document.getElementById('fb1');
+      const chosen=document.querySelector('#mcq1 input:checked');
+      const label=chosen.closest('.mcq-opt');
+      if(chosen.value==='b'){
+        label.classList.add('correct'); fb.className='feedback show ok';
+        fb.textContent='Correct. v(A rel. to B) = 25 − 18 = 7 m/s — as seen from B, A is gaining ground at 7 m/s, even though both cars are moving forward.';
+      } else {
+        label.classList.add('incorrect'); fb.className='feedback show no';
+        fb.textContent='Not quite. Relative velocity of A with respect to B is v_A − v_B = 25 − 18 = 7 m/s, positive, meaning A is catching up to B.';
+      }
+    });
+  });
+
+  function checkOne(id, exp, fbId, tol, note){
+    const v=parseFloat(document.getElementById(id).value);
+    const fb=document.getElementById(fbId);
+    if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+    const ok=Math.abs(v-exp)<=tol;
+    fb.className='feedback show '+(ok?'ok':'no');
+    fb.textContent = ok?('Correct — '+note):'Not quite yet. Open "Show solution" for a walkthrough.';
+  }
+  function checkPair(idA,idB,expA,expB,fbId,tol,note){
+    const a=parseFloat(document.getElementById(idA).value), b=parseFloat(document.getElementById(idB).value);
+    const fb=document.getElementById(fbId);
+    if(isNaN(a)||isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+    const okA=Math.abs(a-expA)<=tol, okB=Math.abs(b-expB)<=tol;
+    if(okA&&okB){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+    else{ fb.className='feedback show no'; fb.textContent='Not quite yet. '+(!okA?'Check the time. ':'')+(!okB?'Check the position. ':'')+'Open "Show solution" for a walkthrough.'; }
+  }
+
+  document.getElementById('check2').addEventListener('click', ()=>checkOne('q2a', 1.2, 'fb2', 0.05, 'closing speeds add when moving toward each other.'));
+  document.getElementById('check3').addEventListener('click', ()=>checkPair('q3a','q3b', 3, 4, 'fb3', 0.1, 'setting the two position expressions equal and solving for t.'));
+  document.getElementById('check4').addEventListener('click', ()=>checkOne('q4a', 0, 'fb4', 0.05, 'equal velocities mean zero relative velocity — the gap is frozen.'));
+})();
+</script>
+</body>
+</html>

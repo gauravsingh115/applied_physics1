@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jerk — The Rudest Quantity in Kinematics</title>
+<style>
+  :root{
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #ffffff;
+    --border: #ddd;
+    --border-soft: #eee;
+    --text: #111111;
+    --text-muted: #666666;
+    --text-dim: #999999;
+    --smooth: #111111;
+    --smooth-dim: #eeeeee;
+    --slam: #666666;
+    --slam-dim: #eeeeee;
+    --gold: #111111;
+    --gold-dim: #eeeeee;
+    --good: #1a7f37;
+    --bad: #c1373f;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ max-width: 1180px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+
+  header{ margin-bottom: 30px; max-width: 780px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; }
+  h1{
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em;
+  }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  header p.sub2{ margin-top: 10px; font-size: 14.5px; color: var(--text-dim); }
+
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 660px; }
+
+  .concepts{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .concept-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 22px 22px 20px; }
+  .concept-card.def{ border-top: 2px solid var(--gold); }
+  .concept-card.why{ border-top: 2px solid var(--slam); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.65; margin: 8px 0 0; }
+  .concept-card strong{ color: var(--text); font-weight: 600; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 0; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .ladder{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-muted); background: var(--bg); border: 1px solid var(--border); border-radius: 0; padding: 10px 12px; margin-top: 12px; line-height: 1.9; }
+  .ladder b{ color: var(--text); }
+  .ladder .jerk-row b{ color: var(--text); }
+
+  .lab-panel{ background: var(--panel-2); border: 1px solid var(--border); border-radius: 0; padding: 18px 18px 16px; }
+  .mode-row{ display: flex; gap: 8px; margin-bottom: 14px; }
+  .mode-btn{
+    flex: 1; font-family: var(--font-display); font-weight: 600; font-size: 14px;
+    border-radius: 0; border: 1px solid var(--border); background: var(--panel); color: var(--text-muted);
+    padding: 10px 14px; cursor: pointer; transition: all .15s ease;
+  }
+  .mode-btn.active.smooth{ border-color: var(--text); color: var(--text); background: var(--border-soft); }
+  .mode-btn.active.slam{ border-color: var(--text); color: var(--text); background: var(--border-soft); border-style: dashed; }
+
+  .controls-row{ display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 14px; }
+  .field{ display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 6px 12px; }
+  .field label{ font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
+  .field input[type="range"]{ width: 120px; accent-color: var(--gold); }
+  .field .val{ font-family: var(--font-mono); font-size: 13px; color: var(--gold); font-weight: 600; min-width: 60px; text-align: right; }
+  .jerk-caption{ font-family: var(--font-mono); font-size: 11.5px; color: var(--text-dim); margin-left: 4px; }
+
+  button{
+    font-family: var(--font-body); font-weight: 600; font-size: 13px; border-radius: 0;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    padding: 7px 13px; cursor: pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  button:hover{ border-color: rgba(0,0,0,0.32); background: #f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button:focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+  button:disabled{ opacity: 0.5; cursor: default; }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background: #333; }
+
+  .scene{ background: var(--bg); border: 1px solid var(--border); border-radius: 0; padding: 10px; margin-bottom: 14px; }
+  svg#sceneSvg{ width: 100%; height: auto; display: block; }
+  .road{ stroke: #bbb; stroke-width: 2; }
+  .road-tick{ stroke: #ddd; stroke-width: 1; }
+  .car-body{ fill: var(--panel); stroke: var(--text-muted); stroke-width: 1.5; }
+  .car-body.smooth{ stroke: var(--text); }
+  .car-body.slam{ stroke: var(--text); stroke-dasharray: 2 2; }
+  .cup-body{ fill: #fff; stroke: var(--text-dim); stroke-width: 1.2; }
+  .coffee{ fill: #999; }
+  .drip{ fill: #999; }
+  #carGroup{ transition: transform 0.4s cubic-bezier(.4,0,.2,1); }
+  #carGroup.playing{ transition: none; }
+  @media (prefers-reduced-motion: reduce){ #carGroup{ transition: none; } }
+  .status-label{ font-family: var(--font-mono); font-size: 20px; font-weight: 700; }
+
+  .side-col{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .stat-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 12px 14px; }
+  .stat-card .stat-label{ font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+  .stat-card .stat-value{ font-family: var(--font-mono); font-size: 17px; font-weight: 600; }
+  .stat-card .stat-value.a{ color: var(--text); }
+  .stat-card .stat-value.j{ color: var(--text); }
+
+  .chart-panel{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 14px 16px 10px; }
+  .chart-legend{ display: flex; gap: 18px; margin-bottom: 6px; font-size: 12.5px; font-family: var(--font-mono); color: var(--text-muted); }
+  .chart-legend span{ display: inline-flex; align-items: center; gap: 6px; }
+  .dot{ width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot.smooth{ background: var(--text); }
+  .dot.slam{ background: repeating-linear-gradient(90deg, var(--text) 0 3px, transparent 3px 6px); }
+  svg#chartSvg{ width: 100%; height: auto; display: block; }
+  .chart-axis{ stroke: #ccc; stroke-width: 1; }
+  .chart-grid{ stroke: #eee; stroke-width: 1; }
+  .chart-tick{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-dim); }
+  .chart-line.smooth{ fill:none; stroke: var(--text); stroke-width: 2.4; }
+  .chart-line.slam{ fill:none; stroke: var(--text); stroke-width: 2.4; stroke-dasharray: 3 4; }
+  .chart-note{ font-family: var(--font-mono); font-size: 11px; fill: var(--text-dim); }
+  .chart-note.slam{ fill: var(--text); }
+
+  .caption-line{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 12px; }
+  .caption-line b{ color: var(--text-muted); }
+
+  .problems{ display: flex; flex-direction: column; gap: 14px; }
+  .problem{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin: 0 0 8px; }
+  .problem .ptext{ font-size: 15px; line-height: 1.6; margin: 0 0 14px; }
+  .problem .ptext em{ color: var(--text); font-style: normal; font-weight: 600; }
+
+  .mcq-opts{ display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .mcq-opt{ display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 0; cursor: pointer; font-size: 14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,0.3); }
+  .mcq-opt input{ margin-top: 3px; accent-color: var(--gold); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(26,127,55,0.06); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(193,55,63,0.06); }
+
+  .answer-row{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .answer-field{ display: flex; align-items: center; gap: 6px; }
+  .answer-field label{ font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width: 96px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 14px; padding: 6px 9px; }
+  .answer-field input:focus-visible{ outline: 2px solid var(--gold); outline-offset: 1px; }
+  .answer-field .unit{ font-size: 12.5px; color: var(--text-dim); }
+
+  .feedback{ font-size: 13.5px; margin-top: 8px; line-height: 1.6; display: none; padding: 10px 12px; border-radius: 0; }
+  .feedback.show{ display: block; }
+  .feedback.ok{ background: rgba(26,127,55,0.06); color: var(--good); border: 1px solid rgba(26,127,55,0.25); }
+  .feedback.no{ background: rgba(193,55,63,0.06); color: var(--bad); border: 1px solid rgba(193,55,63,0.25); }
+
+  details.solution{ margin-top: 6px; }
+  details.solution summary{ cursor: pointer; font-size: 13px; color: var(--gold); font-weight: 600; list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.solution summary::-webkit-details-marker{ display: none; }
+  details.solution summary::before{ content: '›'; display: inline-block; transition: transform .15s ease; font-size: 16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+
+  .challenge{ border: 1px dashed var(--border); background: transparent; border-radius: 0; padding: 16px 20px; }
+  .challenge .ptext{ margin-bottom: 4px; }
+  .challenge .pnum{ color: var(--text); }
+
+  footer{ margin-top: 40px; text-align: center; color: var(--text-dim); font-size: 12.5px; font-family: var(--font-mono); }
+
+  @media (max-width: 900px){
+    .concepts{ grid-template-columns: 1fr; }
+    .side-col{ grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="distance-displacement.html">Distance &amp; Displacement</a>
+    <a href="speed-velocity.html">Speed &amp; Velocity</a>
+    <a href="acceleration.html">Acceleration</a>
+    <a class="here" href="jerk.html">Jerk</a>
+    <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+    <a href="motion-in-a-straight-line.html">Motion in a Straight Line</a>
+    <a href="equations-of-motion.html">Equations of Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">kinematics — jerk (yes, that's really its name)</p>
+    <h1>Jerk: the rudest quantity in kinematics</h1>
+    <p>Velocity is speed with an opinion about direction. Acceleration is velocity changing its mind. Jerk is acceleration changing its mind <em>about</em> changing its mind — and it's the reason a smooth elevator ride is boring and a bad one ends up on your shirt.</p>
+    <p class="sub2">Physicists named it "jerk" because that's genuinely what it feels like. No committee. No vote. Just vibes and a coffee stain.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card def">
+        <h3>What it actually is</h3>
+        <p>Jerk is the rate of change of acceleration — the <strong>third</strong> derivative of position. You never meet it in intro problems because most of them politely assume acceleration snaps on instantly. It doesn't, and something has to describe how "instantly" it snaps.</p>
+        <span class="formula">jerk = Δacceleration ⁄ Δtime</span>
+        <div class="ladder">
+          position <b>x</b> → velocity <b>dx/dt</b> → acceleration <b>d²x/dt²</b><br>
+          <span class="jerk-row">→ jerk <b>d³x/dt³</b> ← you are here</span>
+        </div>
+      </div>
+      <div class="concept-card why">
+        <h3>Why anyone bothers</h3>
+        <p>Your inner ear doesn't measure acceleration directly — it measures <strong>how suddenly</strong> it starts. That's jerk. It's why a rocket launch and a gentle elevator can both hit high acceleration, but only one of them is described as "smooth."</p>
+        <p>Elevator engineers, train designers, and roller coaster builders spend real budget limiting jerk on purpose. Not because high acceleration scares your body — because <em>sudden</em> acceleration does.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="lab">
+    <div class="section-head">
+      <h2>The Coffee Cup Test</h2>
+      <p>Same top acceleration, same total time, two very different philosophies. One ramps up gently. The other just... doesn't. Press Play on each and watch the cup find out.</p>
+    </div>
+
+    <div class="lab-panel">
+      <div class="mode-row">
+        <button class="mode-btn smooth active" id="btnSmooth">🧘 Smooth (jerk-limited)</button>
+        <button class="mode-btn slam" id="btnSlam">💥 Slam it (instant)</button>
+      </div>
+
+      <div class="controls-row">
+        <div class="field"><label for="amaxSlider">target accel</label><input type="range" id="amaxSlider" min="1" max="6" step="0.5" value="3"><span class="val" id="amaxVal">3.0 m/s²</span></div>
+        <div class="field"><label for="jSlider">jerk limit</label><input type="range" id="jSlider" min="0.5" max="20" step="0.5" value="4"><span class="val" id="jVal">4.0 m/s³</span></div>
+        <span class="jerk-caption" id="jerkCaption">Normal human 🙂</span>
+        <div class="field"><label for="cruiseSlider">cruise time</label><input type="range" id="cruiseSlider" min="0" max="5" step="0.5" value="2"><span class="val" id="cruiseVal">2.0 s</span></div>
+        <button id="playBtn" class="primary" style="margin-left:auto;">▶ Play</button>
+      </div>
+
+      <div class="scene">
+        <svg id="sceneSvg" viewBox="0 0 1100 180" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <div class="side-col">
+        <div class="stat-card"><div class="stat-label">elapsed</div><div class="stat-value" id="tVal">0.0 s</div></div>
+        <div class="stat-card"><div class="stat-label">acceleration</div><div class="stat-value a" id="aVal">0.0 m/s²</div></div>
+        <div class="stat-card"><div class="stat-label">jerk right now</div><div class="stat-value j" id="jNowVal">0.0 m/s³</div></div>
+        <div class="stat-card"><div class="stat-label">cup status</div><div class="status-label" id="cupStatus">😌 Dry</div></div>
+      </div>
+
+      <div class="chart-panel">
+        <div class="chart-legend">
+          <span><i class="dot smooth"></i>smooth acceleration a(t)</span>
+          <span><i class="dot slam"></i>slam acceleration a(t)</span>
+        </div>
+        <svg id="chartSvg" viewBox="0 0 1100 220" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <p class="caption-line"><b>Notice:</b> both curves reach the exact same height. The solid line takes its time getting there. The dashed one just teleports — mathematically, its jerk is infinite for one instant, which is a fancy way of saying "your neck felt that."</p>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself. No actual coffee was harmed in the making of these problems.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">Two rides reach the same top speed in the same time. Ride A ramps its acceleration up smoothly. Ride B's acceleration switches on instantly, like a bad rideshare driver flooring it from a red light. Which ride is more likely to spill your coffee, and why?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> Ride A, because it accelerates for a longer total time.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> Ride B, because its jerk — not its acceleration — is enormous at the instant it kicks in.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> Both spill equally, since they reach the same top speed.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> Neither — coffee is famously exempt from Newtonian mechanics.</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">An elevator's acceleration ramps at a constant rate from 0 to <em>1.2 m/s²</em> over <em>0.6 s</em>. Find its jerk during that ramp.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">jerk =</label><input type="text" id="q2a" placeholder="?"><span class="unit">m/s³</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Jerk is the change in acceleration over time: <code>(1.2 − 0) ⁄ 0.6 = 2 m/s³</code>. This is roughly what a genuinely comfortable elevator aims for.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">Position is measured in metres and time in seconds. What are the SI units of jerk?</p>
+        <div class="mcq-opts" id="mcq3">
+          <label class="mcq-opt"><input type="radio" name="q3" value="a"> m/s</label>
+          <label class="mcq-opt"><input type="radio" name="q3" value="b"> m/s²</label>
+          <label class="mcq-opt"><input type="radio" name="q3" value="c"> m/s³</label>
+          <label class="mcq-opt"><input type="radio" name="q3" value="d"> m/s⁴</label>
+        </div>
+        <div class="feedback" id="fb3"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A very patient train's acceleration ramps linearly from 0 up to <em>0.8 m/s²</em> over <em>4 s</em>, holds there a while, then ramps back down to 0 over another 4 s. What is the jerk during the ramp-up?</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">jerk =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m/s³</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>0.8 ⁄ 4 = 0.2 m/s³</code> during ramp-up. During ramp-down it's the same magnitude but negative, <code>−0.2 m/s³</code> — acceleration is now decreasing at a steady rate instead of increasing.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the lab</p>
+        <p class="ptext">Crank the jerk slider up until "Smooth" basically stops living up to its name. At what value does the cup status flip to trouble? Then find the gentlest jerk that still finishes the ramp inside a reasonable cruise time — congratulations, you've just specced an elevator.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>no coffee cups were harmed — this one's just SVG</footer>
+</div>
+
+<script>
+(function(){
+  const MS_PER_SEC = 500;
+  let mode = 'smooth'; // 'smooth' | 'slam'
+  let playing=false, rafId=null, playStartTs=null;
+
+  const amaxSlider=document.getElementById('amaxSlider'), amaxVal=document.getElementById('amaxVal');
+  const jSlider=document.getElementById('jSlider'), jVal=document.getElementById('jVal');
+  const cruiseSlider=document.getElementById('cruiseSlider'), cruiseVal=document.getElementById('cruiseVal');
+  const jerkCaption=document.getElementById('jerkCaption');
+  const btnSmooth=document.getElementById('btnSmooth'), btnSlam=document.getElementById('btnSlam');
+  const playBtn=document.getElementById('playBtn');
+
+  function jCaptionFor(j){
+    if(j<2) return 'Chauffeur mode 🧘';
+    if(j<5) return 'Normal human 🙂';
+    if(j<10) return 'Uber driver, late for something 😬';
+    if(j<15) return 'Student driver, first day 😱';
+    return 'Basically the Slam button anyway 💀';
+  }
+
+  function readParams(){
+    return {
+      amax: parseFloat(amaxSlider.value),
+      j: parseFloat(jSlider.value),
+      cruise: parseFloat(cruiseSlider.value)
+    };
+  }
+
+  function updateSliderLabels(){
+    const P = readParams();
+    amaxVal.textContent = P.amax.toFixed(1)+' m/s²';
+    jVal.textContent = P.j.toFixed(1)+' m/s³';
+    jerkCaption.textContent = jCaptionFor(P.j);
+    cruiseVal.textContent = P.cruise.toFixed(1)+' s';
+  }
+
+  // -------- kinematics: smooth (3-phase) & slam (rectangle), both over the same T --------
+  function buildSmooth(P){
+    const tau = P.amax/P.j;
+    const phases = [ {j:+P.j, dur:tau}, {j:0, dur:P.cruise}, {j:-P.j, dur:tau} ];
+    let t=0,a=0,v=0,x=0; const segs=[];
+    for(const p of phases){
+      const t0=t,a0=a,v0=v,x0=x, dur=p.dur, jj=p.j, t1=t0+dur;
+      const a1=a0+jj*dur, v1=v0+a0*dur+0.5*jj*dur*dur, x1=x0+v0*dur+0.5*a0*dur*dur+(1/6)*jj*dur*dur*dur;
+      segs.push({j:jj,t0,t1,dur,a0,a1,v0,v1,x0,x1});
+      t=t1;a=a1;v=v1;x=x1;
+    }
+    return {segs, T:t, finalV:v, finalX:x};
+  }
+  function smoothAt(segs, tq){
+    for(const s of segs) if(tq>=s.t0-1e-9 && tq<=s.t1+1e-9){ const tau=tq-s.t0; return {a:s.a0+s.j*tau, v:s.v0+s.a0*tau+0.5*s.j*tau*tau, x:s.x0+s.v0*tau+0.5*s.a0*tau*tau+(1/6)*s.j*tau*tau*tau, j:s.j}; }
+    const s=segs[segs.length-1]; return {a:s.a1,v:s.v1,x:s.x1,j:0};
+  }
+  function slamAt(amax, T, tq){
+    const eps=0.04;
+    const spike = (tq<=eps) || (tq>=T-eps);
+    const a = (tq<=0) ? 0 : (tq>=T ? amax : amax);
+    const v = amax*Math.min(Math.max(tq,0),T);
+    const x = 0.5*amax*Math.min(Math.max(tq,0),T)*Math.min(Math.max(tq,0),T);
+    return {a, v, x, spike};
+  }
+
+  // -------- scene rendering (track + car + cup) --------
+  const sceneSvg = document.getElementById('sceneSvg');
+  const SW=1100, SH=180, padL=40, padR=40, roadY=130;
+  sceneSvg.innerHTML = '<g id="sceneBg"></g><g id="carGroup"></g>';
+  const sceneBg = document.getElementById('sceneBg');
+  const carGroup = document.getElementById('carGroup');
+  let scrX = x=>SW/2+x*10;
+
+  function carSvg(colorClass){
+    return `
+      <g>
+        <rect class="car-body ${colorClass}" x="-30" y="-6" width="60" height="26" rx="8"/>
+        <g id="cupGroup" transform="translate(14,-6)">
+          <rect class="cup-body" x="-7" y="-16" width="14" height="16" rx="2"/>
+          <ellipse id="coffeeSurf" class="coffee" cx="0" cy="-13" rx="5.5" ry="2"/>
+        </g>
+      </g>`;
+  }
+
+  function renderScene(P){
+    const K = buildSmooth(P);
+    const T = K.T;
+    const finalX = mode==='smooth' ? K.finalX : 0.5*P.amax*T*T;
+    let minX=0, maxX=Math.max(finalX,1);
+    const pad=(maxX-minX)*0.15; minX-=pad; maxX+=pad;
+    const pxPerM=(SW-padL-padR)/(maxX-minX);
+    scrX = x=>padL+(x-minX)*pxPerM;
+
+    let s='';
+    for(let i=0;i<=10;i++){
+      const x=padL+i*(SW-padL-padR)/10;
+      s += `<line class="road-tick" x1="${x.toFixed(1)}" y1="${roadY-6}" x2="${x.toFixed(1)}" y2="${roadY+6}"/>`;
+    }
+    s += `<line class="road" x1="${padL}" y1="${roadY}" x2="${SW-padR}" y2="${roadY}"/>`;
+    sceneBg.innerHTML = s;
+
+    carGroup.innerHTML = carSvg(mode);
+    carGroup.style.transform = `translate(${scrX(0).toFixed(1)}px, ${roadY-14}px)`;
+    document.getElementById('cupGroup') && (document.getElementById('cupGroup').style.transform='');
+
+    return {K, T};
+  }
+
+  // -------- chart: a(t) overlay for both profiles over current T --------
+  function renderChart(P){
+    const K = buildSmooth(P);
+    const T = K.T;
+    const chartSvg = document.getElementById('chartSvg');
+    const cw=1100, ch=220, cpadL=52, cpadR=20, cpadT=16, cpadB=30;
+    const plotW=cw-cpadL-cpadR, plotH=ch-cpadT-cpadB;
+    const maxA = P.amax*1.25;
+
+    function xC(t){ return cpadL+(t/T)*plotW; }
+    function yC(a){ return cpadT+plotH-(a/maxA)*plotH; }
+
+    let s='';
+    const yTicks=4;
+    for(let k=0;k<=yTicks;k++){
+      const val=(k/yTicks)*maxA, y=yC(val);
+      s += `<line class="chart-grid" x1="${cpadL}" y1="${y}" x2="${cw-cpadR}" y2="${y}"/>`;
+      s += `<text class="chart-tick" x="${cpadL-8}" y="${y+3}" text-anchor="end">${val.toFixed(1)}</text>`;
+    }
+    s += `<line class="chart-axis" x1="${cpadL}" y1="${cpadT}" x2="${cpadL}" y2="${ch-cpadB}"/>`;
+    s += `<line class="chart-axis" x1="${cpadL}" y1="${ch-cpadB}" x2="${cw-cpadR}" y2="${ch-cpadB}"/>`;
+    s += `<text class="chart-tick" x="${cpadL}" y="${ch-8}">t = 0s</text>`;
+    s += `<text class="chart-tick" x="${cw-cpadR}" y="${ch-8}" text-anchor="end">t = ${T.toFixed(1)}s</text>`;
+
+    // smooth trapezoid
+    let dSmooth = K.segs.map((seg,i)=> (i===0?'M':'L')+xC(seg.t0).toFixed(1)+' '+yC(seg.a0).toFixed(1)).join(' ');
+    dSmooth += ' L'+xC(K.segs[K.segs.length-1].t1).toFixed(1)+' '+yC(K.segs[K.segs.length-1].a1).toFixed(1);
+    s += `<path class="chart-line smooth" d="${dSmooth}"/>`;
+
+    // slam rectangle
+    const dSlam = `M${xC(0).toFixed(1)} ${yC(0).toFixed(1)} L${xC(0).toFixed(1)} ${yC(P.amax).toFixed(1)} L${xC(T).toFixed(1)} ${yC(P.amax).toFixed(1)} L${xC(T).toFixed(1)} ${yC(0).toFixed(1)}`;
+    s += `<path class="chart-line slam" d="${dSlam}"/>`;
+    s += `<text class="chart-note slam" x="${xC(0).toFixed(1)}" y="${yC(P.amax)-8}">jerk → ∞ here</text>`;
+    s += `<text class="chart-note" x="${xC(K.segs[0].t1).toFixed(1)}" y="${yC(P.amax)-8}" text-anchor="middle">gentle ramp (jerk = j)</text>`;
+
+    const marker = `<line class="chart-marker" id="chartMarker" x1="${cpadL}" y1="${cpadT}" x2="${cpadL}" y2="${ch-cpadB}" stroke="rgba(0,0,0,0.4)" stroke-dasharray="3 3" opacity="0"/>`;
+    chartSvg.innerHTML = s + marker;
+    return {xC, T};
+  }
+  let chartInfo = null;
+
+  // -------- live update --------
+  function cupTiltFor(jerkVal, spike){
+    if(spike) return 42;
+    const k = 2.2, maxTilt = 40;
+    return Math.max(-maxTilt, Math.min(maxTilt, jerkVal*k));
+  }
+  function statusFor(tiltAbs){
+    if(tiltAbs < 12) return {text:'😌 Dry', cls:'ok'};
+    if(tiltAbs < 28) return {text:'😬 Jostled', cls:'no'};
+    return {text:'💦 SPILLED!', cls:'no'};
+  }
+
+  function updateLive(t, ctx){
+    const P = readParams();
+    let a,v,x,jerkVal,spike=false;
+    if(mode==='smooth'){
+      const r = smoothAt(ctx.K.segs, t);
+      a=r.a; v=r.v; x=r.x; jerkVal=r.j;
+    } else {
+      const r = slamAt(P.amax, ctx.T, t);
+      a=r.a; v=r.v; x=r.x; spike=r.spike; jerkVal = spike ? (t<=ctx.T/2 ? 999 : -999) : 0;
+    }
+    document.getElementById('tVal').textContent = t.toFixed(1)+' s';
+    document.getElementById('aVal').textContent = a.toFixed(2)+' m/s²';
+    document.getElementById('jNowVal').textContent = (mode==='slam' && spike) ? '±∞ (instant)' : jerkVal.toFixed(2)+' m/s³';
+
+    const tilt = cupTiltFor(jerkVal, mode==='slam' && spike);
+    const cupGroup = sceneSvg.querySelector('#cupGroup');
+    if(cupGroup) cupGroup.style.transform = `translate(14,-6) rotate(${tilt.toFixed(1)}deg)`;
+    const stat = statusFor(Math.abs(tilt));
+    const statusEl = document.getElementById('cupStatus');
+    statusEl.textContent = stat.text;
+    statusEl.style.color = stat.cls==='ok' ? 'var(--smooth)' : 'var(--slam)';
+
+    carGroup.style.transform = `translate(${scrX(x).toFixed(1)}px, ${roadY-14}px)`;
+
+    if(chartInfo){
+      const mk = document.getElementById('chartMarker');
+      if(mk){ const mx=chartInfo.xC(t); mk.setAttribute('x1',mx); mk.setAttribute('x2',mx); mk.setAttribute('opacity',1); }
+    }
+  }
+
+  function renderAll(){
+    updateSliderLabels();
+    const P = readParams();
+    const sceneCtx = renderScene(P);
+    chartInfo = renderChart(P);
+    updateLive(0, sceneCtx);
+    return sceneCtx;
+  }
+
+  [amaxSlider,jSlider,cruiseSlider].forEach(el=> el.addEventListener('input', ()=>{ stopPlaying(); renderAll(); }));
+
+  function setMode(m){
+    mode=m; stopPlaying();
+    btnSmooth.classList.toggle('active', m==='smooth');
+    btnSlam.classList.toggle('active', m==='slam');
+    renderAll();
+  }
+  btnSmooth.addEventListener('click', ()=>setMode('smooth'));
+  btnSlam.addEventListener('click', ()=>setMode('slam'));
+
+  function stopPlaying(){
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId=null; playing=false; playStartTs=null;
+    carGroup.classList.remove('playing');
+    playBtn.disabled=false; playBtn.textContent='▶ Play';
+  }
+
+  playBtn.addEventListener('click', ()=>{
+    if(playing) return;
+    const P = readParams();
+    const sceneCtx = renderScene(P);
+    playing=true; playStartTs=null;
+    carGroup.classList.add('playing');
+    playBtn.disabled=true; playBtn.textContent='● Playing…';
+
+    function frame(ts){
+      if(!playStartTs) playStartTs=ts;
+      const t=(ts-playStartTs)/MS_PER_SEC;
+      if(t < sceneCtx.T){
+        updateLive(t, sceneCtx);
+        rafId=requestAnimationFrame(frame);
+      } else {
+        updateLive(sceneCtx.T, sceneCtx);
+        playing=false; rafId=null;
+        carGroup.classList.remove('playing');
+        playBtn.disabled=false; playBtn.textContent='▶ Replay';
+      }
+    }
+    rafId=requestAnimationFrame(frame);
+  });
+
+  renderAll();
+
+  // -------- practice problems --------
+  document.querySelectorAll('#mcq1 input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+      const fb=document.getElementById('fb1');
+      const chosen=document.querySelector('#mcq1 input:checked');
+      const label=chosen.closest('.mcq-opt');
+      if(chosen.value==='b'){
+        label.classList.add('correct'); fb.className='feedback show ok';
+        fb.textContent='Correct. Ride B accelerates from nowhere — an enormous jerk for one instant — and that sudden onset is exactly what your inner ear (and your cup) reacts to.';
+      } else {
+        label.classList.add('incorrect'); fb.className='feedback show no';
+        fb.textContent='Not quite. Ride B is the one — the instant switch-on means its jerk spikes for a moment, even though both rides end up at the same speed the same way in the same time.';
+      }
+    });
+  });
+  document.querySelectorAll('#mcq3 input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      document.querySelectorAll('#mcq3 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+      const fb=document.getElementById('fb3');
+      const chosen=document.querySelector('#mcq3 input:checked');
+      const label=chosen.closest('.mcq-opt');
+      if(chosen.value==='c'){
+        label.classList.add('correct'); fb.className='feedback show ok';
+        fb.textContent='Correct. Each derivative with respect to time divides by another second: m/s → m/s² → m/s³.';
+      } else {
+        label.classList.add('incorrect'); fb.className='feedback show no';
+        fb.textContent='Not quite. Jerk is the third time-derivative of position, so its units pick up a third power of seconds in the denominator: m/s³.';
+      }
+    });
+  });
+
+  function checkOne(id, exp, fbId, tol, note){
+    const val=parseFloat(document.getElementById(id).value);
+    const fb=document.getElementById(fbId);
+    if(isNaN(val)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+    const ok=Math.abs(val-exp)<=tol;
+    fb.className='feedback show '+(ok?'ok':'no');
+    fb.textContent = ok?('Correct — '+note):'Not quite yet. Open "Show solution" for a walkthrough.';
+  }
+  document.getElementById('check2').addEventListener('click', ()=>checkOne('q2a', 2, 'fb2', 0.1, 'a pretty typical, genuinely comfortable elevator jerk.'));
+  document.getElementById('check4').addEventListener('click', ()=>checkOne('q4a', 0.2, 'fb4', 0.05, 'jerk = Δa ⁄ Δt during the ramp-up.'));
+})();
+</script>
+</body>
+</html>

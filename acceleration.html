@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceleration — Speeding Up, Slowing Down</title>
+<style>
+  :root{
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #ffffff;
+    --border: #ddd;
+    --border-soft: #eee;
+    --text: #111111;
+    --text-muted: #666666;
+    --text-dim: #999999;
+    --scalar: #111111;
+    --scalar-dim: #eeeeee;
+    --vector: #666666;
+    --vector-dim: #eeeeee;
+    --bad: #c1373f;
+    --bad-dim: #eeeeee;
+    --good: #1a7f37;
+    --good-dim: #eeeeee;
+    --flat: #999999;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ max-width: 1180px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; }
+  h1{
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em;
+  }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 640px; }
+
+  .concepts{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .concept-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 22px 22px 20px; }
+  .concept-card.def{ border-top: 2px solid var(--scalar); }
+  .concept-card.sign{ border-top: 2px solid var(--vector); }
+  .concept-card .icon{ margin-bottom: 14px; }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card strong{ color: var(--text); font-weight: 600; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 0; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .sign-rows{ display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .sign-row{ display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); }
+  .sign-row .tagword{ font-family: var(--font-mono); font-weight: 600; font-size: 12px; padding: 2px 8px; border-radius: 0; border: 1px solid var(--text); }
+  .sign-row .tagword.speed{ color: var(--text); border-style: solid; }
+  .sign-row .tagword.slow{ color: var(--text); border-style: dashed; }
+
+  .sim-wrap{ display: grid; grid-template-columns: 1.55fr 1fr; gap: 18px; align-items: start; }
+  .track-panel{ background: var(--panel-2); border: 1px solid var(--border); border-radius: 0; padding: 16px 16px 14px; }
+  .toolbar-row{ display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 12px; }
+  .field{ display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 6px 12px; }
+  .field label{ font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
+  .field input[type="number"]{ width: 56px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 4px 6px; }
+  .field input[type="range"]{ width: 110px; accent-color: var(--scalar); }
+  .field .val{ font-family: var(--font-mono); font-size: 13px; color: var(--scalar); font-weight: 600; min-width: 58px; text-align: right; }
+
+  button{
+    font-family: var(--font-body); font-weight: 600; font-size: 13px; border-radius: 0;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    padding: 7px 13px; cursor: pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  button:hover{ border-color: rgba(0,0,0,0.32); background: #f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button:focus-visible{ outline: 2px solid var(--vector); outline-offset: 2px; }
+  button:disabled{ opacity: 0.5; cursor: default; }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background: #333; }
+  button.ghost{ background: transparent; }
+
+  .timeline{ display: flex; gap: 3px; align-items: stretch; height: 46px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
+  .seg-block{
+    flex-shrink: 0; border-radius: 0; display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; color: var(--bg);
+    min-width: 34px;
+  }
+  .seg-block.pos{ background: var(--text); }
+  .seg-block.neg{ background: #fff; color: var(--text); border: 1px dashed var(--text); }
+  .seg-block.zero{ background: var(--border-soft); color: var(--text); }
+  .timeline-empty{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); align-self: center; }
+
+  svg#trackSvg{ width: 100%; height: auto; display: block; background: var(--bg); border-radius: 0; }
+  .track-tick{ stroke: rgba(0,0,0,0.18); stroke-width: 1; }
+  .track-line{ stroke: rgba(0,0,0,0.25); stroke-width: 1.5; }
+  .tick-label{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-dim); }
+  .trail-piece.speed{ stroke: var(--text); }
+  .trail-piece.slow{ stroke: var(--text); stroke-dasharray: 1 6; }
+  .trail-piece.flat{ stroke: var(--flat); }
+  .trail-piece{ stroke-width: 5; stroke-linecap: round; }
+  .car-body{ fill: var(--text); }
+  .car-glow{ fill: var(--text); opacity: 0.15; }
+  #carGroup{ transition: transform 0.4s cubic-bezier(.4,0,.2,1); }
+  #carGroup.playing{ transition: none; }
+  @media (prefers-reduced-motion: reduce){ #carGroup{ transition: none; } }
+
+  .legend-row{ display: flex; gap: 16px; margin-top: 10px; font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); flex-wrap: wrap; }
+  .legend-row span{ display: inline-flex; align-items: center; gap: 6px; }
+  .swatch{ width: 14px; height: 4px; border-radius: 0; display: inline-block; }
+  .swatch.speed{ background: var(--text); }
+  .swatch.slow{ background: repeating-linear-gradient(90deg, var(--text) 0 3px, transparent 3px 6px); }
+  .swatch.flat{ background: var(--flat); }
+
+  .side-col{ display: flex; flex-direction: column; gap: 14px; }
+  .stat-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 16px 18px; }
+  .stat-card .card-title{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin: 0 0 12px; }
+  .stat-row{ display: flex; align-items: baseline; justify-content: space-between; }
+  .stat-label{ font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  .stat-value{ font-family: var(--font-mono); font-size: 22px; font-weight: 600; color: var(--vector); }
+  .stat-sub{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .state-badge{ display: inline-block; margin-top: 10px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 0; border: 1px solid var(--text); }
+  .state-badge.speed{ border-style: solid; color: var(--text); }
+  .state-badge.slow{ border-style: dashed; color: var(--text); }
+  .state-badge.flat{ border-color: var(--flat); color: var(--flat); }
+
+  .accel-block{ margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-soft); }
+  .accel-block .stat-row{ margin-bottom: 6px; }
+  .accel-block .stat-value{ color: var(--scalar); font-size: 19px; }
+  .gauge-bar{ position: relative; height: 10px; background: var(--border-soft); border-radius: 0; overflow: visible; }
+  .gauge-bar .center-tick{ position: absolute; left: 50%; top: -3px; width: 1px; height: 16px; background: var(--border); transform: translateX(-50%); }
+  .gauge-bar .fill{ position: absolute; top: 0; height: 100%; background: var(--text); border-radius: 0; transition: left .15s linear, width .15s linear; }
+
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .elapsed-line{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-muted); margin-top: 10px; }
+  .elapsed-line b{ color: var(--text); }
+
+  .chart-panel{ background: var(--panel-2); border: 1px solid var(--border); border-radius: 0; padding: 18px 18px 10px; }
+  .chart-legend{ display: flex; gap: 18px; margin-bottom: 8px; font-size: 12.5px; font-family: var(--font-mono); color: var(--text-muted); flex-wrap: wrap; }
+  .chart-legend span{ display: inline-flex; align-items: center; gap: 6px; }
+  svg#chartSvg{ width: 100%; height: auto; display: block; }
+  .chart-axis{ stroke: rgba(0,0,0,0.18); stroke-width: 1; }
+  .chart-grid{ stroke: rgba(0,0,0,0.06); stroke-width: 1; }
+  .chart-zero{ stroke: rgba(0,0,0,0.3); stroke-width: 1; stroke-dasharray: 3 3; }
+  .chart-tick{ font-family: var(--font-mono); font-size: 10.5px; fill: var(--text-dim); }
+  .chart-line{ fill: none; stroke-width: 2.6; stroke-linecap: round; }
+  .chart-line.speed{ stroke: var(--text); }
+  .chart-line.slow{ stroke: var(--text); stroke-dasharray: 2 5; }
+  .chart-line.flat{ stroke: var(--flat); }
+  .chart-secant{ stroke: var(--text-muted); stroke-width: 1.6; stroke-dasharray: 2 5; opacity: 0.65; }
+  .chart-marker{ stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; }
+
+  .problems{ display: flex; flex-direction: column; gap: 14px; }
+  .problem{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin: 0 0 8px; }
+  .problem .ptext{ font-size: 15px; line-height: 1.55; margin: 0 0 14px; }
+  .problem .ptext em{ color: var(--text); font-style: normal; font-weight: 600; }
+
+  .mcq-opts{ display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .mcq-opt{ display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 0; cursor: pointer; font-size: 14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,0.3); }
+  .mcq-opt input{ margin-top: 3px; accent-color: var(--vector); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,0.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,0.08); }
+
+  .answer-row{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .answer-field{ display: flex; align-items: center; gap: 6px; }
+  .answer-field label{ font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width: 96px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 14px; padding: 6px 9px; }
+  .answer-field input:focus-visible{ outline: 2px solid var(--vector); outline-offset: 1px; }
+  .answer-field .unit{ font-size: 12.5px; color: var(--text-dim); }
+
+  .feedback{ font-size: 13.5px; margin-top: 8px; line-height: 1.55; display: none; padding: 10px 12px; border-radius: 0; }
+  .feedback.show{ display: block; }
+  .feedback.ok{ background: rgba(107,222,142,0.08); color: var(--good); border: 1px solid rgba(107,222,142,0.25); }
+  .feedback.no{ background: rgba(255,122,107,0.08); color: var(--bad); border: 1px solid rgba(255,122,107,0.25); }
+
+  details.solution{ margin-top: 6px; }
+  details.solution summary{ cursor: pointer; font-size: 13px; color: var(--vector); font-weight: 600; list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.solution summary::-webkit-details-marker{ display: none; }
+  details.solution summary::before{ content: '›'; display: inline-block; transition: transform .15s ease; font-size: 16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+
+  .challenge{ border: 1px dashed var(--border); background: transparent; border-radius: 0; padding: 16px 20px; }
+  .challenge .ptext{ margin-bottom: 4px; }
+  .challenge .pnum{ color: var(--text); }
+
+  footer{ margin-top: 40px; text-align: center; color: var(--text-dim); font-size: 12.5px; font-family: var(--font-mono); }
+
+  @media (max-width: 900px){
+    .concepts{ grid-template-columns: 1fr; }
+    .sim-wrap{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="distance-displacement.html">Distance &amp; Displacement</a>
+    <a href="speed-velocity.html">Speed &amp; Velocity</a>
+    <a class="here" href="acceleration.html">Acceleration</a>
+    <a href="jerk.html">Jerk</a>
+    <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+    <a href="motion-in-a-straight-line.html">Motion in a Straight Line</a>
+    <a href="equations-of-motion.html">Equations of Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">kinematics — acceleration</p>
+    <h1>A push doesn't always mean speeding up</h1>
+    <p>Acceleration is the rate at which velocity itself changes. A positive number doesn't automatically mean "faster" — it depends entirely on which way the object is already moving. Build a motion below and watch the same acceleration speed the car up in one moment and slow it down in the next.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card def">
+        <div class="icon">
+          <svg width="70" height="42" viewBox="0 0 70 42" fill="none">
+            <polyline points="4,34 20,30 36,18 52,10 66,4" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="4" cy="34" r="2.6" fill="#111"/>
+            <circle cx="66" cy="4" r="2.6" fill="#111"/>
+          </svg>
+        </div>
+        <h3>Acceleration</h3>
+        <p>The rate of change of <strong>velocity</strong> — how quickly the velocity arrow grows, shrinks, or turns. Like velocity, it's a vector: it has a size and a direction.</p>
+        <span class="formula">acceleration = Δvelocity ⁄ Δtime</span>
+      </div>
+      <div class="concept-card sign">
+        <div class="icon">
+          <svg width="70" height="42" viewBox="0 0 70 42" fill="none">
+            <defs>
+              <marker id="ahg" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#111"/></marker>
+              <marker id="ahr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#111"/></marker>
+            </defs>
+            <line x1="6" y1="12" x2="42" y2="12" stroke="#111" stroke-width="2.5" marker-end="url(#ahg)"/>
+            <line x1="64" y1="32" x2="28" y2="32" stroke="#111" stroke-width="2.5" stroke-dasharray="1 5" marker-end="url(#ahr)"/>
+          </svg>
+        </div>
+        <h3>Speeding up, or slowing down?</h3>
+        <p>Compare the direction of <strong>acceleration</strong> to the direction of <strong>velocity</strong> — not just the sign of the number.</p>
+        <div class="sign-rows">
+          <div class="sign-row"><span class="tagword speed">speeding up</span> velocity and acceleration point the same way</div>
+          <div class="sign-row"><span class="tagword slow">slowing down</span> velocity and acceleration point opposite ways</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulator">
+    <div class="section-head">
+      <h2>Build a motion</h2>
+      <p>Set a starting velocity, pick an acceleration and a duration, then add segments to build up a journey along a straight track. Press Play to watch it unfold — the trail runs solid while the car speeds up and dashed while it slows down.</p>
+    </div>
+
+    <div class="sim-wrap">
+      <div class="track-panel">
+        <div class="toolbar-row">
+          <div class="field"><label for="v0Input">start v₀</label><input type="number" id="v0Input" value="0" step="0.5"><span class="val">m/s</span></div>
+          <div class="field"><label for="aSlider">acceleration</label><input type="range" id="aSlider" min="-4" max="4" step="0.1" value="1.5"><span class="val" id="aVal">+1.5 m/s²</span></div>
+          <div class="field"><label for="durInput">for</label><input type="number" id="durInput" value="2" min="0.5" max="6" step="0.5"><span class="val">s</span></div>
+          <button id="addBtn" class="primary">+ Add segment</button>
+          <button id="undoBtn" class="ghost">Undo</button>
+          <button id="resetBtn" class="ghost">Reset</button>
+        </div>
+
+        <div class="timeline" id="timeline"><span class="timeline-empty">no segments yet — add one above</span></div>
+
+        <svg id="trackSvg" viewBox="0 0 640 160" xmlns="http://www.w3.org/2000/svg"></svg>
+
+        <div class="legend-row">
+          <span><i class="swatch speed"></i>speeding up</span>
+          <span><i class="swatch slow"></i>slowing down</span>
+          <span><i class="swatch flat"></i>constant velocity</span>
+          <button id="playBtn" class="primary" style="margin-left:auto;">▶ Play</button>
+        </div>
+      </div>
+
+      <div class="side-col">
+        <div class="stat-card">
+          <p class="card-title">right now</p>
+          <div class="stat-row">
+            <span class="stat-label">velocity</span>
+            <span class="stat-value" id="velValue">–</span>
+          </div>
+          <div class="stat-sub" id="velSub">press Play to start</div>
+          <div id="stateBadge" class="state-badge flat">at rest</div>
+
+          <div class="accel-block">
+            <div class="stat-row">
+              <span class="stat-label">acceleration</span>
+              <span class="stat-value" id="accValue">–</span>
+            </div>
+            <div class="gauge-bar"><div class="center-tick"></div><div class="fill" id="accFill" style="left:50%; width:0%;"></div></div>
+          </div>
+
+          <div class="note"><b>Notice:</b> the badge above only depends on whether velocity and acceleration currently agree in direction — not on the sign of acceleration alone.</div>
+        </div>
+
+        <div class="stat-card">
+          <p class="card-title">so far</p>
+          <div class="stat-row">
+            <span class="stat-label">average acceleration</span>
+            <span class="stat-value" id="avgAccValue" style="color:var(--scalar);">0.0 m/s²</span>
+          </div>
+          <div class="stat-sub">Δv ⁄ Δt from the start until now</div>
+          <div class="elapsed-line">elapsed time: <b id="elapsedVal">0.0 s</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="chart">
+    <div class="chart-panel">
+      <div class="chart-legend">
+        <span><i class="swatch speed"></i>speeding up</span>
+        <span><i class="swatch slow"></i>slowing down</span>
+        <span><i class="swatch flat"></i>constant velocity</span>
+        <span>┄ average acceleration (secant)</span>
+      </div>
+      <svg id="chartSvg" viewBox="0 0 1100 260" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself. Take "up" or "forward" as positive unless told otherwise.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">A ball is thrown straight up and is still rising, with upward taken as positive. What are the signs of its velocity and acceleration, and is it speeding up or slowing down?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> v is positive, a is negative — slowing down</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> v is positive, a is positive — speeding up</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> v is negative, a is negative — speeding up</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> v is positive, a is negative — speeding up</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">A car speeds up from <em>12 m/s</em> to <em>28 m/s</em> in <em>4.0 s</em>, moving in a straight line the whole time. Find its average acceleration.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">a =</label><input type="text" id="q2a" placeholder="?"><span class="unit">m/s²</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Average acceleration is the change in velocity over the time it took: <code>(28 − 12) ⁄ 4.0 = 4.0 m/s²</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A car moving at <em>+20 m/s</em> brakes with a constant acceleration of <em>−4 m/s²</em>. Find how long it takes to come to rest, and its velocity <em>6.0 s</em> after braking begins.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">time to rest =</label><input type="text" id="q3a" placeholder="?"><span class="unit">s</span></div>
+          <div class="answer-field"><label for="q3b">v at 6.0 s =</label><input type="text" id="q3b" placeholder="?"><span class="unit">m/s</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">It reaches rest when <code>v = 20 + (−4)t = 0</code>, so <code>t = 5.0 s</code>. The braking acceleration doesn't stop there — at <code>t = 6.0 s</code>, <code>v = 20 + (−4)(6) = −4 m/s</code>. The car has reversed direction: the same constant acceleration first slowed it down, then sped it up again backward.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">An object moving at <em>−8 m/s</em> undergoes a constant acceleration of <em>+2 m/s²</em> for <em>3.0 s</em>. Find its final velocity, and state whether it was speeding up or slowing down over that interval.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">final v =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m/s</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Final velocity: <code>−8 + (2)(3.0) = −2 m/s</code>. Velocity stayed negative the entire 3 seconds while acceleration was positive — opposite signs the whole way — so the object was <strong>slowing down</strong> throughout, from 8 m/s down to 2 m/s (it never reached zero, so it never started speeding up again).</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Build a motion above where the car slows to a stop and then reverses direction, using just one acceleration segment. Then ask: could a single constant, nonzero acceleration ever bring the car to rest and leave it there permanently? What would have to happen at that instant instead?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>positive direction points right along the track</footer>
+</div>
+
+<script>
+(function(){
+  const A_MAX = 4;                    // matches slider range, used for gauge scaling
+  const PLAYBACK_MS_PER_SEC = 550;
+  const SEC_PX = 46;                  // timeline px per second
+
+  let segments = [];                  // {a, dur}
+  let playing = false, rafId = null, playStartTs = null;
+
+  const v0Input = document.getElementById('v0Input');
+  const aSlider = document.getElementById('aSlider');
+  const aVal = document.getElementById('aVal');
+  const durInput = document.getElementById('durInput');
+
+  function fmtSigned(v, digits){ return (v>=0?'+':'') + v.toFixed(digits); }
+
+  aSlider.addEventListener('input', ()=>{ aVal.textContent = fmtSigned(parseFloat(aSlider.value),1) + ' m/s²'; });
+
+  // -------- kinematics core --------
+  function computeKinematics(){
+    const v0 = parseFloat(v0Input.value) || 0;
+    let t=0, v=v0, x=0;
+    const segs = [];
+    for(const s of segments){
+      const t0=t, vS=v, xS=x;
+      const t1=t0+s.dur;
+      const v1=vS + s.a*s.dur;
+      const x1=xS + vS*s.dur + 0.5*s.a*s.dur*s.dur;
+      segs.push({a:s.a, t0, t1, dur:s.dur, v0:vS, v1, x0:xS, x1});
+      t=t1; v=v1; x=x1;
+    }
+    return { v0, segs, totalTime:t, totalDeltaV: v - v0 };
+  }
+
+  function vAt(segs, v0, tq){
+    for(const s of segs){ if(tq >= s.t0-1e-9 && tq <= s.t1+1e-9) return s.v0 + s.a*(tq-s.t0); }
+    return segs.length ? segs[segs.length-1].v1 : v0;
+  }
+  function xAt(segs, tq){
+    for(const s of segs){ if(tq >= s.t0-1e-9 && tq <= s.t1+1e-9){ const tau=tq-s.t0; return s.x0 + s.v0*tau + 0.5*s.a*tau*tau; } }
+    return segs.length ? segs[segs.length-1].x1 : 0;
+  }
+  function aAt(segs, tq){
+    for(const s of segs){ if(tq >= s.t0-1e-9 && tq <= s.t1+1e-9) return s.a; }
+    return segs.length ? segs[segs.length-1].a : 0;
+  }
+
+  // split each segment into speeding/slowing/flat time-pieces
+  function colorPieces(segs){
+    const pieces = [];
+    for(const s of segs){
+      if(s.a === 0){ pieces.push({t0:s.t0, t1:s.t1, state:'flat'}); continue; }
+      const sameSign = Math.sign(s.v0) !== 0 && Math.sign(s.v0) === Math.sign(s.v1);
+      const crosses = Math.sign(s.v0) !== 0 && Math.sign(s.v1) !== 0 && !sameSign;
+      if(crosses){
+        const tCross = s.t0 - s.v0/s.a;
+        if(tCross > s.t0+1e-9 && tCross < s.t1-1e-9){
+          pieces.push({t0:s.t0, t1:tCross, state:'slow'});
+          pieces.push({t0:tCross, t1:s.t1, state:'speed'});
+          continue;
+        }
+      }
+      const state = (s.v0*s.a > 1e-9) ? 'speed' : (s.v0*s.a < -1e-9 ? 'slow' : (s.a!==0 ? 'speed' : 'flat'));
+      pieces.push({t0:s.t0, t1:s.t1, state});
+    }
+    return pieces;
+  }
+
+  function niceStep(range){
+    const raw = range/5;
+    const mag = Math.pow(10, Math.floor(Math.log10(Math.max(raw,0.001))));
+    const options = [1,2,5,10].map(m=>m*mag);
+    return options.reduce((best,o)=> Math.abs(o-raw)<Math.abs(best-raw)?o:best, options[0]);
+  }
+
+  // -------- track rendering --------
+  const trackSvg = document.getElementById('trackSvg');
+  const TW=640, TH=160, padL=30, padR=30;
+  trackSvg.innerHTML = '<g id="trackBg"></g><g id="carGroup"><circle class="car-glow" r="12"/><circle class="car-body" r="6"/></g>';
+  const trackBg = document.getElementById('trackBg');
+  const carGroup = document.getElementById('carGroup');
+  const trackY = 96;
+  let scrX = (x)=> TW/2 + x*10;   // replaced by renderTrack each call
+
+  function renderTrack(K){
+    const pieces = colorPieces(K.segs);
+    let xs = [K.segs.length ? 0 : 0];
+    K.segs.forEach(s=>{ xs.push(s.x0, s.x1); if(Math.sign(s.v0)!==Math.sign(s.v1) && s.a!==0){ const tC=s.t0-s.v0/s.a; if(tC>s.t0 && tC<s.t1) xs.push(xAt(K.segs,tC)); } });
+    xs.push(0);
+    let minX = Math.min(...xs), maxX = Math.max(...xs);
+    if(maxX-minX < 4){ const mid=(maxX+minX)/2; minX=mid-2; maxX=mid+2; }
+    const pad = (maxX-minX)*0.18;
+    minX -= pad; maxX += pad;
+    const pxPerM = (TW-padL-padR)/(maxX-minX);
+    scrX = (x)=> padL + (x-minX)*pxPerM;
+
+    let s = '';
+    const step = niceStep(maxX-minX);
+    for(let v = Math.ceil(minX/step)*step; v<=maxX; v+=step){
+      const x = scrX(v);
+      s += `<line class="track-tick" x1="${x.toFixed(1)}" y1="${trackY-8}" x2="${x.toFixed(1)}" y2="${trackY+8}"/>`;
+      s += `<text class="tick-label" x="${x.toFixed(1)}" y="${trackY+24}" text-anchor="middle">${v.toFixed(step<1?1:0)}</text>`;
+    }
+    s += `<line class="track-line" x1="${padL}" y1="${trackY}" x2="${TW-padR}" y2="${trackY}"/>`;
+
+    pieces.forEach(p=>{
+      const x1 = scrX(xAt(K.segs, p.t0)), x2 = scrX(xAt(K.segs, p.t1));
+      s += `<line class="trail-piece ${p.state}" x1="${x1.toFixed(1)}" y1="${trackY}" x2="${x2.toFixed(1)}" y2="${trackY}"/>`;
+    });
+
+    trackBg.innerHTML = s;
+    const lastX = K.segs.length ? K.segs[K.segs.length-1].x1 : 0;
+    carGroup.style.transform = `translate(${scrX(lastX).toFixed(1)}px, ${trackY}px)`;
+  }
+
+  // -------- timeline strip --------
+  function renderTimeline(){
+    const tl = document.getElementById('timeline');
+    if(!segments.length){ tl.innerHTML = '<span class="timeline-empty">no segments yet — add one above</span>'; return; }
+    tl.innerHTML = segments.map(s=>{
+      const cls = s.a>0 ? 'pos' : (s.a<0 ? 'neg' : 'zero');
+      const w = Math.max(34, s.dur*SEC_PX);
+      return `<div class="seg-block ${cls}" style="width:${w}px;" title="${fmtSigned(s.a,1)} m/s² for ${s.dur}s">${fmtSigned(s.a,1)}</div>`;
+    }).join('');
+  }
+
+  // -------- chart --------
+  let chartXAt = null, chartYAt = null;
+  function renderChart(K){
+    const chartSvg = document.getElementById('chartSvg');
+    const cw=1100, ch=260, cpadL=52, cpadR=20, cpadT=16, cpadB=30;
+    const plotW=cw-cpadL-cpadR, plotH=ch-cpadT-cpadB;
+    const totalTime = K.totalTime || 1;
+
+    let vs=[K.v0]; K.segs.forEach(s=>vs.push(s.v0,s.v1));
+    let minV = Math.min(0,...vs), maxV = Math.max(0,...vs);
+    if(maxV-minV < 2){ minV-=1; maxV+=1; }
+    const padV = (maxV-minV)*0.12; minV-=padV; maxV+=padV;
+
+    function xAtC(t){ return cpadL + (t/totalTime)*plotW; }
+    function yAtC(v){ return cpadT + plotH - (v-minV)/(maxV-minV)*plotH; }
+    chartXAt = xAtC; chartYAt = yAtC;
+
+    let s = '';
+    const yTicks=4;
+    for(let k=0;k<=yTicks;k++){
+      const val = minV + (k/yTicks)*(maxV-minV), y = yAtC(val);
+      s += `<line class="chart-grid" x1="${cpadL}" y1="${y}" x2="${cw-cpadR}" y2="${y}"/>`;
+      s += `<text class="chart-tick" x="${cpadL-8}" y="${y+3}" text-anchor="end">${val.toFixed(1)}</text>`;
+    }
+    s += `<line class="chart-zero" x1="${cpadL}" y1="${yAtC(0)}" x2="${cw-cpadR}" y2="${yAtC(0)}"/>`;
+    s += `<line class="chart-axis" x1="${cpadL}" y1="${cpadT}" x2="${cpadL}" y2="${ch-cpadB}"/>`;
+    s += `<line class="chart-axis" x1="${cpadL}" y1="${ch-cpadB}" x2="${cw-cpadR}" y2="${ch-cpadB}"/>`;
+    s += `<text class="chart-tick" x="${cpadL}" y="${ch-8}">t = 0s</text>`;
+    if(K.totalTime>0) s += `<text class="chart-tick" x="${cw-cpadR}" y="${ch-8}" text-anchor="end">t = ${K.totalTime.toFixed(1)}s</text>`;
+
+    const pieces = colorPieces(K.segs);
+    pieces.forEach(p=>{
+      const v1 = vAt(K.segs, K.v0, p.t0), v2 = vAt(K.segs, K.v0, p.t1);
+      s += `<path class="chart-line ${p.state}" d="M${xAtC(p.t0).toFixed(1)} ${yAtC(v1).toFixed(1)} L${xAtC(p.t1).toFixed(1)} ${yAtC(v2).toFixed(1)}"/>`;
+    });
+
+    if(K.segs.length){
+      s += `<line class="chart-secant" x1="${xAtC(0).toFixed(1)}" y1="${yAtC(K.v0).toFixed(1)}" x2="${xAtC(K.totalTime).toFixed(1)}" y2="${yAtC(K.v0+K.totalDeltaV).toFixed(1)}"/>`;
+    }
+    s += `<line class="chart-marker" id="chartMarker" x1="${cpadL}" y1="${cpadT}" x2="${cpadL}" y2="${ch-cpadB}"/>`;
+    chartSvg.innerHTML = s;
+  }
+
+  // -------- side stats (static preview when not playing) --------
+  function updatePreview(K){
+    document.getElementById('velValue').textContent = '–';
+    document.getElementById('velSub').textContent = K.segs.length ? 'press Play to start' : 'add a segment, then press Play';
+    document.getElementById('stateBadge').textContent = 'at rest';
+    document.getElementById('stateBadge').className = 'state-badge flat';
+    document.getElementById('accValue').textContent = '–';
+    document.getElementById('accFill').style.width = '0%';
+    document.getElementById('accFill').style.left = '50%';
+    const avgA = K.totalTime>0 ? K.totalDeltaV/K.totalTime : 0;
+    document.getElementById('avgAccValue').textContent = fmtSigned(avgA,2) + ' m/s²';
+    document.getElementById('elapsedVal').textContent = K.totalTime.toFixed(1) + ' s';
+  }
+
+  function setAccelGauge(a){
+    const frac = Math.max(-1, Math.min(1, a/A_MAX));
+    if(frac >= 0){ document.getElementById('accFill').style.left = '50%'; document.getElementById('accFill').style.width = (frac*50)+'%'; }
+    else { document.getElementById('accFill').style.left = (50+frac*50)+'%'; document.getElementById('accFill').style.width = (-frac*50)+'%'; }
+  }
+
+  function updateLive(t, K){
+    const v = vAt(K.segs, K.v0, t);
+    const a = aAt(K.segs, t);
+    const x = xAt(K.segs, t);
+
+    document.getElementById('velValue').textContent = fmtSigned(v,2) + ' m/s';
+    document.getElementById('velSub').textContent = v===0 ? 'momentarily at rest' : (v>0 ? 'moving in the + direction' : 'moving in the − direction');
+
+    let state, label;
+    if(a===0 || Math.abs(v) < 1e-6){ state='flat'; label = a===0 ? 'constant velocity' : 'at rest'; }
+    else if(v*a > 0){ state='speed'; label='speeding up'; }
+    else { state='slow'; label='slowing down'; }
+    const badge = document.getElementById('stateBadge');
+    badge.textContent = label; badge.className = 'state-badge '+state;
+
+    document.getElementById('accValue').textContent = fmtSigned(a,2) + ' m/s²';
+    setAccelGauge(a);
+
+    const avgA = t>0 ? (v-K.v0)/t : 0;
+    document.getElementById('avgAccValue').textContent = fmtSigned(avgA,2) + ' m/s²';
+    document.getElementById('elapsedVal').textContent = t.toFixed(1) + ' s';
+
+    carGroup.style.transform = `translate(${scrX(x).toFixed(1)}px, ${trackY}px)`;
+
+    const marker = document.getElementById('chartMarker');
+    if(marker && chartXAt){ const mx=chartXAt(t); marker.setAttribute('x1',mx); marker.setAttribute('x2',mx); marker.setAttribute('opacity',1); }
+  }
+
+  function renderAll(){
+    const K = computeKinematics();
+    renderTrack(K);
+    renderTimeline();
+    renderChart(K);
+    if(!playing) updatePreview(K);
+    return K;
+  }
+
+  // -------- controls --------
+  document.getElementById('addBtn').addEventListener('click', ()=>{
+    stopPlaying();
+    const a = parseFloat(aSlider.value);
+    const dur = Math.max(0.5, parseFloat(durInput.value)||2);
+    segments.push({a, dur});
+    renderAll();
+  });
+  document.getElementById('undoBtn').addEventListener('click', ()=>{ stopPlaying(); segments.pop(); renderAll(); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ stopPlaying(); segments=[]; renderAll(); });
+  v0Input.addEventListener('change', ()=>{ stopPlaying(); renderAll(); });
+
+  const playBtn = document.getElementById('playBtn');
+  function stopPlaying(){
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId=null; playing=false; playStartTs=null;
+    carGroup.classList.remove('playing');
+    playBtn.disabled=false; playBtn.textContent='▶ Play';
+  }
+  playBtn.addEventListener('click', ()=>{
+    const K = computeKinematics();
+    if(!K.segs.length || playing) return;
+    playing = true; playStartTs = null;
+    carGroup.classList.add('playing');
+    playBtn.disabled = true; playBtn.textContent = '● Playing…';
+
+    function frame(ts){
+      if(!playStartTs) playStartTs = ts;
+      const t = (ts-playStartTs)/PLAYBACK_MS_PER_SEC;
+      if(t < K.totalTime){
+        updateLive(t, K);
+        rafId = requestAnimationFrame(frame);
+      } else {
+        updateLive(K.totalTime, K);
+        playing = false; rafId = null;
+        carGroup.classList.remove('playing');
+        playBtn.disabled = false; playBtn.textContent = '▶ Replay';
+      }
+    }
+    rafId = requestAnimationFrame(frame);
+  });
+
+  renderAll();
+
+  // -------- practice problems --------
+  document.querySelectorAll('#mcq1 input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+      const fb = document.getElementById('fb1');
+      const chosen = document.querySelector('#mcq1 input:checked');
+      const label = chosen.closest('.mcq-opt');
+      if(chosen.value==='a'){
+        label.classList.add('correct'); fb.className='feedback show ok';
+        fb.textContent='Correct. Gravity pulls down the whole time (a is negative), while the ball is still moving up (v is positive) — opposite signs, so it\'s slowing down, exactly as you\'d expect on the way up.';
+      } else {
+        label.classList.add('incorrect'); fb.className='feedback show no';
+        fb.textContent='Not quite. Velocity is positive (still rising) and acceleration is negative (gravity, constant downward) — opposite signs mean slowing down, not speeding up.';
+      }
+    });
+  });
+
+  function checkOne(id, exp, fbId, tol, note){
+    const v = parseFloat(document.getElementById(id).value);
+    const fb = document.getElementById(fbId);
+    if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+    const ok = Math.abs(v-exp) <= tol;
+    fb.className='feedback show '+(ok?'ok':'no');
+    fb.textContent = ok ? ('Correct — '+note) : 'Not quite yet. Open "Show solution" for a walkthrough.';
+  }
+  function checkPair(idA, idB, expA, expB, fbId, tol, note){
+    const a=parseFloat(document.getElementById(idA).value), b=parseFloat(document.getElementById(idB).value);
+    const fb=document.getElementById(fbId);
+    if(isNaN(a)||isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+    const okA=Math.abs(a-expA)<=tol, okB=Math.abs(b-expB)<=tol;
+    if(okA&&okB){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+    else{ fb.className='feedback show no'; fb.textContent='Not quite yet. '+(!okA?'Check the first value. ':'')+(!okB?'Check the second value. ':'')+'Open "Show solution" for a walkthrough.'; }
+  }
+
+  document.getElementById('check2').addEventListener('click', ()=>checkOne('q2a', 4.0, 'fb2', 0.15, 'a straightforward Δv ⁄ Δt.'));
+  document.getElementById('check3').addEventListener('click', ()=>checkPair('q3a','q3b', 5.0, -4.0, 'fb3', 0.15, 'the car reaches rest at t = 5.0 s, then keeps accelerating into negative velocity by t = 6.0 s.'));
+  document.getElementById('check4').addEventListener('click', ()=>checkOne('q4a', -2.0, 'fb4', 0.15, 'v stayed negative throughout while a was positive — opposite signs the whole time, so it was slowing down all 3 seconds.'));
+})();
+</script>
+</body>
+</html>

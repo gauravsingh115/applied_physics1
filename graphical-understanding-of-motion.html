@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graphical Understanding of Motion — Slope &amp; Area</title>
+<style>
+  :root{
+    --bg: #ffffff;
+    --bg-2: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #ffffff;
+    --border: #ddd;
+    --border-soft: #eee;
+    --text: #111111;
+    --text-muted: #666666;
+    --text-dim: #999999;
+    --xcolor: #111111;
+    --vcolor: #111111;
+    --acolor: #111111;
+    --xcolor-dim: #eeeeee;
+    --vcolor-dim: #eeeeee;
+    --acolor-dim: #eeeeee;
+    --bad: #c1373f;
+    --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 32px 20px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app{ max-width: 1180px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+
+  header{ margin-bottom: 30px; max-width: 780px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; }
+  h1{
+    font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em;
+  }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 660px; }
+
+  .concepts{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .concept-card{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 22px 22px 20px; }
+  .concept-card.slope{ border-top: 2px solid var(--vcolor); }
+  .concept-card.area{ border-top: 2px solid var(--acolor); }
+  .concept-card .icon{ margin-bottom: 14px; }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card strong{ color: var(--text); font-weight: 600; }
+  .concept-card .chain{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 0; padding: 8px 11px; margin-top: 10px; display: block; line-height: 1.7; }
+  .concept-card .chain b{ font-weight: 600; }
+  .concept-card.slope .chain b{ color: var(--vcolor); }
+  .concept-card.area .chain b{ color: var(--acolor); }
+
+  .explorer-panel{ background: var(--panel-2); border: 1px solid var(--border); border-radius: 0; padding: 18px 18px 16px; }
+  .toolbar-row{ display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 12px; }
+  .field{ display: flex; align-items: center; gap: 8px; background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 6px 12px; }
+  .field label{ font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
+  .field input[type="number"]{ width: 56px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 4px 6px; }
+  .field input[type="range"]{ width: 110px; accent-color: var(--acolor); }
+  .field .val{ font-family: var(--font-mono); font-size: 13px; color: var(--acolor); font-weight: 600; min-width: 58px; text-align: right; }
+
+  button{
+    font-family: var(--font-body); font-weight: 600; font-size: 13px; border-radius: 0;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    padding: 7px 13px; cursor: pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  button:hover{ border-color: rgba(0,0,0,0.32); background: #f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button:focus-visible{ outline: 2px solid var(--vcolor); outline-offset: 2px; }
+  button:disabled{ opacity: 0.5; cursor: default; }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background: #333; }
+  button.ghost{ background: transparent; }
+  .preset-row{ display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .preset-row button{ font-weight: 500; font-size: 12.5px; padding: 6px 11px; color: var(--text-muted); }
+
+  .timeline{ display: flex; gap: 3px; align-items: stretch; height: 40px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
+  .seg-block{ flex-shrink: 0; border-radius: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: #fff; min-width: 34px; }
+  .seg-block.pos{ background: var(--text); }
+  .seg-block.neg{ background: #fff; color: var(--text); border: 1px dashed var(--text); }
+  .seg-block.zero{ background: var(--border-soft); color: var(--text); }
+  .timeline-empty{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); align-self: center; }
+
+  .scrub-row{ display: flex; align-items: center; gap: 14px; margin-bottom: 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 10px 16px; }
+  .scrub-row input[type="range"]{ flex: 1; accent-color: var(--vcolor); }
+  .scrub-row .tval{ font-family: var(--font-mono); font-size: 13px; color: var(--text); min-width: 66px; text-align: right; }
+
+  .graph-block{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 12px 14px 8px; margin-bottom: 12px; }
+  .graph-head{ display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; flex-wrap: wrap; gap: 6px; }
+  .graph-head .gtitle{ font-family: var(--font-display); font-size: 14.5px; font-weight: 600; }
+  .graph-head .gtitle.x{ color: var(--xcolor); }
+  .graph-head .gtitle.v{ color: var(--vcolor); }
+  .graph-head .gtitle.a{ color: var(--acolor); }
+  .graph-head .greadout{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-muted); }
+  .graph-head .greadout b{ color: var(--text); font-weight: 600; }
+  svg.graph-svg{ width: 100%; height: auto; display: block; }
+  .g-grid{ stroke: rgba(0,0,0,0.06); stroke-width: 1; }
+  .g-zero{ stroke: rgba(0,0,0,0.25); stroke-width: 1; }
+  .g-axis{ stroke: rgba(0,0,0,0.2); stroke-width: 1; }
+  .g-tick{ font-family: var(--font-mono); font-size: 10px; fill: var(--text-dim); }
+  .g-curve{ fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .g-curve.x{ stroke: var(--xcolor); }
+  .g-curve.v{ stroke: var(--vcolor); }
+  .g-curve.a{ stroke: var(--acolor); }
+  .g-area{ opacity: 0.22; }
+  .g-area.v{ fill: var(--vcolor); }
+  .g-area.a{ fill: var(--acolor); }
+  .g-tangent{ stroke: var(--text); stroke-width: 1.4; stroke-dasharray: 3 3; opacity: 0.85; }
+  .g-marker{ fill: var(--text); }
+  .g-marker-ring{ fill: none; stroke: var(--text); stroke-width: 1.2; opacity: 0.5; }
+
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; }
+  .note b{ color: var(--text-muted); }
+
+  .gallery{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 10px; margin-top: 4px; }
+  .gallery button{ display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; text-align: left; }
+  .gallery button .glabel{ font-weight: 600; font-size: 13px; }
+  .gallery button .gdesc{ font-weight: 400; font-size: 11.5px; color: var(--text-dim); }
+
+  .problems{ display: flex; flex-direction: column; gap: 14px; }
+  .problem{ background: var(--panel); border: 1px solid var(--border); border-radius: 0; padding: 18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin: 0 0 8px; }
+  .problem .ptext{ font-size: 15px; line-height: 1.55; margin: 0 0 14px; }
+  .problem .ptext em{ color: var(--text); font-style: normal; font-weight: 600; }
+
+  .mcq-opts{ display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .mcq-opt{ display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 0; cursor: pointer; font-size: 14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,0.3); }
+  .mcq-opt input{ margin-top: 3px; accent-color: var(--vcolor); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,0.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,0.08); }
+
+  .answer-row{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .answer-field{ display: flex; align-items: center; gap: 6px; }
+  .answer-field label{ font-size: 13px; color: var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width: 96px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 0; color: var(--text); font-family: var(--font-mono); font-size: 14px; padding: 6px 9px; }
+  .answer-field input:focus-visible{ outline: 2px solid var(--vcolor); outline-offset: 1px; }
+  .answer-field .unit{ font-size: 12.5px; color: var(--text-dim); }
+
+  .feedback{ font-size: 13.5px; margin-top: 8px; line-height: 1.55; display: none; padding: 10px 12px; border-radius: 0; }
+  .feedback.show{ display: block; }
+  .feedback.ok{ background: rgba(107,222,142,0.08); color: var(--good); border: 1px solid rgba(107,222,142,0.25); }
+  .feedback.no{ background: rgba(255,122,107,0.08); color: var(--bad); border: 1px solid rgba(255,122,107,0.25); }
+
+  details.solution{ margin-top: 6px; }
+  details.solution summary{ cursor: pointer; font-size: 13px; color: var(--vcolor); font-weight: 600; list-style: none; display: inline-flex; align-items: center; gap: 5px; }
+  details.solution summary::-webkit-details-marker{ display: none; }
+  details.solution summary::before{ content: '›'; display: inline-block; transition: transform .15s ease; font-size: 16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+
+  .challenge{ border: 1px dashed var(--border); background: transparent; border-radius: 0; padding: 16px 20px; }
+  .challenge .ptext{ margin-bottom: 4px; }
+  .challenge .pnum{ color: var(--acolor); }
+
+  footer{ margin-top: 40px; text-align: center; color: var(--text-dim); font-size: 12.5px; font-family: var(--font-mono); }
+
+  @media (max-width: 900px){
+    .concepts{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="distance-displacement.html">Distance &amp; Displacement</a>
+    <a href="speed-velocity.html">Speed &amp; Velocity</a>
+    <a href="acceleration.html">Acceleration</a>
+    <a href="jerk.html">Jerk</a>
+    <a class="here" href="graphical-understanding-of-motion.html">Graphs of Motion</a>
+    <a href="motion-in-a-straight-line.html">Motion in a Straight Line</a>
+    <a href="equations-of-motion.html">Equations of Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">kinematics — graphical understanding of motion</p>
+    <h1>Three graphs, one motion</h1>
+    <p>Position, velocity, and acceleration are the same story told three times. Each graph's <strong>slope</strong> is the next graph's height, and each graph's <strong>area</strong> is the next graph's change. Scrub through a motion below and watch all three move together.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card slope">
+        <div class="icon">
+          <svg width="70" height="42" viewBox="0 0 70 42" fill="none">
+            <path d="M4 36 C 20 34, 30 24, 40 18 C 52 10, 60 8, 66 6" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <line x1="26" y1="30.5" x2="52" y2="14" stroke="#111" stroke-width="1.4" stroke-dasharray="3 3"/>
+            <circle cx="38" cy="20.2" r="3" fill="#111"/>
+          </svg>
+        </div>
+        <h3>Slope tells you the next graph up</h3>
+        <p>The steeper a curve, the faster the quantity below it is changing. A tangent line's slope <strong>is</strong> the reading on the graph one level up.</p>
+        <span class="chain">slope of <b>x-t</b> → v<br>slope of <b>v-t</b> → a</span>
+      </div>
+      <div class="concept-card area">
+        <div class="icon">
+          <svg width="70" height="42" viewBox="0 0 70 42" fill="none">
+            <polygon points="6,36 6,20 26,10 46,16 46,36" fill="#999" opacity="0.28"/>
+            <polyline points="6,20 26,10 46,16" stroke="#111" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <line x1="6" y1="36" x2="66" y2="36" stroke="#111" stroke-width="1.4" opacity="0.4"/>
+          </svg>
+        </div>
+        <h3>Area tells you the next graph down</h3>
+        <p>The space between a curve and the zero line, added up over time, gives the <strong>total change</strong> in the quantity one level below.</p>
+        <span class="chain">area under <b>v-t</b> → Δx<br>area under <b>a-t</b> → Δv</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="explorer">
+    <div class="section-head">
+      <h2>Build a motion, read all three graphs</h2>
+      <p>Set a starting velocity and stack up acceleration segments, or load a shape from the gallery below. Then drag the scrubber — the dashed line is the tangent (slope), the shaded region is the accumulated area, both updating live.</p>
+    </div>
+
+    <div class="explorer-panel">
+      <div class="toolbar-row">
+        <div class="field"><label for="v0Input">start v₀</label><input type="number" id="v0Input" value="0" step="0.5"><span class="val">m/s</span></div>
+        <div class="field"><label for="aSlider">acceleration</label><input type="range" id="aSlider" min="-5" max="5" step="0.1" value="2"><span class="val" id="aVal">+2.0 m/s²</span></div>
+        <div class="field"><label for="durInput">for</label><input type="number" id="durInput" value="3" min="0.5" max="8" step="0.5"><span class="val">s</span></div>
+        <button id="addBtn" class="primary">+ Add segment</button>
+        <button id="undoBtn" class="ghost">Undo</button>
+        <button id="resetBtn" class="ghost">Reset</button>
+      </div>
+
+      <div class="timeline" id="timeline"><span class="timeline-empty">no segments yet — add one, or pick a shape below</span></div>
+
+      <div class="gallery" id="gallery"></div>
+
+      <div class="scrub-row">
+        <button id="playBtn" class="primary">▶ Play</button>
+        <input type="range" id="scrubSlider" min="0" max="1" step="0.005" value="0">
+        <span class="tval" id="scrubTval">t = 0.0 s</span>
+      </div>
+
+      <div class="graph-block">
+        <div class="graph-head">
+          <span class="gtitle x">position — x(t)</span>
+          <span class="greadout">slope here (velocity) = <b id="xSlopeVal">–</b></span>
+        </div>
+        <svg class="graph-svg" id="xSvg" viewBox="0 0 1100 170"></svg>
+      </div>
+
+      <div class="graph-block">
+        <div class="graph-head">
+          <span class="gtitle v">velocity — v(t)</span>
+          <span class="greadout">slope = <b id="vSlopeVal">–</b> &nbsp;·&nbsp; area so far (Δx) = <b id="vAreaVal">–</b></span>
+        </div>
+        <svg class="graph-svg" id="vSvg" viewBox="0 0 1100 170"></svg>
+      </div>
+
+      <div class="graph-block">
+        <div class="graph-head">
+          <span class="gtitle a">acceleration — a(t)</span>
+          <span class="greadout">area so far (Δv) = <b id="aAreaVal">–</b></span>
+        </div>
+        <svg class="graph-svg" id="aSvg" viewBox="0 0 1100 170"></svg>
+      </div>
+
+      <p class="note"><b>Notice:</b> the tangent on the x-t graph always reads the same value shown on the v-t graph directly below it at that instant — and the shaded area on the v-t graph always matches how far the x-t curve has risen or fallen since t = 0.</p>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these from the graph descriptions, then check yourself.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">A velocity-time graph shows a perfectly horizontal line above the time axis. What does this describe?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> The object is at rest.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> The object moves with constant velocity — zero acceleration.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> The object moves with constant, nonzero acceleration.</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> The object's position isn't changing.</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">On a position-time graph, an object is at <em>x = 4 m</em> when <em>t = 2 s</em>, and at <em>x = 20 m</em> when <em>t = 6 s</em>. Find its average velocity over that interval.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">v =</label><input type="text" id="q2a" placeholder="?"><span class="unit">m/s</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Average velocity is the slope of the straight line (secant) connecting the two points: <code>(20 − 4) ⁄ (6 − 2) = 4 m/s</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A velocity-time graph is a horizontal line at <em>5 m/s</em> from <em>t = 0</em> to <em>t = 8 s</em>. Use the area under the graph to find the displacement over that time.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">Δx =</label><input type="text" id="q3a" placeholder="?"><span class="unit">m</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">The shaded region is a rectangle: <code>5 m/s × 8 s = 40 m</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">An object starts at rest and its velocity rises in a straight line to <em>12 m/s</em> after <em>6 s</em> of constant acceleration. Use the area under the v-t graph to find the displacement.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">Δx =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">The shaded region is a triangle, not a rectangle, since velocity isn't constant: <code>½ × 6 s × 12 m/s = 36 m</code>.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the explorer</p>
+        <p class="ptext">Load the "thrown upward" shape below. Scrub to the exact peak of the x-t curve. What does the v-t graph show at that instant — and what does the a-t graph show? Many people guess acceleration is also zero at the peak. Is it?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>drag the scrubber, or press Play, to move through time</footer>
+</div>
+
+<script>
+(function(){
+  const PLAYBACK_MS_PER_SEC = 700;
+
+  let segments = [];
+  let playing = false, rafId = null, playStartTs = null;
+
+  const v0Input = document.getElementById('v0Input');
+  const aSlider = document.getElementById('aSlider');
+  const aVal = document.getElementById('aVal');
+  const durInput = document.getElementById('durInput');
+  const scrubSlider = document.getElementById('scrubSlider');
+  const scrubTval = document.getElementById('scrubTval');
+
+  function fmtSigned(v, digits){ return (v>=0?'+':'') + v.toFixed(digits); }
+  aSlider.addEventListener('input', ()=>{ aVal.textContent = fmtSigned(parseFloat(aSlider.value),1) + ' m/s²'; });
+
+  // -------- kinematics core (validated) --------
+  function computeKinematics(){
+    const v0 = parseFloat(v0Input.value) || 0;
+    let t=0, v=v0, x=0;
+    const segs = [];
+    for(const s of segments){
+      const t0=t, vS=v, xS=x;
+      const t1=t0+s.dur, v1=vS+s.a*s.dur, x1=xS+vS*s.dur+0.5*s.a*s.dur*s.dur;
+      segs.push({a:s.a, t0, t1, dur:s.dur, v0:vS, v1, x0:xS, x1});
+      t=t1; v=v1; x=x1;
+    }
+    return { v0, segs, totalTime: t };
+  }
+  function vAt(segs, v0, tq){ for(const s of segs){ if(tq>=s.t0-1e-9 && tq<=s.t1+1e-9) return s.v0+s.a*(tq-s.t0); } return segs.length?segs[segs.length-1].v1:v0; }
+  function xAt(segs, tq){ for(const s of segs){ if(tq>=s.t0-1e-9 && tq<=s.t1+1e-9){ const tau=tq-s.t0; return s.x0+s.v0*tau+0.5*s.a*tau*tau; } } return segs.length?segs[segs.length-1].x1:0; }
+  function aAt(segs, tq){ for(const s of segs){ if(tq>=s.t0-1e-9 && tq<=s.t1+1e-9) return s.a; } return segs.length?segs[segs.length-1].a:0; }
+
+  function niceStep(range){
+    const raw = Math.max(range,0.001)/5;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const options = [1,2,5,10].map(m=>m*mag);
+    return options.reduce((best,o)=> Math.abs(o-raw)<Math.abs(best-raw)?o:best, options[0]);
+  }
+
+  // sampled curve points for drawing, in (t,value) pairs
+  function curvePoints(mode, K){
+    const pts = [];
+    if(mode==='a'){
+      if(!K.segs.length) return [[0,0]];
+      K.segs.forEach(s=>{ pts.push([s.t0,s.a],[s.t1,s.a]); });
+    } else if(mode==='v'){
+      pts.push([0,K.v0]);
+      K.segs.forEach(s=> pts.push([s.t1,s.v1]));
+    } else {
+      pts.push([0,0]);
+      K.segs.forEach(s=>{
+        const N=14;
+        for(let k=1;k<=N;k++){ const tau=(k/N)*s.dur, t=s.t0+tau; pts.push([t, s.x0+s.v0*tau+0.5*s.a*tau*tau]); }
+      });
+    }
+    return pts;
+  }
+
+  // truncate a curve's points at time t (for the shaded "area so far")
+  function trimAtT(mode, K, t){
+    if(mode==='a'){
+      const pts=[];
+      for(const s of K.segs){
+        if(t <= s.t0+1e-9) break;
+        if(t >= s.t1-1e-9){ pts.push([s.t0,s.a],[s.t1,s.a]); }
+        else { pts.push([s.t0,s.a],[t,s.a]); break; }
+      }
+      return pts;
+    }
+    const pts=[[0,K.v0]];
+    for(const s of K.segs){
+      if(t <= s.t0+1e-9) break;
+      if(t >= s.t1-1e-9){ pts.push([s.t1,s.v1]); }
+      else { pts.push([t, vAt(K.segs,K.v0,t)]); break; }
+    }
+    return pts;
+  }
+
+  // -------- graph panel renderer --------
+  const panels = {}; // mode -> {xScale,yScale,domainT,domainY}
+
+  function renderPanel(mode, K){
+    const svg = document.getElementById(mode==='x'?'xSvg':mode==='v'?'vSvg':'aSvg');
+    const cw=1100, ch=170, padL=48, padR=18, padT=12, padB=26;
+    const plotW=cw-padL-padR, plotH=ch-padT-padB;
+    const totalTime = Math.max(K.totalTime, 0.001);
+
+    const pts = curvePoints(mode, K);
+    let ys = pts.map(p=>p[1]);
+    if(mode!=='a') ys.push(0);
+    let minY = Math.min(...ys), maxY = Math.max(...ys);
+    if(maxY-minY < 1) { const mid=(maxY+minY)/2; minY=mid-1; maxY=mid+1; }
+    const padY = (maxY-minY)*0.14; minY-=padY; maxY+=padY;
+
+    function xScale(t){ return padL + (t/totalTime)*plotW; }
+    function yScale(v){ return padT + plotH - (v-minY)/(maxY-minY)*plotH; }
+    panels[mode] = { xScale, yScale, minY, maxY, totalTime, padT, padB, ch };
+
+    let s = '';
+    const step = niceStep(maxY-minY);
+    for(let v = Math.ceil(minY/step)*step; v<=maxY; v+=step){
+      const y = yScale(v);
+      s += `<line class="g-grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${cw-padR}" y2="${y.toFixed(1)}"/>`;
+      s += `<text class="g-tick" x="${padL-6}" y="${(y+3).toFixed(1)}" text-anchor="end">${v.toFixed(step<1?1:0)}</text>`;
+    }
+    if(minY<0 && maxY>0) s += `<line class="g-zero" x1="${padL}" y1="${yScale(0).toFixed(1)}" x2="${cw-padR}" y2="${yScale(0).toFixed(1)}"/>`;
+    s += `<line class="g-axis" x1="${padL}" y1="${padT}" x2="${padL}" y2="${ch-padB}"/>`;
+    s += `<line class="g-axis" x1="${padL}" y1="${ch-padB}" x2="${cw-padR}" y2="${ch-padB}"/>`;
+    s += `<text class="g-tick" x="${padL}" y="${ch-8}">0s</text>`;
+    if(K.totalTime>0) s += `<text class="g-tick" x="${cw-padR}" y="${ch-8}" text-anchor="end">${K.totalTime.toFixed(1)}s</text>`;
+
+    // static shaded area placeholder (updated live) + curve
+    s += `<path class="g-area ${mode}" id="area-${mode}" d=""/>`;
+    const path = pts.map((p,i)=> (i===0?'M':'L')+xScale(p[0]).toFixed(1)+' '+yScale(p[1]).toFixed(1)).join(' ');
+    s += `<path class="g-curve ${mode}" d="${path}"/>`;
+    s += `<line class="g-tangent" id="tan-${mode}" x1="0" y1="0" x2="0" y2="0" opacity="0"/>`;
+    s += `<circle class="g-marker-ring" id="ring-${mode}" cx="0" cy="0" r="7" opacity="0"/>`;
+    s += `<circle class="g-marker" id="dot-${mode}" cx="0" cy="0" r="3.5" opacity="0"/>`;
+
+    svg.innerHTML = s;
+  }
+
+  function renderAllGraphs(K){
+    renderPanel('x', K);
+    renderPanel('v', K);
+    renderPanel('a', K);
+  }
+
+  // -------- scrub: update markers, tangents, shaded areas, readouts --------
+  function updateScrub(t, K){
+    t = Math.max(0, Math.min(K.totalTime, t));
+    scrubSlider.value = K.totalTime>0 ? t : 0;
+    scrubTval.textContent = 't = ' + t.toFixed(2) + ' s';
+
+    const xv = xAt(K.segs, t), vv = vAt(K.segs, K.v0, t), av = aAt(K.segs, t);
+
+    // ---- x panel: marker + tangent (slope = v) ----
+    updateMarker('x', t, xv);
+    updateTangent('x', t, xv, vv, K.totalTime);
+    document.getElementById('xSlopeVal').textContent = K.segs.length ? fmtSigned(vv,2)+' m/s' : '–';
+
+    // ---- v panel: marker + tangent (slope = a) + area (=Δx) ----
+    updateMarker('v', t, vv);
+    updateTangent('v', t, vv, av, K.totalTime);
+    updateArea('v', K, t);
+    document.getElementById('vSlopeVal').textContent = K.segs.length ? fmtSigned(av,2)+' m/s²' : '–';
+    document.getElementById('vAreaVal').textContent = K.segs.length ? fmtSigned(xv-xAt(K.segs,0),2)+' m' : '–';
+
+    // ---- a panel: marker + area (=Δv) ----
+    updateMarker('a', t, av);
+    updateArea('a', K, t);
+    document.getElementById('aAreaVal').textContent = K.segs.length ? fmtSigned(vv-K.v0,2)+' m/s' : '–';
+  }
+
+  function updateMarker(mode, t, val){
+    const P = panels[mode]; if(!P) return;
+    const dot = document.getElementById('dot-'+mode), ring = document.getElementById('ring-'+mode);
+    if(!panels_hasData(mode)){ dot.setAttribute('opacity',0); ring.setAttribute('opacity',0); return; }
+    const sx = P.xScale(t), sy = P.yScale(val);
+    dot.setAttribute('cx',sx); dot.setAttribute('cy',sy); dot.setAttribute('opacity',1);
+    ring.setAttribute('cx',sx); ring.setAttribute('cy',sy); ring.setAttribute('opacity',1);
+  }
+
+  function updateTangent(mode, t, val, slope, totalTime){
+    const P = panels[mode]; if(!P) return;
+    const line = document.getElementById('tan-'+mode);
+    if(!panels_hasData(mode) || totalTime<=0){ line.setAttribute('opacity',0); return; }
+    const dtVis = Math.max(totalTime*0.09, 0.15);
+    const t1 = t-dtVis, t2 = t+dtVis;
+    const v1 = val - slope*dtVis, v2 = val + slope*dtVis;
+    line.setAttribute('x1', P.xScale(t1)); line.setAttribute('y1', P.yScale(v1));
+    line.setAttribute('x2', P.xScale(t2)); line.setAttribute('y2', P.yScale(v2));
+    line.setAttribute('opacity', 0.9);
+  }
+
+  function updateArea(mode, K, t){
+    const P = panels[mode]; if(!P) return;
+    const areaPath = document.getElementById('area-'+mode);
+    if(!K.segs.length || t<=1e-6){ areaPath.setAttribute('d',''); return; }
+    const pts = trimAtT(mode, K, t);
+    if(pts.length<1){ areaPath.setAttribute('d',''); return; }
+    const zeroY = P.yScale(0);
+    let d = `M ${P.xScale(pts[0][0]).toFixed(1)} ${zeroY.toFixed(1)} `;
+    pts.forEach(p=> d += `L ${P.xScale(p[0]).toFixed(1)} ${P.yScale(p[1]).toFixed(1)} `);
+    d += `L ${P.xScale(pts[pts.length-1][0]).toFixed(1)} ${zeroY.toFixed(1)} Z`;
+    areaPath.setAttribute('d', d);
+  }
+
+  function panels_hasData(mode){ return segments.length>0; }
+
+  // -------- timeline strip --------
+  function renderTimeline(){
+    const tl = document.getElementById('timeline');
+    if(!segments.length){ tl.innerHTML = '<span class="timeline-empty">no segments yet — add one, or pick a shape below</span>'; return; }
+    tl.innerHTML = segments.map(s=>{
+      const cls = s.a>0 ? 'pos' : (s.a<0 ? 'neg' : 'zero');
+      const w = Math.max(34, s.dur*40);
+      return `<div class="seg-block ${cls}" style="width:${w}px;" title="${fmtSigned(s.a,1)} m/s² for ${s.dur}s">${fmtSigned(s.a,1)}</div>`;
+    }).join('');
+  }
+
+  // -------- main render / state flow --------
+  let currentT = 0;
+  function renderAll(preserveT){
+    const K = computeKinematics();
+    renderTimeline();
+    renderAllGraphs(K);
+    scrubSlider.max = K.totalTime>0 ? K.totalTime : 1;
+    if(!preserveT) currentT = 0;
+    currentT = Math.min(currentT, K.totalTime);
+    updateScrub(currentT, K);
+    return K;
+  }
+
+  document.getElementById('addBtn').addEventListener('click', ()=>{
+    stopPlaying();
+    segments.push({ a: parseFloat(aSlider.value), dur: Math.max(0.5, parseFloat(durInput.value)||2) });
+    renderAll(false);
+  });
+  document.getElementById('undoBtn').addEventListener('click', ()=>{ stopPlaying(); segments.pop(); renderAll(false); });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{ stopPlaying(); segments=[]; renderAll(false); });
+  v0Input.addEventListener('change', ()=>{ stopPlaying(); renderAll(true); });
+
+  scrubSlider.addEventListener('input', ()=>{
+    stopPlaying();
+    const K = computeKinematics();
+    currentT = parseFloat(scrubSlider.value);
+    updateScrub(currentT, K);
+  });
+
+  // -------- shape gallery (presets) --------
+  const shapes = [
+    { label:'At rest', desc:'flat line, flat line', v0:0, segs:[{a:0,dur:4}] },
+    { label:'Constant velocity', desc:'straight x-t, flat v-t', v0:3, segs:[{a:0,dur:5}] },
+    { label:'Uniform acceleration', desc:'curving x-t, straight v-t', v0:0, segs:[{a:2,dur:4}] },
+    { label:'Braking to a stop', desc:'flattening x-t', v0:8, segs:[{a:-2,dur:4}] },
+    { label:'Thrown upward', desc:'peaks then falls', v0:15, segs:[{a:-5,dur:6}] },
+  ];
+  const gallery = document.getElementById('gallery');
+  gallery.innerHTML = shapes.map((sh,i)=>`<button data-shape="${i}"><span class="glabel">${sh.label}</span><span class="gdesc">${sh.desc}</span></button>`).join('');
+  gallery.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      stopPlaying();
+      const sh = shapes[parseInt(btn.dataset.shape)];
+      v0Input.value = sh.v0;
+      segments = sh.segs.map(s=>({a:s.a, dur:s.dur}));
+      renderAll(false);
+    });
+  });
+
+  // -------- playback --------
+  const playBtn = document.getElementById('playBtn');
+  function stopPlaying(){
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId=null; playing=false; playStartTs=null;
+    playBtn.disabled=false; playBtn.textContent='▶ Play';
+  }
+  playBtn.addEventListener('click', ()=>{
+    const K = computeKinematics();
+    if(!K.segs.length || playing) return;
+    playing = true; playStartTs = null;
+    playBtn.disabled = true; playBtn.textContent = '● Playing…';
+
+    function frame(ts){
+      if(!playStartTs) playStartTs = ts;
+      const t = (ts-playStartTs)/PLAYBACK_MS_PER_SEC;
+      if(t < K.totalTime){
+        currentT = t;
+        updateScrub(t, K);
+        rafId = requestAnimationFrame(frame);
+      } else {
+        currentT = K.totalTime;
+        updateScrub(K.totalTime, K);
+        playing = false; rafId = null;
+        playBtn.disabled = false; playBtn.textContent = '▶ Replay';
+      }
+    }
+    rafId = requestAnimationFrame(frame);
+  });
+
+  renderAll(false);
+
+  // -------- practice problems --------
+  document.querySelectorAll('#mcq1 input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+      const fb = document.getElementById('fb1');
+      const chosen = document.querySelector('#mcq1 input:checked');
+      const label = chosen.closest('.mcq-opt');
+      if(chosen.value==='b'){
+        label.classList.add('correct'); fb.className='feedback show ok';
+        fb.textContent='Correct. A flat v-t line means velocity isn\'t changing — zero slope, zero acceleration — even though the object keeps moving (it is not at rest).';
+      } else {
+        label.classList.add('incorrect'); fb.className='feedback show no';
+        fb.textContent='Not quite. A horizontal v-t line means the height (velocity) never changes, so the slope — the acceleration — is zero. The object is still moving, just at a steady speed.';
+      }
+    });
+  });
+
+  function checkOne(id, exp, fbId, tol, note){
+    const v = parseFloat(document.getElementById(id).value);
+    const fb = document.getElementById(fbId);
+    if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+    const ok = Math.abs(v-exp) <= tol;
+    fb.className='feedback show '+(ok?'ok':'no');
+    fb.textContent = ok ? ('Correct — '+note) : 'Not quite yet. Open "Show solution" for a walkthrough.';
+  }
+  document.getElementById('check2').addEventListener('click', ()=>checkOne('q2a', 4, 'fb2', 0.15, 'the slope of the secant line between the two points.'));
+  document.getElementById('check3').addEventListener('click', ()=>checkOne('q3a', 40, 'fb3', 1, 'a rectangle of height 5 m/s and width 8 s.'));
+  document.getElementById('check4').addEventListener('click', ()=>checkOne('q4a', 36, 'fb4', 1, 'a triangle of base 6 s and height 12 m/s.'));
+})();
+</script>
+</body>
+</html>
