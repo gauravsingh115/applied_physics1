@@ -12,10 +12,9 @@
     color:var(--ink); max-width:720px; margin:0 auto; padding:2.5rem 1.25rem 5rem;
     line-height:1.55;
   }
-  nav.pagenav{ font-size: 13px; color: var(--sub); margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: ui-monospace,Menlo,monospace; }
-  nav.pagenav a{ color: var(--sub); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
-  nav.pagenav a.here{ color: var(--ink); border-bottom-color: var(--ink); }
-  nav.pagenav a:hover{ color: var(--ink); }
+  nav{font-size:.82rem; color:var(--sub); margin-bottom:2rem;}
+  nav a{color:var(--sub); margin-right:1rem; text-decoration:none; border-bottom:1px solid var(--line);}
+  nav a.here{color:var(--ink); border-bottom-color:var(--ink);}
   h1{font-size:1.5rem; margin:0 0 .8rem;}
   h2{font-size:1.05rem; margin:2.4rem 0 .8rem; border-top:1px solid var(--line); padding-top:1.5rem;}
   p{color:#333; margin:0 0 1rem; max-width:62ch;}
@@ -27,7 +26,9 @@
   .controls > div{flex:1; min-width:200px;}
   .frameChoice{display:flex; gap:1rem; font-size:.85rem;}
   .frameChoice label{display:flex; align-items:center; gap:.35rem; color:var(--ink);}
-  .readout{font-family:ui-monospace,Menlo,monospace; font-size:.85rem; color:#333; margin:.75rem 0 0; display:flex; gap:1.5rem; flex-wrap:wrap;}
+  .readout{font-size:.85rem; color:#333; margin:.75rem 0 0; display:flex; gap:1.5rem; flex-wrap:wrap;}
+  .readout .stat{white-space:nowrap;}
+  .readout .stat .val{font-family:ui-monospace,Menlo,monospace; color:#111;}
   .btnRow{display:flex; gap:.6rem; margin-top:1rem;}
   button{font-family:inherit; font-size:.85rem; padding:.4rem .9rem; border:1px solid var(--ink); background:#fff; color:var(--ink); cursor:pointer;}
   button:hover{background:#f2f2f2;}
@@ -41,21 +42,15 @@
 </head>
 <body>
 
-<nav class="pagenav">
-  <a href="distance-displacement.html">Distance &amp; Displacement</a>
-  <a href="speed-velocity.html">Speed &amp; Velocity</a>
-  <a href="acceleration.html">Acceleration</a>
-  <a href="jerk.html">Jerk</a>
-  <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
-  <a href="equations-of-motion.html">Equations of Motion</a>
+<nav>
   <a class="here" href="relative-motion.html">Relative Motion</a>
+  <a href="one-d-motion.html">1-D Motion</a>
   <a href="projectile-motion.html">Projectile Motion</a>
   <a href="multi-d-motion.html">Multi-D Motion</a>
 </nav>
 
 <h1>Relative Motion</h1>
 <p>Velocity depends on who is measuring it. A train's speed on the ground differs from its speed as seen by someone riding a second train. The rule is vector subtraction: velocity of A relative to B equals v<sub>A</sub> − v<sub>B</sub>.</p>
-<p>Everything below lives on a single line with a fixed origin and a positive direction (east). A position is just one signed number — negative means on the other side of the origin, not "less distance" — and each train's position at time t is x(t) = x<sub>0</sub> + vt.</p>
 
 <canvas id="sim" style="height:180px"></canvas>
 
@@ -114,16 +109,6 @@
     <button id="ex3n">New numbers</button>
   </div>
   <div class="fb" id="ex3f"></div>
-</div>
-
-<div class="exercise" id="ex4">
-  <p id="ex4q"></p>
-  <div class="er">
-    <input type="number" id="ex4i" step="any"><span style="font-size:.82rem;color:var(--sub)">s</span>
-    <button id="ex4c">Check</button>
-    <button id="ex4n">New numbers</button>
-  </div>
-  <div class="fb" id="ex4f"></div>
 </div>
 
 <script>
@@ -234,10 +219,10 @@ function draw(){
   ctx.fillText('viewing from: '+(frame==='ground'?'ground':'train '+frame), 8, 16);
 
   document.getElementById('readout').innerHTML =
-    'v<sub>A</sub> (ground) = '+fmt(vA,1)+' m/s &nbsp; &nbsp; '+
-    'v<sub>B</sub> (ground) = '+fmt(vB,1)+' m/s &nbsp; &nbsp; '+
-    'v<sub>A rel B</sub> = '+fmt(vA-vB,1)+' m/s &nbsp; &nbsp; '+
-    'v<sub>B rel A</sub> = '+fmt(vB-vA,1)+' m/s';
+    '<span class="stat">v<sub>A</sub> (ground) <span class="val">'+fmt(vA,1)+' m/s</span></span>'+
+    '<span class="stat">v<sub>B</sub> (ground) <span class="val">'+fmt(vB,1)+' m/s</span></span>'+
+    '<span class="stat">v<sub>A rel B</sub> <span class="val">'+fmt(vA-vB,1)+' m/s</span></span>'+
+    '<span class="stat">v<sub>B rel A</sub> <span class="val">'+fmt(vB-vA,1)+' m/s</span></span>';
 }
 
 let last = performance.now();
@@ -251,15 +236,14 @@ function loop(now){
 requestAnimationFrame(loop);
 
 // ---------- exercises ----------
-function checkNumeric(inputEl, correct, tol, fbEl, correctMsg, unit){
-  unit = unit || 'm/s';
+function checkNumeric(inputEl, correct, tol, fbEl, correctMsg){
   const v = parseFloat(inputEl.value);
   if(isNaN(v)){ fbEl.textContent='Enter a number first.'; fbEl.className='fb bad'; return; }
   if(Math.abs(v-correct)<=tol){
-    fbEl.textContent = correctMsg || ('Correct — '+fmt(correct,1)+' '+unit+'.');
+    fbEl.textContent = correctMsg || ('Correct — '+fmt(correct,1)+' m/s.');
     fbEl.className = 'fb good';
   } else {
-    fbEl.textContent = 'Not quite. The answer is '+fmt(correct,1)+' '+unit+'.';
+    fbEl.textContent = 'Not quite. The answer is '+fmt(correct,1)+' m/s.';
     fbEl.className = 'fb bad';
   }
 }
@@ -294,22 +278,7 @@ function newEx3(){
 document.getElementById('ex3c').addEventListener('click', ()=> checkNumeric(document.getElementById('ex3i'), e3g-(-e3w), 0.5, document.getElementById('ex3f')));
 document.getElementById('ex3n').addEventListener('click', newEx3);
 
-let e4xA0, e4vA, e4xB0, e4vB;
-function newEx4(){
-  e4xA0 = rand(-15,-3); e4vA = rand(2,8);
-  e4xB0 = rand(3,15); e4vB = -rand(2,8);
-  document.getElementById('ex4q').textContent =
-    'Car A starts at x = '+e4xA0+' m moving at '+e4vA+' m/s. Car B starts at x = '+e4xB0+' m moving at '+e4vB+' m/s (same line, east positive). At what time do they meet?';
-  document.getElementById('ex4i').value=''; document.getElementById('ex4f').textContent=''; document.getElementById('ex4f').className='fb';
-}
-document.getElementById('ex4c').addEventListener('click', ()=>{
-  const correct = (e4xB0-e4xA0)/(e4vA-e4vB);
-  checkNumeric(document.getElementById('ex4i'), correct, 0.3, document.getElementById('ex4f'),
-    'Correct — '+fmt(correct,2)+' s. Set x_A(t) = x_B(t): '+e4xA0+' + '+e4vA+'t = '+e4xB0+' + ('+e4vB+')t, and solve for t.', 's');
-});
-document.getElementById('ex4n').addEventListener('click', newEx4);
-
-newEx1(); newEx2(); newEx3(); newEx4();
+newEx1(); newEx2(); newEx3();
 </script>
 </body>
 </html>

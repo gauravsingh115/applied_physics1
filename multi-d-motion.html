@@ -12,10 +12,9 @@
     color:var(--ink); max-width:720px; margin:0 auto; padding:2.5rem 1.25rem 5rem;
     line-height:1.55;
   }
-  nav.pagenav{ font-size: 13px; color: var(--sub); margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: ui-monospace,Menlo,monospace; }
-  nav.pagenav a{ color: var(--sub); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
-  nav.pagenav a.here{ color: var(--ink); border-bottom-color: var(--ink); }
-  nav.pagenav a:hover{ color: var(--ink); }
+  nav{font-size:.82rem; color:var(--sub); margin-bottom:2rem;}
+  nav a{color:var(--sub); margin-right:1rem; text-decoration:none; border-bottom:1px solid var(--line);}
+  nav a.here{color:var(--ink); border-bottom-color:var(--ink);}
   h1{font-size:1.5rem; margin:0 0 .8rem;}
   h2{font-size:1.05rem; margin:2.4rem 0 .8rem; border-top:1px solid var(--line); padding-top:1.5rem;}
   p{color:#333; margin:0 0 1rem; max-width:62ch;}
@@ -25,7 +24,9 @@
   input[type=range]{width:100%;}
   .controls{display:flex; gap:2rem; flex-wrap:wrap; margin:1.2rem 0;}
   .controls > div{flex:1; min-width:200px;}
-  .readout{font-family:ui-monospace,Menlo,monospace; font-size:.85rem; color:#333; margin:.75rem 0 0; display:flex; gap:1.5rem; flex-wrap:wrap;}
+  .readout{font-size:.85rem; color:#333; margin:.75rem 0 0; display:flex; gap:1.5rem; flex-wrap:wrap;}
+  .readout .stat{white-space:nowrap;}
+  .readout .stat .val{font-family:ui-monospace,Menlo,monospace; color:#111;}
   .btnRow{display:flex; gap:.6rem; margin-top:1rem;}
   button{font-family:inherit; font-size:.85rem; padding:.4rem .9rem; border:1px solid var(--ink); background:#fff; color:var(--ink); cursor:pointer;}
   button:hover{background:#f2f2f2;}
@@ -39,14 +40,9 @@
 </head>
 <body>
 
-<nav class="pagenav">
-  <a href="distance-displacement.html">Distance &amp; Displacement</a>
-  <a href="speed-velocity.html">Speed &amp; Velocity</a>
-  <a href="acceleration.html">Acceleration</a>
-  <a href="jerk.html">Jerk</a>
-  <a href="graphical-understanding-of-motion.html">Graphs of Motion</a>
-  <a href="equations-of-motion.html">Equations of Motion</a>
+<nav>
   <a href="relative-motion.html">Relative Motion</a>
+  <a href="one-d-motion.html">1-D Motion</a>
   <a href="projectile-motion.html">Projectile Motion</a>
   <a class="here" href="multi-d-motion.html">Multi-D Motion</a>
 </nav>
@@ -54,7 +50,53 @@
 <h1>Breaking Down Multi-D Motion</h1>
 <p>Any motion in a plane splits into two independent 1-D problems: one along x, one along y. Solve each separately, then recombine: |v| = &radic;(v<sub>x</sub>² + v<sub>y</sub>²), and &theta; = atan2(v<sub>y</sub>, v<sub>x</sub>).</p>
 
-<h2>1. Decomposing a vector</h2>
+<h2>1. A particle under constant acceleration in 2-D</h2>
+<p>Set an initial velocity and a constant acceleration for each axis separately. Position and velocity at any time follow directly from the 1-D equations, applied once to x and once to y:</p>
+<p style="margin-top:-.6rem;">x(t) = x<sub>0</sub> + v<sub>0x</sub>t + ½a<sub>x</sub>t² &nbsp; &middot; &nbsp; v<sub>x</sub>(t) = v<sub>0x</sub> + a<sub>x</sub>t<br>
+y(t) = y<sub>0</sub> + v<sub>0y</sub>t + ½a<sub>y</sub>t² &nbsp; &middot; &nbsp; v<sub>y</sub>(t) = v<sub>0y</sub> + a<sub>y</sub>t</p>
+
+<canvas id="motionCanvas" style="height:300px"></canvas>
+
+<p style="margin-bottom:.3rem; color:var(--sub); font-size:.85rem;">at elapsed time t</p>
+<div class="readout" id="motionReadout"></div>
+
+<div class="controls">
+  <div>
+    <label>Initial velocity v<sub>0x</sub> <span class="v" id="mdV0xLabel">6 m/s</span></label>
+    <input type="range" id="mdV0x" min="-15" max="15" step="1" value="6">
+  </div>
+  <div>
+    <label>Initial velocity v<sub>0y</sub> <span class="v" id="mdV0yLabel">10 m/s</span></label>
+    <input type="range" id="mdV0y" min="-15" max="15" step="1" value="10">
+  </div>
+</div>
+<div class="controls">
+  <div>
+    <label>Acceleration a<sub>x</sub> <span class="v" id="mdAxLabel">2 m/s²</span></label>
+    <input type="range" id="mdAx" min="-5" max="5" step="0.5" value="2">
+  </div>
+  <div>
+    <label>Acceleration a<sub>y</sub> <span class="v" id="mdAyLabel">-4 m/s²</span></label>
+    <input type="range" id="mdAy" min="-5" max="5" step="0.5" value="-4">
+  </div>
+</div>
+<div class="controls">
+  <div>
+    <label>Time window <span class="v" id="mdTMaxLabel">6 s</span></label>
+    <input type="range" id="mdTMax" min="2" max="12" step="1" value="6">
+  </div>
+  <div>
+    <label>Elapsed time t <span class="v" id="mdScrubLabel">0.0 s</span></label>
+    <input type="range" id="mdScrub" min="0" max="6" step="0.05" value="0">
+  </div>
+</div>
+
+<div class="btnRow">
+  <button id="mdPlayBtn">Play</button>
+  <button id="mdResetBtn">Reset</button>
+</div>
+
+<h2>2. Decomposing a vector</h2>
 <canvas id="vecCanvas" style="height:260px"></canvas>
 <div class="readout" id="vecReadout"></div>
 
@@ -69,7 +111,7 @@
   </div>
 </div>
 
-<h2>2. Independence of x and y — drop vs. launch</h2>
+<h2>3. Independence of x and y — drop vs. launch</h2>
 <p>One ball drops straight down. The other launches sideways from the same height at the same instant. Their heights match at every moment, even though only one moves sideways.</p>
 <canvas id="indepCanvas" style="height:220px"></canvas>
 
@@ -122,6 +164,19 @@
   <div class="fb" id="ex3f"></div>
 </div>
 
+<div class="exercise" id="ex4">
+  <p id="ex4q"></p>
+  <div class="er">
+    <input type="number" id="ex4i1" step="any" placeholder="x">
+    <input type="number" id="ex4i2" step="any" placeholder="y">
+    <input type="number" id="ex4i3" step="any" placeholder="vx">
+    <input type="number" id="ex4i4" step="any" placeholder="vy">
+    <button id="ex4c">Check</button>
+    <button id="ex4n">New numbers</button>
+  </div>
+  <div class="fb" id="ex4f"></div>
+</div>
+
 <script>
 function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
 function rand(min,max){ return Math.round(Math.random()*(max-min))+min; }
@@ -151,6 +206,119 @@ function arrow(ctx,x1,y1,x2,y2){
   ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
   ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
   ctx.closePath(); ctx.fill();
+}
+
+/* ---------- particle under constant 2D acceleration ---------- */
+const motionCanvas = makeCanvas('motionCanvas', 300);
+let mdV0x = parseFloat(document.getElementById('mdV0x').value);
+let mdV0y = parseFloat(document.getElementById('mdV0y').value);
+let mdAx = parseFloat(document.getElementById('mdAx').value);
+let mdAy = parseFloat(document.getElementById('mdAy').value);
+let mdTMax = parseFloat(document.getElementById('mdTMax').value);
+let mdT = 0, mdPlaying = false;
+
+function mdX(tt){ return mdV0x*tt + 0.5*mdAx*tt*tt; }
+function mdY(tt){ return mdV0y*tt + 0.5*mdAy*tt*tt; }
+function mdVx(tt){ return mdV0x + mdAx*tt; }
+function mdVy(tt){ return mdV0y + mdAy*tt; }
+
+const mdScrubEl = document.getElementById('mdScrub');
+function mdSyncScrub(){
+  mdScrubEl.max = mdTMax;
+  if(mdT>mdTMax) mdT = mdTMax;
+  mdScrubEl.value = mdT;
+  document.getElementById('mdScrubLabel').textContent = fmt(mdT,2)+' s';
+}
+function mdStop(){ mdPlaying=false; document.getElementById('mdPlayBtn').textContent='Play'; }
+
+document.getElementById('mdV0x').addEventListener('input', e=>{ mdV0x=parseFloat(e.target.value); document.getElementById('mdV0xLabel').textContent=mdV0x+' m/s'; });
+document.getElementById('mdV0y').addEventListener('input', e=>{ mdV0y=parseFloat(e.target.value); document.getElementById('mdV0yLabel').textContent=mdV0y+' m/s'; });
+document.getElementById('mdAx').addEventListener('input', e=>{ mdAx=parseFloat(e.target.value); document.getElementById('mdAxLabel').textContent=mdAx+' m/s²'; });
+document.getElementById('mdAy').addEventListener('input', e=>{ mdAy=parseFloat(e.target.value); document.getElementById('mdAyLabel').textContent=mdAy+' m/s²'; });
+document.getElementById('mdTMax').addEventListener('input', e=>{ mdTMax=parseFloat(e.target.value); document.getElementById('mdTMaxLabel').textContent=mdTMax+' s'; mdSyncScrub(); });
+mdScrubEl.addEventListener('input', e=>{ mdT=parseFloat(e.target.value); mdStop(); document.getElementById('mdScrubLabel').textContent=fmt(mdT,2)+' s'; });
+document.getElementById('mdPlayBtn').addEventListener('click', e=>{
+  if(mdT>=mdTMax) mdT=0;
+  mdPlaying = !mdPlaying;
+  e.target.textContent = mdPlaying?'Pause':'Play';
+});
+document.getElementById('mdResetBtn').addEventListener('click', ()=>{ mdT=0; mdStop(); });
+
+document.getElementById('mdV0xLabel').textContent = mdV0x+' m/s';
+document.getElementById('mdV0yLabel').textContent = mdV0y+' m/s';
+document.getElementById('mdAxLabel').textContent = mdAx+' m/s²';
+document.getElementById('mdAyLabel').textContent = mdAy+' m/s²';
+document.getElementById('mdTMaxLabel').textContent = mdTMax+' s';
+mdSyncScrub();
+
+function updateMd(dt){
+  if(!mdPlaying) return;
+  mdT += dt;
+  if(mdT>=mdTMax){ mdT=mdTMax; mdStop(); }
+  mdScrubEl.value = mdT;
+  document.getElementById('mdScrubLabel').textContent = fmt(mdT,2)+' s';
+}
+
+function mdRange(fn){
+  let min=0, max=0;
+  const n=80;
+  for(let i=0;i<=n;i++){ const val=fn(i/n*mdTMax); if(val<min)min=val; if(val>max)max=val; }
+  if(min===max){ min-=1; max+=1; }
+  return {min,max};
+}
+
+function drawMd(){
+  const ctx = motionCanvas.ctx, w = motionCanvas.w, h = motionCanvas.h;
+  ctx.clearRect(0,0,w,h);
+  const marginL=46, marginR=20, marginT=20, marginB=30;
+  const plotW = w-marginL-marginR, plotH = h-marginT-marginB;
+  const rx = mdRange(mdX), ry = mdRange(mdY);
+  const xPad = (rx.max-rx.min)*0.12 || 1, yPad = (ry.max-ry.min)*0.12 || 1;
+  const xMin=rx.min-xPad, xMax=rx.max+xPad, yMin=ry.min-yPad, yMax=ry.max+yPad;
+  const scale = Math.min(plotW/(xMax-xMin), plotH/(yMax-yMin));
+  function sx(x){ return marginL + (x-xMin)*scale; }
+  function sy(y){ return h-marginB - (y-yMin)*scale; }
+
+  // axes through x=0 / y=0 if in range
+  ctx.strokeStyle = '#eee'; ctx.lineWidth=1;
+  if(xMin<0 && xMax>0){ ctx.beginPath(); ctx.moveTo(sx(0),marginT); ctx.lineTo(sx(0),h-marginB); ctx.stroke(); }
+  if(yMin<0 && yMax>0){ ctx.beginPath(); ctx.moveTo(marginL,sy(0)); ctx.lineTo(w-marginR,sy(0)); ctx.stroke(); }
+  ctx.strokeStyle = '#ddd';
+  ctx.strokeRect(marginL, marginT, plotW, plotH);
+
+  // trajectory
+  ctx.strokeStyle = '#bbb'; ctx.setLineDash([3,3]); ctx.lineWidth=1.25;
+  ctx.beginPath();
+  const n=60;
+  for(let i=0;i<=n;i++){
+    const tt = i/n*mdTMax;
+    const px = sx(mdX(tt)), py = sy(mdY(tt));
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // start point
+  ctx.fillStyle = '#999';
+  ctx.beginPath(); ctx.arc(sx(0),sy(0),3,0,Math.PI*2); ctx.fill();
+
+  // current position + velocity vector
+  const curX = mdX(mdT), curY = mdY(mdT);
+  const vx = mdVx(mdT), vy = mdVy(mdT);
+  const px = sx(curX), py = sy(curY);
+
+  ctx.strokeStyle = '#111'; ctx.fillStyle = '#111'; ctx.lineWidth=1.75;
+  if(Math.abs(vx)>0.01) arrow(ctx, px,py, px+Math.sign(vx)*Math.min(Math.abs(vx)*2.2,50), py);
+  if(Math.abs(vy)>0.01) arrow(ctx, px,py, px, py-Math.sign(vy)*Math.min(Math.abs(vy)*2.2,50));
+
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fill();
+
+  document.getElementById('motionReadout').innerHTML =
+    '<span class="stat">t <span class="val">'+fmt(mdT,2)+' s</span></span>'+
+    '<span class="stat">x <span class="val">'+fmt(curX,2)+' m</span></span>'+
+    '<span class="stat">y <span class="val">'+fmt(curY,2)+' m</span></span>'+
+    '<span class="stat">v<sub>x</sub> <span class="val">'+fmt(vx,2)+' m/s</span></span>'+
+    '<span class="stat">v<sub>y</sub> <span class="val">'+fmt(vy,2)+' m/s</span></span>';
 }
 
 /* ---------- vector decomposition ---------- */
@@ -185,7 +353,9 @@ function drawVec(){
   ctx.fillText('vy = '+fmt(vy,1), 8, 32);
 
   document.getElementById('vecReadout').innerHTML =
-    'v<sub>x</sub> = '+fmt(vx,2)+' &nbsp; &nbsp; v<sub>y</sub> = '+fmt(vy,2)+' &nbsp; &nbsp; |v| = '+fmt(mag,2);
+    '<span class="stat">v<sub>x</sub> <span class="val">'+fmt(vx,2)+'</span></span>'+
+    '<span class="stat">v<sub>y</sub> <span class="val">'+fmt(vy,2)+'</span></span>'+
+    '<span class="stat">|v| <span class="val">'+fmt(mag,2)+'</span></span>';
 }
 
 /* ---------- independence demo ---------- */
@@ -262,7 +432,9 @@ let last = performance.now();
 function loop(now){
   const dt = Math.min((now-last)/1000, 0.05);
   last = now;
+  updateMd(dt);
   updateIndep(dt);
+  drawMd();
   drawVec();
   drawIndep();
   requestAnimationFrame(loop);
@@ -353,7 +525,42 @@ document.getElementById('ex3c').addEventListener('click', ()=>{
 });
 document.getElementById('ex3n').addEventListener('click', newEx3);
 
-newEx1(); newEx2(); newEx3();
+let e4v0x,e4v0y,e4ax,e4ay,e4t;
+function newEx4(){
+  e4v0x=rand(-10,10); e4v0y=rand(-10,10); e4ax=nonZeroRand(-4,4); e4ay=nonZeroRand(-4,4); e4t=rand(2,6);
+  document.getElementById('ex4q').textContent =
+    'A particle starts with v0x = '+e4v0x+' m/s, v0y = '+e4v0y+' m/s, and accelerates at ax = '+e4ax+' m/s², ay = '+e4ay+' m/s². '+
+    'Find its position (x, y) and velocity (vx, vy) at t = '+e4t+' s, starting from the origin.';
+  document.getElementById('ex4i1').value=''; document.getElementById('ex4i2').value='';
+  document.getElementById('ex4i3').value=''; document.getElementById('ex4i4').value='';
+  document.getElementById('ex4f').textContent=''; document.getElementById('ex4f').className='fb';
+}
+document.getElementById('ex4c').addEventListener('click', ()=>{
+  const xIn = parseFloat(document.getElementById('ex4i1').value);
+  const yIn = parseFloat(document.getElementById('ex4i2').value);
+  const vxIn = parseFloat(document.getElementById('ex4i3').value);
+  const vyIn = parseFloat(document.getElementById('ex4i4').value);
+  const cx = e4v0x*e4t+0.5*e4ax*e4t*e4t;
+  const cy = e4v0y*e4t+0.5*e4ay*e4t*e4t;
+  const cvx = e4v0x+e4ax*e4t;
+  const cvy = e4v0y+e4ay*e4t;
+  const fb = document.getElementById('ex4f');
+  if([xIn,yIn,vxIn,vyIn].some(isNaN)){ fb.textContent='Enter all four values.'; fb.className='fb bad'; return; }
+  const tolPos = Math.max(0.5, Math.max(Math.abs(cx),Math.abs(cy))*0.05);
+  const tolVel = Math.max(0.5, Math.max(Math.abs(cvx),Math.abs(cvy))*0.05);
+  const ok = Math.abs(xIn-cx)<=tolPos && Math.abs(yIn-cy)<=tolPos && Math.abs(vxIn-cvx)<=tolVel && Math.abs(vyIn-cvy)<=tolVel;
+  const summary = 'x = '+fmt(cx,2)+', y = '+fmt(cy,2)+', vx = '+fmt(cvx,2)+', vy = '+fmt(cvy,2)+'.';
+  if(ok){
+    fb.textContent = 'Correct — '+summary;
+    fb.className='fb good';
+  } else {
+    fb.textContent = 'Not quite. '+summary;
+    fb.className='fb bad';
+  }
+});
+document.getElementById('ex4n').addEventListener('click', newEx4);
+
+newEx1(); newEx2(); newEx3(); newEx4();
 </script>
 </body>
 </html>
