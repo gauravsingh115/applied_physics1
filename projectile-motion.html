@@ -46,6 +46,7 @@
   <a href="one-d-motion.html">1-D Motion</a>
   <a class="here" href="projectile-motion.html">Projectile Motion</a>
   <a href="multi-d-motion.html">Multi-D Motion</a>
+  <a href="cricket-run-out.html">Cricket Run-Out Game</a>
 </nav>
 
 <h1>Projectile Motion</h1>
@@ -145,6 +146,50 @@ function arrow(ctx,x1,y1,x2,y2){
   ctx.closePath(); ctx.fill();
 }
 
+function niceStep(maxVal, targetTicks){
+  if(maxVal<=0) return 1;
+  const raw = maxVal/targetTicks;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw/mag;
+  let step;
+  if(norm<1.5) step=1; else if(norm<3) step=2; else if(norm<7) step=5; else step=10;
+  return step*mag;
+}
+
+// draws tick marks, tick labels, and axis titles for a plot occupying
+// [marginL, w-marginR] x [marginT, h-marginB], with (0,0) at (marginL, h-marginB)
+function drawAxes(ctx, w, h, marginL, marginR, marginT, marginB, xMax, yMax, scaleX, scaleY, xLabel, yLabel){
+  const groundY = h-marginB;
+  const xStep = niceStep(xMax, 5);
+  const yStep = niceStep(yMax, 4);
+  const xDec = xStep<1 ? 1 : 0, yDec = yStep<1 ? 1 : 0;
+
+  ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth=1;
+  ctx.fillStyle = '#666'; ctx.font = '10px -apple-system,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let xv=0; xv<=xMax+1e-9; xv+=xStep){
+    const px = marginL + xv*scaleX;
+    ctx.beginPath(); ctx.moveTo(px, marginT); ctx.lineTo(px, groundY); ctx.stroke();
+    ctx.fillText(fmt(xv,xDec), px, groundY+4);
+  }
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let yv=0; yv<=yMax+1e-9; yv+=yStep){
+    const py = groundY - yv*scaleY;
+    ctx.beginPath(); ctx.moveTo(marginL, py); ctx.lineTo(w-marginR, py); ctx.stroke();
+    ctx.fillText(fmt(yv,yDec), marginL-6, py);
+  }
+
+  ctx.fillStyle = '#333'; ctx.font='11px -apple-system,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillText(xLabel, marginL+(w-marginL-marginR)/2, h-4);
+  ctx.save();
+  ctx.translate(12, marginT+(groundY-marginT)/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center';
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
+}
+
 let v0 = parseFloat(document.getElementById('v0').value);
 let angDeg = parseFloat(document.getElementById('ang').value);
 let g = parseFloat(document.getElementById('world').value);
@@ -186,10 +231,15 @@ function draw(){
   const ctx = sim.ctx, w = sim.w, h = sim.h;
   ctx.clearRect(0,0,w,h);
   const {th,T,H,R} = derived();
-  const marginL=42, marginB=30, marginT=20, marginR=20;
+  const marginL=48, marginB=38, marginT=20, marginR=20;
   const plotW = w-marginL-marginR, plotH = h-marginT-marginB;
-  const scale = Math.min(plotW/(R*1.15||1), plotH/(H*1.6||1));
+  const xMax = R*1.08||1, yMax = H*1.15||1;
+  const scaleX = plotW/xMax, scaleY = plotH/yMax;
   const groundY = h-marginB;
+  function sx(x){ return marginL + x*scaleX; }
+  function sy(y){ return groundY - y*scaleY; }
+
+  drawAxes(ctx, w, h, marginL, marginR, marginT, marginB, xMax, yMax, scaleX, scaleY, 'distance (m)', 'height (m)');
 
   ctx.strokeStyle = '#ddd'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(marginL,groundY); ctx.lineTo(w-marginR,groundY); ctx.stroke();
@@ -201,14 +251,14 @@ function draw(){
   for(let i=0;i<=n;i++){
     const tt = i/n*T;
     const x = v0*Math.cos(th)*tt, y = v0*Math.sin(th)*tt-0.5*g*tt*tt;
-    const px = marginL + x*scale, py = groundY - Math.max(y,0)*scale;
+    const px = sx(x), py = sy(Math.max(y,0));
     if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
   }
   ctx.stroke(); ctx.setLineDash([]);
 
   const curX = v0*Math.cos(th)*t;
   const curY = Math.max(v0*Math.sin(th)*t - 0.5*g*t*t, 0);
-  const px = marginL+curX*scale, py = groundY-curY*scale;
+  const px = sx(curX), py = sy(curY);
   const vx = v0*Math.cos(th);
   const vy = v0*Math.sin(th) - g*t;
 
@@ -221,7 +271,7 @@ function draw(){
 
   const hxAtPeak = v0*Math.cos(th)*(T/2);
   ctx.strokeStyle = '#ddd'; ctx.setLineDash([2,3]);
-  ctx.beginPath(); ctx.moveTo(marginL+hxAtPeak*scale, groundY-H*scale); ctx.lineTo(marginL+hxAtPeak*scale, groundY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx(hxAtPeak), sy(H)); ctx.lineTo(sx(hxAtPeak), groundY); ctx.stroke();
   ctx.setLineDash([]);
 
   document.getElementById('readout').innerHTML =

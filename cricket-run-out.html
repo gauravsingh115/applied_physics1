@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cricket Run-Out Game</title>
+<style>
+  :root{ --ink:#111; --sub:#666; --line:#ddd; --good:#1a7f37; --bad:#c1373f; }
+  *{box-sizing:border-box;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    color:var(--ink); max-width:720px; margin:0 auto; padding:2.5rem 1.25rem 5rem;
+    line-height:1.55;
+  }
+  nav{font-size:.82rem; color:var(--sub); margin-bottom:2rem;}
+  nav a{color:var(--sub); margin-right:1rem; text-decoration:none; border-bottom:1px solid var(--line);}
+  nav a.here{color:var(--ink); border-bottom-color:var(--ink);}
+  h1{font-size:1.5rem; margin:0 0 .8rem;}
+  h2{font-size:1.05rem; margin:2.4rem 0 .8rem; border-top:1px solid var(--line); padding-top:1.5rem;}
+  p{color:#333; margin:0 0 1rem; max-width:62ch;}
+  canvas{width:100%; display:block; border:1px solid var(--line); margin:1rem 0;}
+  label{display:flex; justify-content:space-between; font-size:.85rem; color:var(--sub); margin-bottom:.3rem;}
+  label span.v{color:var(--ink); font-family:ui-monospace,Menlo,monospace;}
+  input[type=range]{width:100%;}
+  .controls{display:flex; gap:2rem; flex-wrap:wrap; margin:1.2rem 0;}
+  .controls > div{flex:1; min-width:200px;}
+  .readout{font-size:.85rem; color:#333; margin:.75rem 0 0; display:flex; gap:1.5rem; flex-wrap:wrap;}
+  .readout .stat{white-space:nowrap;}
+  .readout .stat .val{font-family:ui-monospace,Menlo,monospace; color:#111;}
+  .btnRow{display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap;}
+  button{font-family:inherit; font-size:.85rem; padding:.4rem .9rem; border:1px solid var(--ink); background:#fff; color:var(--ink); cursor:pointer;}
+  button:hover{background:#f2f2f2;}
+  button.primary{background:var(--ink); color:#fff;}
+  button.primary:hover{opacity:.85;}
+  #resultMsg{margin:.9rem 0 0; font-size:.95rem; font-weight:600; min-height:1.3em;}
+  #resultMsg.hit{color:var(--good);}
+  #resultMsg.miss{color:var(--bad);}
+  .exercise{margin:1.4rem 0;}
+  .exercise p{margin-bottom:.6rem;}
+  .er{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;}
+  input[type=number]{font-family:inherit; padding:.35rem .5rem; border:1px solid var(--line); width:100px;}
+  .fb{margin-top:.5rem; font-size:.85rem; min-height:1.1em;}
+  .fb.good{color:var(--good);} .fb.bad{color:var(--bad);}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="relative-motion.html">Relative Motion</a>
+  <a href="one-d-motion.html">1-D Motion</a>
+  <a href="projectile-motion.html">Projectile Motion</a>
+  <a href="multi-d-motion.html">Multi-D Motion</a>
+  <a class="here" href="cricket-run-out.html">Cricket Run-Out Game</a>
+</nav>
+
+<h1>Cricket Run-Out Game</h1>
+<p>You're fielding, ball in hand, and the batter is scrambling for a run. Pick a throw speed and release angle to fire the ball at the stumps. Your arm can only generate so much speed — go too hard at the wrong angle and the ball sails over; too soft and it bounces short. The trajectory stays hidden until you commit, so you'll need to work out the physics rather than just eyeball it — and even a clean hit doesn't count if the ball arrives after the batter's already made their ground, so speed matters as much as accuracy.</p>
+
+<canvas id="sim" style="height:320px"></canvas>
+
+<div class="readout" id="readout"></div>
+<div id="resultMsg"></div>
+
+<div class="controls">
+  <div>
+    <label>Throw speed <span class="v" id="v0Label"></span></label>
+    <input type="range" id="v0" min="8" max="32" step="1" value="22">
+  </div>
+  <div>
+    <label>Release angle <span class="v" id="angLabel"></span></label>
+    <input type="range" id="ang" min="0" max="50" step="1" value="15">
+  </div>
+</div>
+
+<div class="btnRow">
+  <button class="primary" id="throwBtn">Throw!</button>
+  <button id="nextBtn">Next fielding position</button>
+  <button id="resetScoreBtn">Reset score</button>
+</div>
+
+<div class="readout" id="scoreboard" style="margin-top:1.2rem;"></div>
+
+<h2>Exercise</h2>
+<div class="exercise" id="ex1">
+  <p id="ex1q"></p>
+  <div class="er">
+    <input type="number" id="ex1i" step="any"><span style="font-size:.82rem;color:var(--sub)">m</span>
+    <button id="ex1c">Check</button>
+    <button id="ex1n">New numbers</button>
+  </div>
+  <div class="fb" id="ex1f"></div>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+function rand(min,max){ return Math.round(Math.random()*(max-min))+min; }
+
+const G = 9.8;
+const H0 = 1.8;        // release height, m
+const STUMP_H = 0.71;  // stump height, m
+const GRAZE_MARGIN = 0.35; // m above stumps still counted as a "close" miss
+
+/* ---------- canvas setup ---------- */
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+const sim = makeCanvas('sim', 320);
+
+function niceStep(maxVal, targetTicks){
+  if(maxVal<=0) return 1;
+  const raw = maxVal/targetTicks;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw/mag;
+  let step;
+  if(norm<1.5) step=1; else if(norm<3) step=2; else if(norm<7) step=5; else step=10;
+  return step*mag;
+}
+
+function drawAxes(ctx, w, h, marginL, marginR, marginT, marginB, xMax, yMax, scaleX, scaleY, xLabel, yLabel){
+  const groundY = h-marginB;
+  const xStep = niceStep(xMax, 5);
+  const yStep = niceStep(yMax, 4);
+  const xDec = xStep<1 ? 1 : 0, yDec = yStep<1 ? 1 : 0;
+
+  ctx.strokeStyle = '#f0f0f0'; ctx.lineWidth=1;
+  ctx.fillStyle = '#666'; ctx.font = '10px -apple-system,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let xv=0; xv<=xMax+1e-9; xv+=xStep){
+    const px = marginL + xv*scaleX;
+    ctx.beginPath(); ctx.moveTo(px, marginT); ctx.lineTo(px, groundY); ctx.stroke();
+    ctx.fillText(fmt(xv,xDec), px, groundY+4);
+  }
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let yv=0; yv<=yMax+1e-9; yv+=yStep){
+    const py = groundY - yv*scaleY;
+    ctx.beginPath(); ctx.moveTo(marginL, py); ctx.lineTo(w-marginR, py); ctx.stroke();
+    ctx.fillText(fmt(yv,yDec), marginL-6, py);
+  }
+
+  ctx.fillStyle = '#333'; ctx.font='11px -apple-system,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillText(xLabel, marginL+(w-marginL-marginR)/2, h-4);
+  ctx.save();
+  ctx.translate(12, marginT+(groundY-marginT)/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center';
+  ctx.fillText(yLabel, 0, 0);
+  ctx.restore();
+}
+
+/* ---------- physics ---------- */
+// full unobstructed flight (ignores stumps) — used only for scaling after a throw
+function flightToGround(v0, angDeg){
+  const th = angDeg*Math.PI/180;
+  const vx = v0*Math.cos(th), vy = v0*Math.sin(th);
+  const tLand = (vy + Math.sqrt(vy*vy + 2*G*H0)) / G;
+  const xLand = vx*tLand;
+  return {vx, vy, tLand, xLand};
+}
+
+// where does the ball actually end up relative to the stumps at distance D?
+function computeThrow(v0, angDeg, D){
+  const f = flightToGround(v0, angDeg);
+  if(f.xLand < D){
+    return { outcome:'short', vx:f.vx, vy:f.vy, tEnd:f.tLand, shortBy: D-f.xLand };
+  }
+  const tD = f.vx>0 ? D/f.vx : Infinity;
+  const yD = H0 + f.vy*tD - 0.5*G*tD*tD;
+  if(yD <= STUMP_H){
+    return { outcome:'hit', vx:f.vx, vy:f.vy, tEnd:tD, yD };
+  } else if(yD <= STUMP_H+GRAZE_MARGIN){
+    return { outcome:'graze', vx:f.vx, vy:f.vy, tEnd:tD, yD, overBy: yD-STUMP_H };
+  } else {
+    return { outcome:'high', vx:f.vx, vy:f.vy, tEnd:tD, yD, overBy: yD-STUMP_H };
+  }
+}
+
+/* ---------- state ---------- */
+let v0 = parseFloat(document.getElementById('v0').value);
+let angDeg = parseFloat(document.getElementById('ang').value);
+let D = rand(12,42);
+let timeLimit = Math.round((2.0 + Math.random()*1.2)*10)/10;
+let animating = false, animT = 0, currentThrow = null, lastResultType = null;
+let attempts = 0, hits = 0;
+
+document.getElementById('v0').addEventListener('input', e=>{
+  v0 = parseFloat(e.target.value);
+  document.getElementById('v0Label').textContent = v0+' m/s ('+Math.round(v0*3.6)+' km/h)';
+});
+document.getElementById('ang').addEventListener('input', e=>{
+  angDeg = parseFloat(e.target.value);
+  document.getElementById('angLabel').textContent = angDeg+'°';
+});
+document.getElementById('v0Label').textContent = v0+' m/s ('+Math.round(v0*3.6)+' km/h)';
+document.getElementById('angLabel').textContent = angDeg+'°';
+
+function updateScoreboard(){
+  const rate = attempts>0 ? Math.round(100*hits/attempts) : 0;
+  document.getElementById('scoreboard').innerHTML =
+    '<span class="stat">throws <span class="val">'+attempts+'</span></span>'+
+    '<span class="stat">run-outs <span class="val">'+hits+'</span></span>'+
+    '<span class="stat">success rate <span class="val">'+rate+'%</span></span>';
+}
+updateScoreboard();
+
+function showResult(res, limit){
+  const el = document.getElementById('resultMsg');
+  const onTarget = res.outcome==='hit' || res.outcome==='graze';
+  const withinTime = res.tEnd <= limit;
+  if(onTarget && withinTime){
+    el.textContent = (res.outcome==='hit' ? 'Direct hit' : 'Clipped the stumps')+' in '+fmt(res.tEnd,2)+' s — the wicket\'s down in time. Run out!';
+    el.className = 'hit';
+  } else if(onTarget && !withinTime){
+    const verb = res.outcome==='hit' ? 'struck the stumps' : 'clipped the stumps';
+    el.textContent = 'You '+verb+', but it took '+fmt(res.tEnd,2)+' s (limit was '+fmt(limit,1)+' s) — the batter was already home. Not out.';
+    el.className = 'miss';
+  } else if(res.outcome==='high'){
+    el.textContent = 'Too high — the ball sailed over the stumps by '+fmt(res.overBy,2)+' m, arriving at '+fmt(res.tEnd,2)+' s. Try less power or a lower angle.';
+    el.className = 'miss';
+  } else {
+    el.textContent = 'Too short — the ball bounced '+fmt(res.shortBy,2)+' m before reaching the stumps (after '+fmt(res.tEnd,2)+' s). Try more power or a lower angle so it carries further.';
+    el.className = 'miss';
+  }
+}
+
+document.getElementById('throwBtn').addEventListener('click', ()=>{
+  currentThrow = computeThrow(v0, angDeg, D);
+  animT = 0; animating = true; lastResultType = null;
+  document.getElementById('resultMsg').textContent = '';
+  document.getElementById('resultMsg').className = '';
+  attempts++;
+  updateScoreboard();
+});
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  D = rand(12,42);
+  timeLimit = Math.round((2.0 + Math.random()*1.2)*10)/10;
+  currentThrow = null; animating = false; animT = 0; lastResultType = null;
+  document.getElementById('resultMsg').textContent = '';
+  document.getElementById('resultMsg').className = '';
+});
+document.getElementById('resetScoreBtn').addEventListener('click', ()=>{
+  attempts = 0; hits = 0; updateScoreboard();
+});
+
+function update(dt){
+  if(!animating) return;
+  animT += dt;
+  if(animT >= currentThrow.tEnd){
+    animT = currentThrow.tEnd;
+    animating = false;
+    const onTarget = currentThrow.outcome==='hit' || currentThrow.outcome==='graze';
+    const withinTime = currentThrow.tEnd <= timeLimit;
+    const success = onTarget && withinTime;
+    lastResultType = success ? 'success' : 'fail';
+    if(success) hits++;
+    updateScoreboard();
+    showResult(currentThrow, timeLimit);
+  }
+}
+
+function draw(){
+  const ctx = sim.ctx, w = sim.w, h = sim.h;
+  ctx.clearRect(0,0,w,h);
+
+  // domain: before a throw, base it only on the known distance D and the
+  // fielder's release height (not on the sliders) so nothing about the chosen
+  // speed/angle leaks through the scale. After a throw, expand to fit the
+  // actual flight so the arc reads clearly.
+  let xMax, yMax;
+  if(currentThrow){
+    const vx = currentThrow.vx, vy = currentThrow.vy;
+    const tLandFull = (vy + Math.sqrt(vy*vy + 2*G*H0)) / G;
+    const xLandFull = vx*tLandFull;
+    const apex = H0 + Math.max(vy,0)**2/(2*G);
+    xMax = Math.max(D, xLandFull)*1.08;
+    yMax = Math.max(apex*1.15, H0*1.3, STUMP_H*3);
+  } else {
+    xMax = D*1.1;
+    yMax = H0*1.3;
+  }
+
+  const marginL=44, marginR=16, marginT=16, marginB=36;
+  const plotW = w-marginL-marginR, plotH = h-marginT-marginB;
+  const scaleX = plotW/xMax, scaleY = plotH/yMax;
+  const groundY = h-marginB;
+  function sx(x){ return marginL + x*scaleX; }
+  function sy(y){ return groundY - y*scaleY; }
+
+  drawAxes(ctx, w, h, marginL, marginR, marginT, marginB, xMax, yMax, scaleX, scaleY, 'distance (m)', 'height (m)');
+
+  // ground
+  ctx.strokeStyle = '#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(marginL,groundY); ctx.lineTo(w-marginR,groundY); ctx.stroke();
+
+  // fielder (simple figure at x=0)
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(sx(0), groundY); ctx.lineTo(sx(0), sy(H0*0.55)); ctx.stroke();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(sx(0), sy(H0*0.55)-6, 6, 0, Math.PI*2); ctx.fill();
+
+  // stumps + target zones at x=D
+  const stumpColor = lastResultType==='success' ? '#1a7f37' : (lastResultType==='fail' ? '#c1373f' : '#111');
+  ctx.fillStyle = 'rgba(26,127,55,0.08)';
+  ctx.fillRect(sx(D)-3, sy(STUMP_H), 6, sy(0)-sy(STUMP_H));
+  ctx.fillStyle = 'rgba(193,55,63,0.06)';
+  ctx.fillRect(sx(D)-3, sy(STUMP_H+GRAZE_MARGIN), 6, sy(STUMP_H)-sy(STUMP_H+GRAZE_MARGIN));
+  ctx.strokeStyle = stumpColor; ctx.lineWidth = 2;
+  for(let i=-1;i<=1;i++){
+    ctx.beginPath(); ctx.moveTo(sx(D)+i*4, groundY); ctx.lineTo(sx(D)+i*4, sy(STUMP_H)); ctx.stroke();
+  }
+
+  // actual traveled path — only ever drawn once a throw is in flight or finished
+  if(currentThrow){
+    ctx.strokeStyle = '#111'; ctx.lineWidth=1.75;
+    ctx.beginPath();
+    const steps = Math.max(2, Math.round(40*(animT/currentThrow.tEnd || 1)));
+    for(let i=0;i<=steps;i++){
+      const tt = i/steps*animT;
+      const x = currentThrow.vx*tt, y = H0+currentThrow.vy*tt-0.5*G*tt*tt;
+      const px = sx(x), py = sy(Math.max(y,0));
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+
+    const bx = currentThrow.vx*animT, by = H0+currentThrow.vy*animT-0.5*G*animT*animT;
+    ctx.fillStyle = '#111';
+    ctx.beginPath(); ctx.arc(sx(bx), sy(Math.max(by,0)), 5, 0, Math.PI*2); ctx.fill();
+  }
+
+  const ballTime = currentThrow ? fmt(animT,2)+' s' : '—';
+  document.getElementById('readout').innerHTML =
+    '<span class="stat">fielder distance <span class="val">'+D+' m</span></span>'+
+    '<span class="stat">time limit <span class="val">'+fmt(timeLimit,1)+' s</span></span>'+
+    '<span class="stat">ball time <span class="val">'+ballTime+'</span></span>'+
+    '<span class="stat">release height <span class="val">'+H0+' m</span></span>'+
+    '<span class="stat">stump height <span class="val">'+STUMP_H+' m</span></span>';
+}
+
+let last = performance.now();
+function loop(now){
+  const dt = Math.min((now-last)/1000, 0.05);
+  last = now;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------- exercise ---------- */
+function checkNumeric(inputEl, correct, tol, fbEl, unit){
+  const v = parseFloat(inputEl.value);
+  if(isNaN(v)){ fbEl.textContent='Enter a number first.'; fbEl.className='fb bad'; return; }
+  if(Math.abs(v-correct)<=tol){
+    fbEl.textContent = 'Correct — '+fmt(correct,2)+' '+unit+'.';
+    fbEl.className = 'fb good';
+  } else {
+    fbEl.textContent = 'Not quite. The answer is '+fmt(correct,2)+' '+unit+'.';
+    fbEl.className = 'fb bad';
+  }
+}
+
+let exV0, exAng, exD, exYD;
+function newEx1(){
+  let tries = 0;
+  do{
+    exV0 = rand(15,30); exAng = rand(5,40); exD = rand(15,40);
+    const f = flightToGround(exV0, exAng);
+    if(f.xLand >= exD){
+      const tD = exD/f.vx;
+      exYD = H0 + f.vy*tD - 0.5*G*tD*tD;
+      break;
+    }
+    tries++;
+  } while(tries<25);
+  document.getElementById('ex1q').textContent =
+    'A fielder releases the ball from '+H0+' m at '+exV0+' m/s, '+exAng+'° above horizontal, standing '+exD+' m from the stumps. '+
+    'Assuming the ball has not yet bounced, what height above the ground is it when it reaches the stumps? (g = 9.8 m/s²)';
+  document.getElementById('ex1i').value=''; document.getElementById('ex1f').textContent=''; document.getElementById('ex1f').className='fb';
+}
+document.getElementById('ex1c').addEventListener('click', ()=>{
+  checkNumeric(document.getElementById('ex1i'), exYD, 0.15, document.getElementById('ex1f'), 'm');
+});
+document.getElementById('ex1n').addEventListener('click', newEx1);
+newEx1();
+</script>
+</body>
+</html>
