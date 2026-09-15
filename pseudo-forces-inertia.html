@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pseudo Forces &amp; Inertia — The Push That Isn't There</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --inertia: #111111; --pseudo: #666666; --centrifugal: #999999;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.inertia{ border-top: 2px solid var(--inertia); }
+  .concept-card.pseudo{ border-top: 2px solid var(--pseudo); }
+  .concept-card.centrifugal{ border-top: 2px solid var(--centrifugal); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px; }
+  .concept-card .kind{ font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; }
+  .concept-card.inertia .kind{ color: var(--inertia); }
+  .concept-card.pseudo .kind{ color: var(--pseudo); }
+  .concept-card.centrifugal .kind{ color: var(--centrifugal); }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: #fafafa; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .controls{ display:flex; gap:2rem; flex-wrap:wrap; margin: 0 0 14px; }
+  .controls > div{ flex:1; min-width:190px; }
+  label{ display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-muted); margin-bottom:.35rem; font-family: var(--font-mono); }
+  label span.v{ color: var(--text); }
+  input[type=range]{ width:100%; accent-color: var(--text); }
+  .readout{ font-family: var(--font-mono); font-size: .85rem; color:#333; margin: 0 0 4px; display:flex; gap:1.4rem; flex-wrap:wrap; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  button.toggle.active{ background: var(--text); border-color: var(--text); color:#fff; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="forces-types.html">Forces &amp; Types</a>
+    <a href="newtons-laws.html">Newton's Laws</a>
+    <a href="frames-of-reference.html">Frames of Reference</a>
+    <a class="here" href="pseudo-forces-inertia.html">Pseudo Forces &amp; Inertia</a>
+    <a href="free-body-diagrams.html">Free Body Diagrams</a>
+  </nav>
+
+  <header>
+    <p class="tag">dynamics — pseudo forces &amp; inertia</p>
+    <h1>The shove you feel that no one actually gave you</h1>
+    <p>A bus brakes and you lurch forward with nothing touching your chest. A car corners and you're pressed against the door with no hand pushing you there. Nothing new is pushing you in either case — you're feeling your own inertia, but from inside a frame that's accelerating. To make the bookkeeping work out in that frame, physicists add a pseudo force: not real, but real enough to explain what you feel.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card inertia">
+        <h3>Inertia</h3>
+        <p>An object's built-in resistance to a change in its motion. Mass is the measure of it — the more mass, the harder it is to speed up, slow down, or turn.</p>
+      </div>
+      <div class="concept-card pseudo">
+        <h3>Pseudo <span class="kind">force</span></h3>
+        <p>A fictitious force introduced only inside a non-inertial (accelerating) frame, to make Newton's second law appear to hold there. It has no source and no reaction pair.</p>
+        <span class="formula">F_pseudo = −m·a_frame</span>
+      </div>
+      <div class="concept-card centrifugal">
+        <h3>Centrifugal <span class="kind">force</span></h3>
+        <p>The pseudo force felt by anything riding in a rotating frame — it points outward, away from the centre, and exists only for observers spinning along with the frame.</p>
+        <span class="formula">F_cf = m·ω²·r</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="bus">
+    <div class="section-head">
+      <h2>The accelerating bus</h2>
+      <p>A suitcase sits on the frictionless floor of a bus. Set the bus's acceleration and switch frames to see what "pushes" the suitcase in each one.</p>
+    </div>
+    <div class="panel">
+      <canvas id="busStage" style="height:170px"></canvas>
+      <div class="readout" id="pseudoReadout">pseudo force (bus frame only) = 30.0 N</div>
+      <div class="controls">
+        <div>
+          <label>Bus's acceleration <span class="v" id="baVal">2.0 m/s²</span></label>
+          <input type="range" id="baSlider" min="0" max="4" step="0.1" value="2">
+        </div>
+        <div>
+          <label>Suitcase mass <span class="v" id="bmVal">15 kg</span></label>
+          <input type="range" id="bmSlider" min="5" max="30" step="1" value="15">
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="toggle active" id="busGroundBtn">Ground frame</button>
+        <button class="toggle" id="busFrameBtn">Bus frame</button>
+        <button class="primary" id="busPlay">▶ Play</button>
+        <button id="busReset">Reset</button>
+      </div>
+      <p class="note" id="busNote"><b>Ground frame.</b> No real horizontal force acts on the suitcase, so it just stays put while the bus accelerates away beneath it — plain old inertia.</p>
+    </div>
+  </section>
+
+  <section id="rotating">
+    <div class="section-head">
+      <h2>The spinning platform</h2>
+      <p>A ball is tied by a string to the centre of a spinning platform. In the ground frame, the string's tension supplies the real centripetal force. In the platform's own spinning frame, the ball looks stationary only because an outward centrifugal pseudo force is added to balance the tension.</p>
+    </div>
+    <div class="panel">
+      <canvas id="rotStage" style="height:210px"></canvas>
+      <div class="readout" id="rotReadout">real tension, inward (ground frame) = 13.5 N &nbsp; &nbsp; pseudo force, outward (platform frame) = 13.5 N</div>
+      <div class="controls">
+        <div>
+          <label>Angular speed ω <span class="v" id="wVal">3.0 rad/s</span></label>
+          <input type="range" id="wSlider" min="0" max="6" step="0.1" value="3">
+        </div>
+        <div>
+          <label>Radius <span class="v" id="rVal">1.5 m</span></label>
+          <input type="range" id="rSlider" min="0.5" max="2.5" step="0.1" value="1.5">
+        </div>
+        <div>
+          <label>Mass <span class="v" id="rmVal">1.0 kg</span></label>
+          <input type="range" id="rmSlider" min="0.5" max="3" step="0.1" value="1">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">A car turns sharply and a loose ball on the seat appears to fly outward, even though — from a view outside the car — nothing seems to be pushing it that way. What actually explains this?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> A real outward force called the centrifugal force</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> Inertia — the ball keeps trying to move in a straight line while the car turns beneath it</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> Friction from the seat pushing it sideways</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> Gravity acting at an angle during the turn</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">A bus accelerates forward at <em>3 m/s²</em>. A <em>15 kg</em> suitcase sits on its frictionless floor. Find the magnitude of the pseudo force felt by the suitcase in the bus's frame.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">pseudo force =</label><input type="text" id="q2a" placeholder="?"><span class="unit">N</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">The pseudo force has magnitude <code>m·a_frame = 15 × 3 = 45 N</code>, directed opposite the bus's acceleration — backward, toward the rear of the bus.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A car brakes, decelerating at <em>6 m/s²</em>. Find the magnitude of the pseudo force that seems to push a <em>65 kg</em> passenger forward, in the car's frame.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">pseudo force =</label><input type="text" id="q3a" placeholder="?"><span class="unit">N</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">The car's acceleration points backward (it's slowing down), so the pseudo force points the opposite way — forward — with magnitude <code>65 × 6 = 390 N</code>. That's the "shove" that throws you toward the windshield when the driver brakes hard.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A <em>2 kg</em> object sits on a platform rotating at <em>ω = 4 rad/s</em>, at a radius of <em>1.5 m</em> from the centre. Find the real centripetal force needed (ground frame) and the centrifugal pseudo force felt (rotating frame) — both share the same magnitude.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">force =</label><input type="text" id="q4a" placeholder="?"><span class="unit">N</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Both come from the same expression: <code>F = mω²r = 2 × 4² × 1.5 = 48 N</code>. In the ground frame this is the real, inward tension needed to keep the object turning. In the platform's own spinning frame, an equal outward pseudo force is added so the (apparently stationary) object still balances to zero net force.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">In the accelerating-bus simulator, switch to the bus frame and slowly ramp up the acceleration. The pseudo force grows right along with it — but nothing new is actually touching the suitcase. What would have to be true, physically, for that force to become "real"?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>use g = 9.8 m/s² throughout</footer>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2,dashed){
+  ctx.save();
+  ctx.setLineDash(dashed?[4,3]:[]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.setLineDash([]);
+  const ang = Math.atan2(y2-y1, x2-x1), hs=7;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// ---------------- accelerating bus ----------------
+const busSim = makeCanvas('busStage', 170);
+const baSlider = document.getElementById('baSlider'), bmSlider = document.getElementById('bmSlider');
+const busGroundBtn = document.getElementById('busGroundBtn'), busFrameBtn = document.getElementById('busFrameBtn');
+const busNote = document.getElementById('busNote');
+let busFrame='ground', busX=0, busV=0, busRunning=false, busAnim=null;
+const caseGroundX0 = 0;
+
+function updatePseudoReadout(){
+  const a = parseFloat(baSlider.value), m = parseFloat(bmSlider.value);
+  document.getElementById('pseudoReadout').textContent = 'pseudo force (bus frame only) = '+fmt(m*a)+' N';
+}
+function drawBus(){
+  const ctx = busSim.ctx, w = busSim.w, h = busSim.h;
+  ctx.clearRect(0,0,w,h);
+  const groundY = h*0.8;
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,groundY); ctx.lineTo(w,groundY); ctx.stroke();
+  const busW=220, busH=90, cy = groundY - busH/2 - 2;
+  let busDrawX, caseX;
+  if(busFrame==='ground'){ busDrawX = w/2 - busW/2 + busX*12; caseX = w/2 + caseGroundX0*12; }
+  else{ busDrawX = w/2 - busW/2; caseX = w/2 + (caseGroundX0 - busX)*12; }
+  ctx.strokeStyle='#111'; ctx.lineWidth=1.5; ctx.fillStyle='#fff';
+  ctx.strokeRect(busDrawX, cy-busH/2, busW, busH);
+  ctx.fillStyle='#111';
+  [busDrawX+30, busDrawX+busW-30].forEach(wx=>{ ctx.beginPath(); ctx.arc(wx, groundY+2, 7, 0, 7); ctx.fill(); });
+  const clamped = Math.max(busDrawX+20, Math.min(busDrawX+busW-20, caseX));
+  ctx.strokeStyle='#111'; ctx.lineWidth=1.5; ctx.fillStyle='#fff';
+  ctx.strokeRect(clamped-14, cy+busH/2-34, 28, 22);
+  if(busFrame==='bus' && parseFloat(baSlider.value) > 0.05){
+    ctx.strokeStyle='#666'; ctx.fillStyle='#666'; ctx.lineWidth=2;
+    arrow(ctx, clamped, cy+busH/2-23, clamped-34, cy+busH/2-23, true);
+  }
+  ctx.font='11px ui-monospace,Menlo,monospace'; ctx.fillStyle='#999';
+  ctx.fillText(busFrame==='ground' ? 'view: standing by the road' : 'view: seated in the bus', 10, 18);
+}
+function stepBus(now,last){
+  const dt = Math.min((now-last)/1000, 0.04);
+  const a = parseFloat(baSlider.value);
+  busV += a*dt; busX += busV*dt;
+  drawBus();
+  if(busRunning && busX*12 < busSim.w) busAnim = requestAnimationFrame(t=>stepBus(t, now));
+  else busRunning=false;
+}
+document.getElementById('busPlay').addEventListener('click', ()=>{
+  if(busRunning) return; busRunning=true;
+  busAnim = requestAnimationFrame(t=>stepBus(t,t));
+});
+document.getElementById('busReset').addEventListener('click', ()=>{
+  busRunning=false; cancelAnimationFrame(busAnim); busX=0; busV=0; drawBus();
+});
+busGroundBtn.addEventListener('click', ()=>{
+  busFrame='ground'; busGroundBtn.classList.add('active'); busFrameBtn.classList.remove('active');
+  busNote.innerHTML = '<b>Ground frame.</b> No real horizontal force acts on the suitcase, so it just stays put while the bus accelerates away beneath it — plain old inertia.';
+  drawBus();
+});
+busFrameBtn.addEventListener('click', ()=>{
+  busFrame='bus'; busFrameBtn.classList.add('active'); busGroundBtn.classList.remove('active');
+  busNote.innerHTML = "<b>Bus frame.</b> To explain why the suitcase slides backward relative to the bus, this frame needs a pseudo force pointing opposite the bus's acceleration — shown as the dashed arrow.";
+  drawBus();
+});
+baSlider.addEventListener('input', ()=>{ document.getElementById('baVal').textContent = parseFloat(baSlider.value).toFixed(1)+' m/s²'; updatePseudoReadout(); if(!busRunning) drawBus(); });
+bmSlider.addEventListener('input', ()=>{ document.getElementById('bmVal').textContent = bmSlider.value+' kg'; updatePseudoReadout(); if(!busRunning) drawBus(); });
+updatePseudoReadout();
+drawBus();
+
+// ---------------- rotating platform ----------------
+const rotSim = makeCanvas('rotStage', 210);
+const wSlider = document.getElementById('wSlider'), rSlider = document.getElementById('rSlider'), rmSlider = document.getElementById('rmSlider');
+let theta = 0;
+function updateRotReadout(){
+  const w = parseFloat(wSlider.value), r = parseFloat(rSlider.value), m = parseFloat(rmSlider.value);
+  const F = m*w*w*r;
+  document.getElementById('rotReadout').textContent = 'real tension, inward (ground frame) = '+fmt(F)+' N \u00A0 \u00A0 pseudo force, outward (platform frame) = '+fmt(F)+' N';
+}
+function drawRot(){
+  const ctx = rotSim.ctx, w = rotSim.w, h = rotSim.h;
+  ctx.clearRect(0,0,w,h);
+  const cx=w/2, cy=h/2;
+  const omega = parseFloat(wSlider.value), rMeters = parseFloat(rSlider.value);
+  const pxPerM = 55, rPx = rMeters*pxPerM;
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx,cy,90,0,7); ctx.stroke();
+  ctx.fillStyle='#999'; ctx.beginPath(); ctx.arc(cx,cy,4,0,7); ctx.fill();
+  theta += omega*0.016;
+  const bx = cx + rPx*Math.cos(theta), by = cy + rPx*Math.sin(theta);
+  ctx.strokeStyle='#ccc'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(bx,by); ctx.stroke();
+  ctx.strokeStyle='#111'; ctx.lineWidth=1.5; ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(bx,by,9,0,7); ctx.fill(); ctx.stroke();
+  const dx=cx-bx, dy=cy-by, len=Math.hypot(dx,dy), ux=dx/len, uy=dy/len;
+  ctx.strokeStyle='#111'; ctx.fillStyle='#111'; ctx.lineWidth=2;
+  arrow(ctx, bx, by, bx+ux*30, by+uy*30, false);
+  ctx.strokeStyle='#666'; ctx.fillStyle='#666'; ctx.lineWidth=2;
+  arrow(ctx, bx, by, bx-ux*30, by-uy*30, true);
+  requestAnimationFrame(drawRot);
+}
+wSlider.addEventListener('input', ()=>{ document.getElementById('wVal').textContent = parseFloat(wSlider.value).toFixed(1)+' rad/s'; updateRotReadout(); });
+rSlider.addEventListener('input', ()=>{ document.getElementById('rVal').textContent = parseFloat(rSlider.value).toFixed(1)+' m'; updateRotReadout(); });
+rmSlider.addEventListener('input', ()=>{ document.getElementById('rmVal').textContent = parseFloat(rmSlider.value).toFixed(1)+' kg'; updateRotReadout(); });
+updateRotReadout();
+requestAnimationFrame(drawRot);
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='b'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = "Correct. The ball keeps moving in a straight line by inertia; it's the car that turns beneath it. From inside the turning car, that looks like an outward push, but no real force is doing it.";
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = "Not quite. Nothing real pushes the ball outward — it's simply continuing in a straight line by inertia while the car turns underneath it. The 'centrifugal force' is only felt inside the turning frame.";
+    }
+  });
+});
+function checkSingle(id, exp, fbId, tolFrac, note){
+  const v = parseFloat(document.getElementById(id).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  const ok = Math.abs(v-exp) <= Math.max(tolFrac*Math.abs(exp), 0.5);
+  if(ok){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+  else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" if you want a walkthrough.'; }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkSingle('q2a', 45, 'fb2', 0.02, 'F_pseudo = m·a = 15 × 3.'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkSingle('q3a', 390, 'fb3', 0.02, 'F_pseudo = m·a = 65 × 6.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkSingle('q4a', 48, 'fb4', 0.02, 'F = mω²r = 2 × 4² × 1.5.'); });
+</script>
+</body>
+</html>

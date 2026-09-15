@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Body Diagrams — Isolate, Then Draw</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --a1: #111111; --a2: #666666; --a3: #999999;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  header p em{ color: var(--text); font-style: normal; font-weight: 600; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.c1{ border-top: 2px solid var(--a1); }
+  .concept-card.c2{ border-top: 2px solid var(--a2); }
+  .concept-card.c3{ border-top: 2px solid var(--a3); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card em{ color: var(--text); font-style: normal; font-weight: 600; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  button.toggle.active{ background: var(--text); border-color: var(--text); color:#fff; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .chip{ font-family: var(--font-mono); font-size: 12.5px; padding: 6px 11px; border: 1px solid var(--border); background:#fff; color:var(--text-muted); cursor:pointer; }
+  .chip.on{ border-color: var(--text); color: var(--text); background:#f2f2f2; }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="forces-types.html">Forces &amp; Types</a>
+    <a href="newtons-laws.html">Newton's Laws</a>
+    <a href="frames-of-reference.html">Frames of Reference</a>
+    <a href="pseudo-forces-inertia.html">Pseudo Forces &amp; Inertia</a>
+    <a class="here" href="free-body-diagrams.html">Free Body Diagrams</a>
+  </nav>
+
+  <header>
+    <p class="tag">dynamics — free body diagrams</p>
+    <h1>One object, every real force, nothing else</h1>
+    <p>A free body diagram strips a problem down to its essentials: pick one object, ignore everything it's touching or connected to, and draw every real external force acting <em>on</em> it as an arrow from its centre. No motion, no speed, no forces it exerts on other things — just the forces it feels. Get the diagram right and the equations practically write themselves.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card c1">
+        <h3>Isolate the object</h3>
+        <p>Mentally cut the object free from the rope, the table, the incline — everything. Replace each connection with the force it was exerting.</p>
+      </div>
+      <div class="concept-card c2">
+        <h3>Only forces on it</h3>
+        <p>Draw only forces acting <em>on</em> the object, never forces it exerts on something else — those belong on a different diagram.</p>
+      </div>
+      <div class="concept-card c3">
+        <h3>Arrows from the centre</h3>
+        <p>Every force is drawn as an arrow starting at the object's centre, with length roughly matching its relative size, and pointing the right way.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="builder">
+    <div class="section-head">
+      <h2>Build the diagram</h2>
+      <p>Pick a scenario, then click the force chips that belong on that object's free body diagram. Some chips are distractors that don't belong at all.</p>
+    </div>
+    <div class="panel">
+      <div class="btnRow" id="scenarioPicker"></div>
+      <canvas id="fbdStage" style="height:220px"></canvas>
+      <div class="btnRow" id="forceChips"></div>
+      <div class="btnRow">
+        <button class="primary" id="checkFbd">Check diagram</button>
+        <button id="revealFbd">Reveal correct diagram</button>
+        <button id="resetFbd">Clear</button>
+      </div>
+      <p class="note" id="fbdNote">Select the forces that belong, then check your work.</p>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself. Use g = 9.8 m/s².</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">A book rests motionless on a level table. Which pair of forces correctly completes its free body diagram?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> Weight, downward, and the normal force, upward</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> Weight, normal force, and friction</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> Weight only</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> Normal force only</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">A <em>5 kg</em> block sits on a frictionless incline tilted at <em>30°</em>. Find the component of gravity pulling it down the slope, and the normal force the incline exerts on it.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">along the slope =</label><input type="text" id="q2a" placeholder="?"><span class="unit">N</span></div>
+          <div class="answer-field"><label for="q2b">normal force =</label><input type="text" id="q2b" placeholder="?"><span class="unit">N</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Weight is <code>mg = 5 × 9.8 = 49 N</code>, straight down. Split it into components along and perpendicular to the incline: along the slope, <code>mg sin30° = 49 × 0.5 = 24.5 N</code>; perpendicular to it, <code>mg cos30° = 49 × 0.866 ≈ 42.4 N</code>, which the normal force must exactly balance since the block doesn't lift off or sink into the ramp.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">Two blocks, <em>4 kg</em> and <em>6 kg</em>, hang from a light string over a frictionless pulley (an Atwood machine). Find the acceleration of the system and the tension in the string.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">acceleration =</label><input type="text" id="q3a" placeholder="?"><span class="unit">m/s²</span></div>
+          <div class="answer-field"><label for="q3b">tension =</label><input type="text" id="q3b" placeholder="?"><span class="unit">N</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Draw a separate FBD for each block: weight down, tension up, same tension on both since the string and pulley are ideal. Writing Newton's second law for each and combining gives <code>a = (m₂ − m₁)g / (m₁ + m₂) = (6 − 4)(9.8) / 10 = 1.96 m/s²</code>. The tension follows from either block's equation: <code>T = m₁(g + a) = 4 × 11.76 = 47.04 N</code> — and checking with the heavier block, <code>T = m₂(g − a) = 6 × 7.84 = 47.04 N</code> too.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A <em>10 kg</em> box is pushed along a floor by a <em>50 N</em> force applied at <em>20°</em> above the horizontal. Find the normal force the floor exerts on the box, accounting for the upward pull of the applied force's vertical component.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">normal force =</label><input type="text" id="q4a" placeholder="?"><span class="unit">N</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">The free body diagram needs four forces: weight down, normal up, the applied push (angled), and friction. Only the vertical forces matter here. Weight is <code>mg = 98 N</code> down; the applied force's vertical component is <code>F sin20° = 50 × 0.342 ≈ 17.1 N</code>, pulling <i>up</i>. Since the box doesn't accelerate vertically, <code>N = mg − F sin20° = 98 − 17.1 ≈ 80.9 N</code> — noticeably less than the box's weight alone.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Build the free body diagram for the "block being pushed" scenario, but imagine the push is angled downward into the floor instead of upward. Which force would grow, and which chip would you need to reconsider?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>use g = 9.8 m/s² throughout</footer>
+</div>
+
+<script>
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2){
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ang = Math.atan2(y2-y1, x2-x1), hs=7;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+}
+
+const scenarios = {
+  book: {
+    label: 'Book on a table',
+    correct: ['Weight', 'Normal force'],
+    all: ['Weight', 'Normal force', 'Friction', 'Applied push', 'Tension'],
+    draw(ctx, w, h){
+      const groundY = h*0.75, cx = w/2;
+      ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0,groundY); ctx.lineTo(w,groundY); ctx.stroke();
+      ctx.strokeStyle = '#111'; ctx.lineWidth = 1.5; ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.moveTo(cx-55,groundY); ctx.lineTo(cx+55,groundY); ctx.lineTo(cx+45,groundY-50); ctx.lineTo(cx-45,groundY-50); ctx.closePath();
+      ctx.stroke();
+      ctx.strokeRect(cx-45, groundY-70, 90, 20);
+      return { x: cx, y: groundY-60 };
+    }
+  },
+  incline: {
+    label: 'Box on an incline',
+    correct: ['Weight', 'Normal force', 'Friction'],
+    all: ['Weight', 'Normal force', 'Friction', 'Applied push', 'Tension'],
+    draw(ctx, w, h){
+      const baseY = h*0.82;
+      ctx.strokeStyle = '#111'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(w*0.15,baseY); ctx.lineTo(w*0.85,baseY); ctx.lineTo(w*0.85,baseY-110); ctx.closePath(); ctx.stroke();
+      const bx = w*0.5, by = baseY - (bx - w*0.15) * (110/(w*0.7)) - 20;
+      ctx.save();
+      ctx.translate(bx,by);
+      ctx.rotate(-Math.atan(110/(w*0.7)));
+      ctx.strokeStyle='#111'; ctx.fillStyle='#fff';
+      ctx.strokeRect(-24,-18,48,36);
+      ctx.restore();
+      return { x: bx, y: by };
+    }
+  },
+  pushed: {
+    label: 'Block pushed with friction',
+    correct: ['Weight', 'Normal force', 'Friction', 'Applied push'],
+    all: ['Weight', 'Normal force', 'Friction', 'Applied push', 'Tension'],
+    draw(ctx, w, h){
+      const groundY = h*0.75, cx = w/2;
+      ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0,groundY); ctx.lineTo(w,groundY); ctx.stroke();
+      ctx.strokeStyle='#111'; ctx.lineWidth=1.5; ctx.fillStyle='#fff';
+      ctx.strokeRect(cx-30, groundY-56, 60, 56);
+      return { x: cx, y: groundY-28 };
+    }
+  },
+  hanging: {
+    label: 'Mass hanging from a string',
+    correct: ['Weight', 'Tension'],
+    all: ['Weight', 'Normal force', 'Friction', 'Applied push', 'Tension'],
+    draw(ctx, w, h){
+      const cx = w/2, topY = h*0.12, cy = h*0.55;
+      ctx.strokeStyle='#999'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx,topY); ctx.lineTo(cx,cy-24); ctx.stroke();
+      ctx.strokeStyle='#111'; ctx.lineWidth=1.5; ctx.fillStyle='#fff';
+      ctx.beginPath(); ctx.arc(cx,cy,24,0,7); ctx.fill(); ctx.stroke();
+      return { x: cx, y: cy };
+    }
+  }
+};
+
+const forceVectors = {
+  'Weight':      { dx: 0, dy: 1, dashed: true },
+  'Normal force': { dx: 0, dy: -1, dashed: true },
+  'Friction':     { dx: -1, dy: 0, dashed: false },
+  'Applied push': { dx: 1, dy: 0, dashed: false },
+  'Tension':      { dx: 0, dy: -1, dashed: false },
+};
+
+let currentScenario = 'book', selected = new Set();
+const picker = document.getElementById('scenarioPicker');
+Object.keys(scenarios).forEach(key=>{
+  const btn = document.createElement('button');
+  btn.className = 'toggle'+(key===currentScenario?' active':'');
+  btn.textContent = scenarios[key].label;
+  btn.onclick = ()=>{
+    currentScenario = key; selected = new Set();
+    [...picker.children].forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    buildChips(); drawFbd();
+  };
+  picker.appendChild(btn);
+});
+
+const chipArea = document.getElementById('forceChips');
+function buildChips(){
+  chipArea.innerHTML = '';
+  scenarios[currentScenario].all.forEach(name=>{
+    const chip = document.createElement('div');
+    chip.className = 'chip'; chip.textContent = name;
+    chip.onclick = ()=>{
+      if(selected.has(name)){ selected.delete(name); chip.classList.remove('on'); }
+      else{ selected.add(name); chip.classList.add('on'); }
+      drawFbd();
+    };
+    chipArea.appendChild(chip);
+  });
+  document.getElementById('fbdNote').textContent = 'Select the forces that belong, then check your work.';
+}
+
+const fbdSim = makeCanvas('fbdStage', 220);
+function drawFbd(){
+  const ctx = fbdSim.ctx, w = fbdSim.w, h = fbdSim.h;
+  ctx.clearRect(0,0,w,h);
+  const sc = scenarios[currentScenario];
+  const pt = sc.draw(ctx, w, h);
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(pt.x, pt.y, 3, 0, 7); ctx.fill();
+  const len = 46;
+  selected.forEach(name=>{
+    const v = forceVectors[name];
+    if(!v) return;
+    ctx.strokeStyle = '#111'; ctx.fillStyle = '#111'; ctx.lineWidth = 2;
+    ctx.save(); ctx.setLineDash(v.dashed?[4,3]:[]);
+    ctx.beginPath(); ctx.moveTo(pt.x, pt.y); ctx.lineTo(pt.x+v.dx*len, pt.y+v.dy*len); ctx.stroke();
+    ctx.restore();
+    const ang = Math.atan2(v.dy, v.dx), hs=7, ex = pt.x+v.dx*len, ey = pt.y+v.dy*len;
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-hs*Math.cos(ang-0.4), ey-hs*Math.sin(ang-0.4));
+    ctx.lineTo(ex-hs*Math.cos(ang+0.4), ey-hs*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fill();
+    ctx.font = '11px ui-monospace,Menlo,monospace'; ctx.fillStyle = '#666';
+    ctx.fillText(name, pt.x+v.dx*(len+10) - (v.dx<0?38:0), pt.y+v.dy*(len+10) + (v.dy===0?4:0));
+  });
+}
+
+document.getElementById('checkFbd').addEventListener('click', ()=>{
+  const sc = scenarios[currentScenario];
+  const correctSet = new Set(sc.correct);
+  const missing = [...correctSet].filter(f=>!selected.has(f));
+  const extra = [...selected].filter(f=>!correctSet.has(f));
+  const note = document.getElementById('fbdNote');
+  if(missing.length===0 && extra.length===0){
+    note.textContent = "Correct — that's exactly the free body diagram for this scenario.";
+  } else {
+    let msg = [];
+    if(missing.length) msg.push('missing: '+missing.join(', '));
+    if(extra.length) msg.push("shouldn't be there: "+extra.join(', '));
+    note.textContent = msg.join(' — ');
+  }
+});
+document.getElementById('revealFbd').addEventListener('click', ()=>{
+  selected = new Set(scenarios[currentScenario].correct);
+  [...chipArea.children].forEach(chip=>{ chip.classList.toggle('on', selected.has(chip.textContent)); });
+  document.getElementById('fbdNote').textContent = 'Showing the correct diagram for this scenario.';
+  drawFbd();
+});
+document.getElementById('resetFbd').addEventListener('click', ()=>{
+  selected = new Set();
+  [...chipArea.children].forEach(chip=>chip.classList.remove('on'));
+  document.getElementById('fbdNote').textContent = 'Select the forces that belong, then check your work.';
+  drawFbd();
+});
+
+buildChips();
+drawFbd();
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='a'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = "Correct. A still book on a flat table only needs weight and the normal force — they cancel exactly, which is why it doesn't move. There's no sideways tendency, so friction has nothing to resist.";
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = 'Not quite. Weight and the normal force are the only two forces here — friction only shows up when there is (or would be) some sliding tendency to resist, and there isn\'t one on a flat, still table.';
+    }
+  });
+});
+function checkPair(idA, idB, expA, expB, fbId, tolFrac, note){
+  const a = parseFloat(document.getElementById(idA).value);
+  const b = parseFloat(document.getElementById(idB).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(a) || isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+  const okA = Math.abs(a-expA) <= Math.max(tolFrac*Math.abs(expA), 0.3);
+  const okB = Math.abs(b-expB) <= Math.max(tolFrac*Math.abs(expB), 0.3);
+  if(okA && okB){ fb.className='feedback show ok'; fb.textContent = 'Correct — '+note; }
+  else{
+    fb.className='feedback show no';
+    let msg='Not quite yet. ';
+    if(!okA) msg+='Check the first value. ';
+    if(!okB) msg+='Check the second value. ';
+    msg+='Open "Show solution" if you want a walkthrough.';
+    fb.textContent = msg;
+  }
+}
+function checkSingle(id, exp, fbId, tolFrac, note){
+  const v = parseFloat(document.getElementById(id).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  const ok = Math.abs(v-exp) <= Math.max(tolFrac*Math.abs(exp), 0.3);
+  if(ok){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+  else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" if you want a walkthrough.'; }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkPair('q2a','q2b', 24.5, 42.4, 'fb2', 0.02, 'along the slope is mg sin30°, and perpendicular to it, balanced by the normal force, is mg cos30°.'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkPair('q3a','q3b', 1.96, 47.04, 'fb3', 0.02, 'a = (m₂−m₁)g/(m₁+m₂), and T follows from either block\'s own equation.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkSingle('q4a', 80.9, 'fb4', 0.02, 'N = mg − F sin20°, since the angled push has an upward component too.'); });
+</script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Newton's Laws of Motion — Why Things Move the Way They Do</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --law1: #111111; --law2: #666666; --law3: #999999;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.law1{ border-top: 2px solid var(--law1); }
+  .concept-card.law2{ border-top: 2px solid var(--law2); }
+  .concept-card.law3{ border-top: 2px solid var(--law3); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px; }
+  .concept-card .kind{ font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; }
+  .concept-card.law1 .kind{ color: var(--law1); }
+  .concept-card.law2 .kind{ color: var(--law2); }
+  .concept-card.law3 .kind{ color: var(--law3); }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: #fafafa; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .controls{ display:flex; gap:2rem; flex-wrap:wrap; margin: 0 0 14px; }
+  .controls > div{ flex:1; min-width:190px; }
+  label{ display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-muted); margin-bottom:.35rem; font-family: var(--font-mono); }
+  label span.v{ color: var(--text); }
+  input[type=range]{ width:100%; accent-color: var(--text); }
+  .readout{ font-family: var(--font-mono); font-size: .85rem; color:#333; margin: 0 0 4px; display:flex; gap:1.4rem; flex-wrap:wrap; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  button.toggle.active{ background: var(--text); border-color: var(--text); color:#fff; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="forces-types.html">Forces &amp; Types</a>
+    <a class="here" href="newtons-laws.html">Newton's Laws</a>
+    <a href="frames-of-reference.html">Frames of Reference</a>
+    <a href="pseudo-forces-inertia.html">Pseudo Forces &amp; Inertia</a>
+    <a href="free-body-diagrams.html">Free Body Diagrams</a>
+  </nav>
+
+  <header>
+    <p class="tag">dynamics — newton's laws of motion</p>
+    <h1>Three rules that explain almost everything that moves</h1>
+    <p>Newton's three laws connect force to motion. The first says what happens with no net force at all, the second says exactly how much a given net force changes things, and the third says forces never show up alone — they arrive in pairs. Push a cart below and watch all three show up in one simulator.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card law1">
+        <h3>First law <span class="kind">inertia</span></h3>
+        <p>An object at rest stays at rest, and an object in motion keeps moving at constant velocity, unless a net external force acts on it.</p>
+      </div>
+      <div class="concept-card law2">
+        <h3>Second law <span class="kind">F = ma</span></h3>
+        <p>Net force causes acceleration. More force means more acceleration; more mass means less, for the same force.</p>
+        <span class="formula">F_net = m·a</span>
+      </div>
+      <div class="concept-card law3">
+        <h3>Third law <span class="kind">action &amp; reaction</span></h3>
+        <p>Whenever object A pushes on object B, B pushes back on A with equal magnitude, opposite direction — always as a pair, never alone.</p>
+        <span class="formula">F_A→B = −F_B→A</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="cart">
+    <div class="section-head">
+      <h2>Push the cart</h2>
+      <p>Set a force and a mass, then press Play. Turn off friction and set the force to zero to see the first law in its purest form: constant velocity, forever.</p>
+    </div>
+    <div class="panel">
+      <canvas id="cartStage" style="height:170px"></canvas>
+      <div class="readout" id="cartReadout"></div>
+      <div class="controls">
+        <div>
+          <label>Applied force <span class="v" id="cfVal">10 N</span></label>
+          <input type="range" id="cfSlider" min="0" max="30" step="1" value="10">
+        </div>
+        <div>
+          <label>Mass <span class="v" id="cmVal">5 kg</span></label>
+          <input type="range" id="cmSlider" min="1" max="15" step="1" value="5">
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="toggle active" id="frictionToggle">Friction: on</button>
+        <button class="primary" id="playBtn">▶ Play</button>
+        <button id="cartReset">Reset</button>
+      </div>
+      <p class="note" id="cartNote">Press Play to start pushing.</p>
+    </div>
+  </section>
+
+  <section id="pushoff">
+    <div class="section-head">
+      <h2>The push-off — third law in action</h2>
+      <p>Two skaters on frictionless ice push apart with equal and opposite forces. Set both masses, then push.</p>
+    </div>
+    <div class="panel">
+      <canvas id="pushStage" style="height:130px"></canvas>
+      <div class="readout" id="pushReadout">skater A's speed = 0.00 m/s &nbsp; &nbsp; skater B's speed = 0.00 m/s</div>
+      <div class="controls">
+        <div>
+          <label>Skater A mass <span class="v" id="m1Val">50 kg</span></label>
+          <input type="range" id="m1Slider" min="30" max="120" step="5" value="50">
+        </div>
+        <div>
+          <label>Skater B mass <span class="v" id="m2Val">80 kg</span></label>
+          <input type="range" id="m2Slider" min="30" max="120" step="5" value="80">
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="primary" id="pushBtn">Push off</button>
+        <button id="pushReset">Reset</button>
+      </div>
+      <p class="note">Both skaters feel the exact same push force, for the exact same instant — but the lighter one ends up moving faster, because the same force divided by a smaller mass gives more acceleration.</p>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself. Use g = 9.8 m/s².</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">A hockey puck slides across frictionless ice at a constant velocity. According to Newton's first law, what net force acts on the puck?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> Zero — nothing is needed to keep it moving at constant velocity</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> A force equal to its weight, pushing it forward</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> A small force in the direction of motion, just enough to overcome inertia</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> A force that decreases the longer it slides</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">A <em>1000 kg</em> car needs to accelerate at <em>2.5 m/s²</em>. Ignoring friction and air resistance, find the net force the engine must provide.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">force =</label><input type="text" id="q2a" placeholder="?"><span class="unit">N</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Straight from the second law: <code>F = ma = 1000 × 2.5 = 2500 N</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A <em>800 kg</em> drone's rotors provide <em>12000 N</em> of upward thrust. Find the net upward force after accounting for its weight, and the resulting upward acceleration.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">net force =</label><input type="text" id="q3a" placeholder="?"><span class="unit">N</span></div>
+          <div class="answer-field"><label for="q3b">acceleration =</label><input type="text" id="q3b" placeholder="?"><span class="unit">m/s²</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Weight pulls down with <code>mg = 800 × 9.8 = 7840 N</code>. Net upward force is thrust minus weight: <code>12000 − 7840 = 4160 N</code>. Acceleration follows from the second law: <code>a = 4160 / 800 = 5.2 m/s²</code>, upward.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A <em>70 kg</em> astronaut pushes off a <em>4000 kg</em> capsule with a force of <em>210 N</em>. Find the magnitude of the astronaut's acceleration and the capsule's acceleration. (By the third law, both feel the same 210 N, in opposite directions.)</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">astronaut's a =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m/s²</span></div>
+          <div class="answer-field"><label for="q4b">capsule's a =</label><input type="text" id="q4b" placeholder="?"><span class="unit">m/s²</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Same force, different mass, different acceleration: astronaut <code>a = 210 / 70 = 3 m/s²</code>; capsule <code>a = 210 / 4000 = 0.0525 m/s²</code>. The much heavier capsule barely notices the push — this is why astronauts can drift away from a station with a light tap.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">In the cart simulator, turn friction off, set the force to zero, and give the cart a push by briefly raising the force, then dropping it back to zero mid-run. What does the velocity do after you drop the force back to zero — and which law is that?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>use g = 9.8 m/s² throughout</footer>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+const G = 9.8;
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2){
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ang = Math.atan2(y2-y1, x2-x1), hs=6;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+}
+
+// ---------------- cart ----------------
+const cartSim = makeCanvas('cartStage', 170);
+const cfSlider = document.getElementById('cfSlider'), cmSlider = document.getElementById('cmSlider');
+let frictionOn = true, cartT=0, cartV=0, cartX=0, cartRunning=false, cartAnim=null;
+
+function cartAccel(){
+  const F = parseFloat(cfSlider.value), m = parseFloat(cmSlider.value);
+  const kinetic = frictionOn ? 0.15*m*G : 0;
+  const opposing = (cartV > 0.001) ? kinetic : Math.min(F, kinetic);
+  return (F - opposing)/m;
+}
+function drawCart(){
+  const ctx = cartSim.ctx, w = cartSim.w, h = cartSim.h;
+  ctx.clearRect(0,0,w,h);
+  const groundY = h*0.75;
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,groundY); ctx.lineTo(w,groundY); ctx.stroke();
+  const startX=50, px = startX + (cartX*14)%(w-100), cy=groundY;
+  ctx.strokeStyle='#111'; ctx.lineWidth=1.75; ctx.fillStyle='#fff';
+  ctx.strokeRect(px, cy-34, 60, 30);
+  ctx.fillStyle='#111';
+  ctx.beginPath(); ctx.arc(px+14, cy, 6, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(px+46, cy, 6, 0, 7); ctx.fill();
+  const F = parseFloat(cfSlider.value);
+  if(F>0.1){ ctx.strokeStyle='#111'; ctx.fillStyle='#111'; ctx.lineWidth=2; arrow(ctx, px+60, cy-20, px+60+F*2, cy-20); }
+}
+function stepCart(now,last){
+  const dt = Math.min((now-last)/1000, 0.05);
+  const a = cartAccel();
+  cartV = Math.max(0, cartV + a*dt);
+  cartX += cartV*dt; cartT += dt;
+  document.getElementById('cartReadout').innerHTML = 'time = '+fmt(cartT)+' s &nbsp; &nbsp; a = '+fmt(a,2)+' m/s² &nbsp; &nbsp; v = '+fmt(cartV)+' m/s &nbsp; &nbsp; x = '+fmt(cartX)+' m';
+  const note = document.getElementById('cartNote');
+  if(Math.abs(a) < 0.02 && cartV > 0.05) note.innerHTML = '<b>First law.</b> Net force is zero, so velocity holds steady — no force is needed to keep it moving.';
+  else if(a > 0.02) note.innerHTML = '<b>Second law.</b> A steady net force gives a steady acceleration — velocity climbs at a constant rate.';
+  drawCart();
+  if(cartRunning) cartAnim = requestAnimationFrame(t=>stepCart(t, now));
+}
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  if(cartRunning) return; cartRunning=true;
+  cartAnim = requestAnimationFrame(t=>stepCart(t,t));
+});
+document.getElementById('cartReset').addEventListener('click', ()=>{
+  cartRunning=false; cancelAnimationFrame(cartAnim); cartT=0; cartV=0; cartX=0;
+  document.getElementById('cartReadout').innerHTML='time = 0.0 s &nbsp; &nbsp; v = 0.0 m/s &nbsp; &nbsp; x = 0.0 m';
+  document.getElementById('cartNote').textContent='Press Play to start pushing.';
+  drawCart();
+});
+document.getElementById('frictionToggle').addEventListener('click', function(){
+  frictionOn = !frictionOn;
+  this.textContent = 'Friction: '+(frictionOn?'on':'off');
+  this.classList.toggle('active', frictionOn);
+});
+cfSlider.addEventListener('input', ()=>{ document.getElementById('cfVal').textContent = cfSlider.value+' N'; if(!cartRunning) drawCart(); });
+cmSlider.addEventListener('input', ()=>{ document.getElementById('cmVal').textContent = cmSlider.value+' kg'; if(!cartRunning) drawCart(); });
+document.getElementById('cartReadout').innerHTML='time = 0.0 s &nbsp; &nbsp; v = 0.0 m/s &nbsp; &nbsp; x = 0.0 m';
+drawCart();
+
+// ---------------- push-off ----------------
+const pushSim = makeCanvas('pushStage', 130);
+const m1Slider = document.getElementById('m1Slider'), m2Slider = document.getElementById('m2Slider');
+let sep=0, pushed=false, v1=0, v2=0, pushAnim=null;
+function drawPush(){
+  const ctx = pushSim.ctx, w = pushSim.w, h = pushSim.h;
+  ctx.clearRect(0,0,w,h);
+  const cy=h/2, cx=w/2;
+  const x1=cx-30-sep, x2=cx+30+sep;
+  ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(x1,cy,15,0,7); ctx.fill();
+  ctx.fillStyle='#666'; ctx.beginPath(); ctx.arc(x2,cy,15,0,7); ctx.fill();
+  ctx.font='12px -apple-system,sans-serif'; ctx.fillStyle='#fff';
+  ctx.fillText('A', x1-4, cy+4); ctx.fillText('B', x2-4, cy+4);
+  if(pushed){
+    ctx.strokeStyle='#111'; ctx.fillStyle='#111'; ctx.lineWidth=2; arrow(ctx, x1, cy-30, x1-26, cy-30);
+    ctx.strokeStyle='#666'; ctx.fillStyle='#666'; ctx.lineWidth=2; arrow(ctx, x2, cy-30, x2+26, cy-30);
+  }
+}
+document.getElementById('pushBtn').addEventListener('click', ()=>{
+  if(pushed) return;
+  const m1=parseFloat(m1Slider.value), m2=parseFloat(m2Slider.value), J=300;
+  v1=J/m1; v2=J/m2; pushed=true;
+  let t0=performance.now();
+  function step(now){
+    const dt=Math.min((now-t0)/1000,0.05); t0=now;
+    sep += ((v1+v2)/2)*dt*18;
+    drawPush();
+    document.getElementById('pushReadout').innerHTML = "skater A's speed = "+fmt(v1,2)+' m/s &nbsp; &nbsp; '+"skater B's speed = "+fmt(v2,2)+' m/s';
+    if(sep < pushSim.w/2 - 40) pushAnim = requestAnimationFrame(step);
+  }
+  pushAnim = requestAnimationFrame(step);
+});
+document.getElementById('pushReset').addEventListener('click', ()=>{
+  cancelAnimationFrame(pushAnim); sep=0; pushed=false; v1=0; v2=0;
+  document.getElementById('pushReadout').innerHTML = "skater A's speed = 0.00 m/s &nbsp; &nbsp; skater B's speed = 0.00 m/s";
+  drawPush();
+});
+m1Slider.addEventListener('input', ()=>{ document.getElementById('m1Val').textContent = m1Slider.value+' kg'; });
+m2Slider.addEventListener('input', ()=>{ document.getElementById('m2Val').textContent = m2Slider.value+' kg'; });
+drawPush();
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='a'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = 'Correct. Constant velocity means zero acceleration, so by the second law the net force must be zero too — nothing is needed to sustain motion once it exists.';
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = 'Not quite. A constant velocity means zero acceleration, and by F = ma that means zero net force — no ongoing push is needed to keep the puck moving.';
+    }
+  });
+});
+function checkSingle(id, exp, fbId, tolFrac, note){
+  const v = parseFloat(document.getElementById(id).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  const ok = Math.abs(v-exp) <= Math.max(tolFrac*Math.abs(exp), 0.5);
+  if(ok){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+  else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" if you want a walkthrough.'; }
+}
+function checkPair(idA, idB, expA, expB, fbId, tolFrac, note){
+  const a = parseFloat(document.getElementById(idA).value);
+  const b = parseFloat(document.getElementById(idB).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(a) || isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+  const okA = Math.abs(a-expA) <= Math.max(tolFrac*Math.abs(expA), 0.5);
+  const okB = Math.abs(b-expB) <= Math.max(tolFrac*Math.abs(expB), 0.5);
+  if(okA && okB){ fb.className='feedback show ok'; fb.textContent = 'Correct — '+note; }
+  else{
+    fb.className='feedback show no';
+    let msg='Not quite yet. ';
+    if(!okA) msg+='Check the first value. ';
+    if(!okB) msg+='Check the second value. ';
+    msg+='Open "Show solution" if you want a walkthrough.';
+    fb.textContent = msg;
+  }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkSingle('q2a', 2500, 'fb2', 0.02, 'F = ma = 1000 × 2.5.'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkPair('q3a','q3b', 4160, 5.2, 'fb3', 0.02, 'net force is thrust minus weight, and a = F_net / m.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkPair('q4a','q4b', 3, 0.0525, 'fb4', 0.03, 'same force, different mass — a = F / m for each.'); });
+</script>
+</body>
+</html>

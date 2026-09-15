@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frames of Reference — Whose Point of View?</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --inertial: #111111; --noninertial: #666666;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.frame{ border-top: 2px solid var(--text-dim); }
+  .concept-card.inertial{ border-top: 2px solid var(--inertial); }
+  .concept-card.noninertial{ border-top: 2px solid var(--noninertial); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px; }
+  .concept-card .kind{ font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; }
+  .concept-card.inertial .kind{ color: var(--inertial); }
+  .concept-card.noninertial .kind{ color: var(--noninertial); }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .controls{ display:flex; gap:2rem; flex-wrap:wrap; margin: 0 0 14px; }
+  .controls > div{ flex:1; min-width:190px; }
+  label{ display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-muted); margin-bottom:.35rem; font-family: var(--font-mono); }
+  label span.v{ color: var(--text); }
+  input[type=range]{ width:100%; accent-color: var(--text); }
+  .readout{ font-family: var(--font-mono); font-size: .85rem; color:#333; margin: 0 0 4px; display:flex; gap:1.4rem; flex-wrap:wrap; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  button.toggle.active{ background: var(--text); border-color: var(--text); color:#fff; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .chip{ font-family: var(--font-mono); font-size: 12.5px; padding: 6px 11px; border: 1px solid var(--border); background:#fff; color:var(--text-muted); cursor:pointer; }
+  .chip.on{ border-color: var(--text); color: var(--text); background:#f2f2f2; }
+  .chip.right{ border-color: var(--good); color: var(--good); background: rgba(107,222,142,.08); }
+  .chip.wrong{ border-color: var(--bad); color: var(--bad); background: rgba(255,122,107,.08); }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="forces-types.html">Forces &amp; Types</a>
+    <a href="newtons-laws.html">Newton's Laws</a>
+    <a class="here" href="frames-of-reference.html">Frames of Reference</a>
+    <a href="pseudo-forces-inertia.html">Pseudo Forces &amp; Inertia</a>
+    <a href="free-body-diagrams.html">Free Body Diagrams</a>
+  </nav>
+
+  <header>
+    <p class="tag">dynamics — frames of reference</p>
+    <h1>Motion only makes sense once you say who's watching</h1>
+    <p>"Moving" is meaningless on its own — moving compared to what? A reference frame is the vantage point you measure position, velocity, and acceleration from. Change the frame and the numbers change with it, even though nothing about the actual object has. Watch a ball roll inside a train, from two different seats.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card frame">
+        <h3>Reference <span class="kind">frame</span></h3>
+        <p>A coordinate system, plus a clock, that an observer measures motion from. Every velocity and acceleration you've ever calculated was secretly measured relative to some frame.</p>
+      </div>
+      <div class="concept-card inertial">
+        <h3>Inertial <span class="kind">frame</span></h3>
+        <p>A frame that isn't accelerating. Newton's laws work in their simple, familiar form here: no force, no acceleration.</p>
+      </div>
+      <div class="concept-card noninertial">
+        <h3>Non-inertial <span class="kind">frame</span></h3>
+        <p>A frame that is accelerating — speeding up, slowing down, or turning. Objects here appear to accelerate even when no real force is acting on them.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="train">
+    <div class="section-head">
+      <h2>A ball, a train, two seats</h2>
+      <p>A ball sits on the frictionless floor of a train car. Set the train's acceleration, choose whose eyes you're watching through, then press Play.</p>
+    </div>
+    <div class="panel">
+      <canvas id="trainStage" style="height:190px"></canvas>
+      <div class="controls">
+        <div>
+          <label>Train's acceleration <span class="v" id="taVal">1.5 m/s²</span></label>
+          <input type="range" id="taSlider" min="0" max="3" step="0.1" value="1.5">
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="toggle active" id="groundFrameBtn">Ground frame</button>
+        <button class="toggle" id="trainFrameBtn">Train frame</button>
+        <button class="primary" id="trainPlay">▶ Play</button>
+        <button id="trainReset">Reset</button>
+      </div>
+      <p class="note" id="frameNote"><b>Ground frame (inertial).</b> No real horizontal force acts on the ball, so — by the first law — it just sits still while the train accelerates away underneath it.</p>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="section-head">
+      <h2>Inertial or not?</h2>
+      <p>Click each scenario to mark it, then check your answers.</p>
+    </div>
+    <div class="panel">
+      <div class="btnRow" id="frameQuiz"></div>
+      <div class="btnRow">
+        <button class="primary" id="checkFrames">Check answers</button>
+        <button id="resetFrames">Reset</button>
+      </div>
+      <p class="note" id="frameQuizNote">Click a scenario once for inertial, twice for non-inertial, a third time to clear it.</p>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">Which of these is an inertial reference frame, to a very good approximation?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> A car speeding up as the light turns green</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> A train moving at a constant velocity along a straight, level track</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> A carousel spinning at a steady rate</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> An elevator that has just started accelerating downward</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">A passenger walks at <em>5 km/h</em> toward the front of a train that is moving at <em>60 km/h</em>, both in the same direction. Find the passenger's speed relative to the ground.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">speed =</label><input type="text" id="q2a" placeholder="?"><span class="unit">km/h</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Velocities in the same direction simply add when you switch from the train's frame to the ground's frame: <code>60 + 5 = 65 km/h</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A boat can move at <em>8 m/s</em> relative to the water. It heads upstream against a river flowing at <em>3 m/s</em>. Find the boat's speed relative to the ground (the riverbank).</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">speed =</label><input type="text" id="q3a" placeholder="?"><span class="unit">m/s</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Going upstream, the current works against the boat, so the velocities subtract: <code>8 − 3 = 5 m/s</code> relative to the bank.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A train accelerates at <em>2 m/s²</em>. A ball sits on its frictionless floor, initially at rest relative to the train. Find the ball's acceleration as measured from the ground frame, and its apparent acceleration as measured from the train's frame (take acceleration in the train's direction of travel as positive).</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">ground frame =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m/s²</span></div>
+          <div class="answer-field"><label for="q4b">train frame =</label><input type="text" id="q4b" placeholder="?"><span class="unit">m/s²</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">No real horizontal force acts on the ball, so in the ground (inertial) frame its acceleration is <code>0 m/s²</code> — it just stays put while the train moves out from under it. Watched from inside the accelerating train, though, the ball appears to slide backward with acceleration <code>−2 m/s²</code>, exactly opposite the train's own acceleration. That apparent acceleration, with nothing real causing it, is the seed of the next topic: pseudo forces.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Switch to the train frame and slowly increase the train's acceleration. What happens to how fast the ball appears to slide backward — and does anything about the ball itself actually change?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>use g = 9.8 m/s² throughout</footer>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+
+// ---------------- train / ball ----------------
+const trainSim = makeCanvas('trainStage', 190);
+const taSlider = document.getElementById('taSlider');
+const groundBtn = document.getElementById('groundFrameBtn'), trainBtn = document.getElementById('trainFrameBtn');
+const frameNote = document.getElementById('frameNote');
+let frame='ground', running=false, anim=null, trainX=0, trainV=0;
+const ballGroundX0 = 0;
+
+function drawTrain(){
+  const ctx = trainSim.ctx, w = trainSim.w, h = trainSim.h;
+  ctx.clearRect(0,0,w,h);
+  const groundY = h*0.8;
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,groundY); ctx.lineTo(w,groundY); ctx.stroke();
+  const carW=220, carH=90, cy = groundY - carH/2 - 2;
+  let carX, ballX;
+  if(frame==='ground'){ carX = w/2 - carW/2 + trainX*12; ballX = w/2 + ballGroundX0*12; }
+  else{ carX = w/2 - carW/2; const relative = ballGroundX0 - trainX; ballX = w/2 + relative*12; }
+  ctx.strokeStyle='#111'; ctx.lineWidth=1.5; ctx.fillStyle='#fff';
+  ctx.strokeRect(carX, cy-carH/2, carW, carH);
+  ctx.fillStyle='#111';
+  [carX+30, carX+carW-30].forEach(wx=>{ ctx.beginPath(); ctx.arc(wx, groundY+2, 7, 0, 7); ctx.fill(); });
+  const clampedBallX = Math.max(carX+16, Math.min(carX+carW-16, ballX));
+  ctx.fillStyle='#666';
+  ctx.beginPath(); ctx.arc(clampedBallX, cy+carH/2-16, 9, 0, 7); ctx.fill();
+  ctx.font='11px ui-monospace,Menlo,monospace'; ctx.fillStyle='#999';
+  ctx.fillText(frame==='ground' ? 'view: standing on the platform' : 'view: seated inside the train', 10, 18);
+}
+function stepTrain(now,last){
+  const dt = Math.min((now-last)/1000, 0.04);
+  const a = parseFloat(taSlider.value);
+  trainV += a*dt; trainX += trainV*dt;
+  drawTrain();
+  const relative = Math.abs(ballGroundX0 - trainX)*12;
+  if(running && relative < trainSim.w/2 - 30 && trainX*12 < trainSim.w) anim = requestAnimationFrame(t=>stepTrain(t, now));
+  else running=false;
+}
+document.getElementById('trainPlay').addEventListener('click', ()=>{
+  if(running) return; running=true;
+  anim = requestAnimationFrame(t0=>stepTrain(t0,t0));
+});
+document.getElementById('trainReset').addEventListener('click', ()=>{
+  running=false; cancelAnimationFrame(anim); trainX=0; trainV=0; drawTrain();
+});
+groundBtn.addEventListener('click', ()=>{
+  frame='ground'; groundBtn.classList.add('active'); trainBtn.classList.remove('active');
+  frameNote.innerHTML = '<b>Ground frame (inertial).</b> No real horizontal force acts on the ball, so — by the first law — it just sits still while the train accelerates away underneath it.';
+  drawTrain();
+});
+trainBtn.addEventListener('click', ()=>{
+  frame='train'; trainBtn.classList.add('active'); groundBtn.classList.remove('active');
+  frameNote.innerHTML = "<b>Train frame (non-inertial).</b> Watched from inside, the ball appears to slide backward with no visible push — an effect real forces alone can't explain in this frame.";
+  drawTrain();
+});
+taSlider.addEventListener('input', ()=>{ document.getElementById('taVal').textContent = parseFloat(taSlider.value).toFixed(1)+' m/s²'; });
+drawTrain();
+
+// ---------------- inertial-or-not quiz ----------------
+const scenarios = [
+  { text:'A car moving at a steady 60 km/h on a straight road', inertial:true },
+  { text:'A car braking hard at a red light', inertial:false },
+  { text:'A carousel spinning at a constant rate', inertial:false },
+  { text:'A rocket accelerating upward during launch', inertial:false },
+  { text:'A plane cruising at constant altitude and velocity', inertial:true },
+];
+const quizArea = document.getElementById('frameQuiz');
+function buildFrameQuiz(){
+  quizArea.innerHTML = '';
+  scenarios.forEach(sc=>{
+    const chip = document.createElement('div');
+    chip.className='chip'; chip.textContent=sc.text; chip.dataset.state='0'; chip.style.maxWidth='260px';
+    chip.onclick = ()=>{
+      let st = (parseInt(chip.dataset.state)+1)%3; chip.dataset.state=st; chip.className='chip';
+      if(st===0) chip.textContent=sc.text;
+      if(st===1){ chip.textContent=sc.text+' — inertial'; chip.classList.add('on'); }
+      if(st===2){ chip.textContent=sc.text+' — non-inertial'; }
+    };
+    quizArea.appendChild(chip);
+  });
+  document.getElementById('frameQuizNote').textContent = 'Click a scenario once for inertial, twice for non-inertial, a third time to clear it.';
+}
+document.getElementById('checkFrames').addEventListener('click', ()=>{
+  const chips = quizArea.querySelectorAll('.chip');
+  let correct=0;
+  chips.forEach((chip,i)=>{
+    const st = parseInt(chip.dataset.state), want = scenarios[i].inertial?1:2;
+    chip.className='chip';
+    if(st===want){ chip.classList.add('right'); correct++; }
+    else chip.classList.add('wrong');
+  });
+  document.getElementById('frameQuizNote').textContent = correct===scenarios.length
+    ? 'All correct — anything speeding up, slowing down, or turning is non-inertial, no matter how smooth it feels from inside.'
+    : correct+' of '+scenarios.length+' correct.';
+});
+document.getElementById('resetFrames').addEventListener('click', buildFrameQuiz);
+buildFrameQuiz();
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='b'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = "Correct. A frame moving at constant velocity, in a straight line, isn't accelerating — so it's inertial. The others are all speeding up, slowing down, or turning.";
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = 'Not quite. Any frame that is speeding up, slowing down, or turning is non-inertial. Only the constant-velocity train qualifies as inertial here.';
+    }
+  });
+});
+function checkSingle(id, exp, fbId, tolFrac, note){
+  const v = parseFloat(document.getElementById(id).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  const ok = Math.abs(v-exp) <= Math.max(tolFrac*Math.abs(exp), 0.3);
+  if(ok){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+  else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" if you want a walkthrough.'; }
+}
+function checkPair(idA, idB, expA, expB, fbId, tolFrac, note){
+  const a = parseFloat(document.getElementById(idA).value);
+  const b = parseFloat(document.getElementById(idB).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(a) || isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+  const okA = Math.abs(a-expA) <= Math.max(tolFrac*Math.abs(expA), 0.2);
+  const okB = Math.abs(b-expB) <= Math.max(tolFrac*Math.abs(expB), 0.2);
+  if(okA && okB){ fb.className='feedback show ok'; fb.textContent = 'Correct — '+note; }
+  else{
+    fb.className='feedback show no';
+    let msg='Not quite yet. ';
+    if(!okA) msg+='Check the first value. ';
+    if(!okB) msg+='Check the second value. ';
+    msg+='Open "Show solution" if you want a walkthrough.';
+    fb.textContent = msg;
+  }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkSingle('q2a', 65, 'fb2', 0.02, 'same-direction velocities simply add: 60 + 5.'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkSingle('q3a', 5, 'fb3', 0.03, 'going upstream, the current subtracts: 8 − 3.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkPair('q4a','q4b', 0, -2, 'fb4', 0.5, "no real force means zero acceleration on the ground; the train frame needs an apparent −2 m/s² to explain what it sees."); });
+</script>
+</body>
+</html>
