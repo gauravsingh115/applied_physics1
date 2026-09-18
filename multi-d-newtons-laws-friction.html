@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Dimensional Newton's Laws &amp; Friction Problems — Connected by a String</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --c1: #111111; --c2: #666666; --c3: #999999;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.c1{ border-top: 2px solid var(--c1); }
+  .concept-card.c2{ border-top: 2px solid var(--c2); }
+  .concept-card.c3{ border-top: 2px solid var(--c3); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card em{ color: var(--text); font-style: normal; font-weight: 600; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: #fafafa; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .controls{ display:flex; gap:2rem; flex-wrap:wrap; margin: 0 0 14px; }
+  .controls > div{ flex:1; min-width:190px; }
+  label{ display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-muted); margin-bottom:.35rem; font-family: var(--font-mono); }
+  label span.v{ color: var(--text); }
+  input[type=range]{ width:100%; accent-color: var(--text); }
+  .readout{ font-family: var(--font-mono); font-size: .85rem; color:#333; margin: 0 0 4px; display:flex; gap:1.4rem; flex-wrap:wrap; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .activity{ background:#fafafa; border:1px solid var(--border); padding:18px 20px; margin-top:14px; }
+  .activity .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .activity .ptext{ font-size:14.5px; line-height:1.6; margin:0 0 12px; color: var(--text); }
+  .activity .ptext em{ font-style:normal; font-weight:600; }
+  .activity code{ font-family: var(--font-mono); font-size: 13px; background:#fff; border:1px solid var(--border); padding:1px 6px; }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="forces-types.html">Forces &amp; Types</a>
+    <a href="newtons-laws.html">Newton's Laws</a>
+    <a href="frames-of-reference.html">Frames of Reference</a>
+    <a href="pseudo-forces-inertia.html">Pseudo Forces &amp; Inertia</a>
+    <a href="free-body-diagrams.html">Free Body Diagrams</a>
+    <a href="friction-types.html">Friction &amp; Types</a>
+    <a href="normal-friction-coefficient.html">Normal &amp; Coefficient of Friction</a>
+    <a href="multi-d-fbd-friction.html">Multi-D FBDs w/ Friction</a>
+    <a class="here" href="multi-d-newtons-laws-friction.html">Multi-D Newton's Laws &amp; Friction</a>
+  </nav>
+
+  <header>
+    <p class="tag">dynamics — multi-dimensional newton's laws &amp; friction problems</p>
+    <h1>Two objects, one string, one shared acceleration</h1>
+    <p>Connect two objects with a string over a pulley and something convenient happens: whatever one does, the other must match — same speed, same acceleration, just possibly in a different direction. That constraint turns two separate free body diagrams into one solvable system. Add friction on one side and the problem becomes a genuine test of Newton's second law applied twice, then combined.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card c1">
+        <h3>The constraint</h3>
+        <p>An ideal string and pulley force both objects to share the same acceleration <em>magnitude</em> — that single fact is what lets you combine two separate equations into one.</p>
+      </div>
+      <div class="concept-card c2">
+        <h3>Tension links them</h3>
+        <p>Tension is the internal force each object exerts on the other through the string. It's the same throughout an ideal, massless string over a frictionless pulley.</p>
+      </div>
+      <div class="concept-card c3">
+        <h3>One FBD each, then combine</h3>
+        <p>Write F = ma separately for every object using its own free body diagram, then use the shared acceleration and shared tension to solve both equations together.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulator">
+    <div class="section-head">
+      <h2>Block on a table, mass on a string</h2>
+      <p>Block A sits on a table with friction. A string runs over a pulley at the table's edge down to hanging Block B. Block B's weight pulls the whole system, and friction under Block A fights back.</p>
+    </div>
+    <div class="panel">
+      <canvas id="stage" style="height:260px"></canvas>
+      <div class="readout" id="readout"></div>
+      <div class="controls">
+        <div>
+          <label>Block A mass (table) <span class="v" id="m1Val">6 kg</span></label>
+          <input type="range" id="m1Slider" min="1" max="20" step="1" value="6">
+        </div>
+        <div>
+          <label>Block B mass (hanging) <span class="v" id="m2Val">3 kg</span></label>
+          <input type="range" id="m2Slider" min="1" max="20" step="1" value="3">
+        </div>
+        <div>
+          <label>Static μ_s (table) <span class="v" id="musVal">0.30</span></label>
+          <input type="range" id="musSlider" min="0.05" max="1" step="0.01" value="0.3">
+        </div>
+        <div>
+          <label>Kinetic μ_k (table) <span class="v" id="mukVal">0.20</span></label>
+          <input type="range" id="mukSlider" min="0.05" max="1" step="0.01" value="0.2">
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="primary" id="playBtn">▶ Play</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <p class="note" id="statusNote"><b>Static.</b> Friction is holding Block A in place against Block B's pull.</p>
+    </div>
+
+    <div class="activity">
+      <p class="pnum">try it in the simulator</p>
+      <p class="ptext">Set Block A = <em>6 kg</em>, Block B = <em>3 kg</em>, μ_k = <em>0.2</em>. Before pressing Play, calculate the system's acceleration by hand:</p>
+      <p class="ptext" style="margin-top:-6px"><code>a = (m₂g − μ_k m₁g) / (m₁ + m₂)</code></p>
+      <p class="ptext">Then press Play and check that the acceleration readout matches your answer once the block is moving.</p>
+      <div class="answer-row">
+        <div class="answer-field"><label for="actA">a =</label><input type="text" id="actA" placeholder="?"><span class="unit">m/s²</span></div>
+        <button id="checkAct">Check</button>
+      </div>
+      <div class="feedback" id="fbAct"></div>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself. Use g = 9.8 m/s².</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">Two blocks are connected by a single ideal (massless, inextensible) string over a frictionless, massless pulley. Which of the following is always true, regardless of their masses?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> They always have the same acceleration magnitude</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> The heavier object always accelerates faster</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> Tension is only the same on both sides if the masses are equal</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> Friction on one object automatically also acts on the other</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">Block A (<em>5 kg</em>, μ_k = 0.25) sits on a table, connected over a pulley to hanging Block B (<em>4 kg</em>). Find the system's acceleration and the string's tension.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">a =</label><input type="text" id="q2a" placeholder="?"><span class="unit">m/s²</span></div>
+          <div class="answer-field"><label for="q2b">T =</label><input type="text" id="q2b" placeholder="?"><span class="unit">N</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">System acceleration: <code>a = (m₂g − μ_k m₁g)/(m₁+m₂) = (4×9.8 − 0.25×5×9.8)/9 = (39.2 − 12.25)/9 ≈ 2.99 m/s²</code>. Tension from Block B's equation: <code>T = m₂(g − a) = 4×(9.8 − 2.99) ≈ 27.2 N</code> (check with Block A: <code>T = m₁a + μ_k m₁g = 5×2.99 + 12.25 ≈ 27.2 N</code> ✓).</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">Block A (<em>8 kg</em>, μ_s = 0.5) sits on a table, connected to hanging Block B (<em>3 kg</em>). Find the driving force from Block B's weight, and the maximum static friction available — then determine whether the system moves at all.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">driving force =</label><input type="text" id="q3a" placeholder="?"><span class="unit">N</span></div>
+          <div class="answer-field"><label for="q3b">max static friction =</label><input type="text" id="q3b" placeholder="?"><span class="unit">N</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Block B's weight is the driving force: <code>m₂g = 3 × 9.8 = 29.4 N</code>. Maximum static friction on Block A is <code>μ_s m₁g = 0.5 × 8 × 9.8 = 39.2 N</code>. Since 29.4 N is less than 39.2 N, static friction can supply exactly what's needed to hold everything still — the system doesn't move.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">Block A (<em>4 kg</em>) sits on a <em>20°</em> frictional incline (μ_k = 0.15), connected over a pulley at the top to hanging Block B (<em>5 kg</em>), which pulls Block A up the slope. Find the system's acceleration and the string's tension.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">a =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m/s²</span></div>
+          <div class="answer-field"><label for="q4b">T =</label><input type="text" id="q4b" placeholder="?"><span class="unit">N</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Along the incline, Block A feels gravity pulling it down-slope (<code>m₁g sinθ ≈ 13.4 N</code>) and kinetic friction also opposing its up-slope motion (<code>μ_k m₁g cosθ ≈ 5.5 N</code>). Combining both blocks' equations: <code>a = (m₂g − m₁g sinθ − μ_k m₁g cosθ)/(m₁+m₂) = (49 − 13.4 − 5.5)/9 ≈ 3.34 m/s²</code>. Tension from Block B: <code>T = m₂(g − a) = 5×(9.8 − 3.34) ≈ 32.3 N</code>.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Find masses where the system sits right on the edge of moving (driving force ≈ maximum static friction). Then nudge Block B's mass up by just a fraction of a kilogram and press Play — how does the acceleration compare to what you'd get from a much bigger imbalance?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>use g = 9.8 m/s² throughout</footer>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+const G = 9.8;
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2,dashed){
+  ctx.save();
+  ctx.setLineDash(dashed?[4,3]:[]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.setLineDash([]);
+  const ang = Math.atan2(y2-y1, x2-x1), hs=7;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+const sim = makeCanvas('stage', 260);
+const m1Slider = document.getElementById('m1Slider'), m2Slider = document.getElementById('m2Slider');
+const musSlider = document.getElementById('musSlider'), mukSlider = document.getElementById('mukSlider');
+let running = false, anim = null, pos = 0, vel = 0;
+
+function state(){
+  const m1 = parseFloat(m1Slider.value), m2 = parseFloat(m2Slider.value);
+  const mus = parseFloat(musSlider.value), muk = parseFloat(mukSlider.value);
+  const N = m1*G;
+  const driving = m2*G;
+  const fsMax = mus*N;
+  let moving, friction, a, T;
+  if(driving <= fsMax + 1e-9){
+    moving = false; friction = driving; a = 0;
+    T = driving; // static equilibrium on B: T = m2 g
+  } else {
+    moving = true; friction = muk*N;
+    a = (driving - friction)/(m1+m2);
+    T = m2*(G-a);
+  }
+  return { m1, m2, mus, muk, N, driving, fsMax, moving, friction, a, T };
+}
+
+function draw(){
+  const ctx = sim.ctx, w = sim.w, h = sim.h;
+  ctx.clearRect(0,0,w,h);
+  const s = state();
+
+  const tableY = h*0.42, tableLeft = w*0.08, tableRight = w*0.62, pulleyX = tableRight, pulleyY = tableY;
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.75;
+  ctx.beginPath(); ctx.moveTo(tableLeft, tableY); ctx.lineTo(tableRight, tableY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(tableRight, tableY); ctx.lineTo(tableRight, tableY+h*0.02); ctx.stroke();
+  // table legs
+  ctx.strokeStyle = '#ddd';
+  ctx.beginPath(); ctx.moveTo(tableLeft+10, tableY); ctx.lineTo(tableLeft+10, tableY+40); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(tableRight-10, tableY); ctx.lineTo(tableRight-10, tableY+40); ctx.stroke();
+
+  // pulley
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(pulleyX, pulleyY-14, 10, 0, 7); ctx.stroke();
+
+  const travel = Math.min(pos, (tableRight-tableLeft)*0.55);
+  const blockX = tableLeft + 30 + travel;
+  const blockY = tableY;
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.75; ctx.fillStyle = '#fff';
+  ctx.strokeRect(blockX-22, blockY-32, 44, 32);
+  ctx.font = '11px -apple-system,sans-serif'; ctx.fillStyle = '#666';
+  ctx.fillText('A', blockX-4, blockY-14);
+
+  // string from block A to pulley top, then down to block B
+  ctx.strokeStyle = '#999'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(blockX+22, blockY-16); ctx.lineTo(pulleyX, pulleyY-24); ctx.stroke();
+  const hangTravel = Math.min(pos, h*0.35);
+  const bY = pulleyY - 4 + hangTravel;
+  ctx.beginPath(); ctx.moveTo(pulleyX, pulleyY-4); ctx.lineTo(pulleyX, bY); ctx.stroke();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.75; ctx.fillStyle = '#fff';
+  ctx.strokeRect(pulleyX-16, bY, 32, 32);
+  ctx.fillStyle = '#666';
+  ctx.fillText('B', pulleyX-6, bY+20);
+
+  // force arrows on block A
+  const scale = 1.6;
+  if(s.friction>0.2){
+    ctx.strokeStyle = s.moving ? '#3a3a3a' : '#111';
+    ctx.fillStyle = s.moving ? '#3a3a3a' : '#111';
+    ctx.lineWidth = 2;
+    arrow(ctx, blockX-22, blockY-16, blockX-22-s.friction*scale, blockY-16, s.moving);
+  }
+  ctx.font = '10px ui-monospace,Menlo,monospace';
+  if(s.friction>0.2){ ctx.fillStyle = '#666'; ctx.fillText('f', blockX-22-s.friction*scale-12, blockY-12); }
+
+  document.getElementById('readout').innerHTML =
+    'N (on A) = '+fmt(s.N)+' N &nbsp; &nbsp; driving (B\'s weight) = '+fmt(s.driving)+' N &nbsp; &nbsp; max static = '+fmt(s.fsMax)+' N &nbsp; &nbsp; friction = '+fmt(s.friction)+' N &nbsp; &nbsp; a = '+fmt(s.a,2)+' m/s² &nbsp; &nbsp; T = '+fmt(s.T)+' N';
+
+  const note = document.getElementById('statusNote');
+  if(s.moving) note.innerHTML = '<b>Moving.</b> Block B\'s weight has beaten the maximum static friction under Block A, so the system accelerates.';
+  else note.innerHTML = '<b>Static.</b> Friction is holding Block A in place against Block B\'s pull.';
+}
+
+function stepAnim(now,last){
+  const dt = Math.min((now-last)/1000, 0.05);
+  const s = state();
+  if(s.moving){ vel += s.a*dt; pos += vel*dt; }
+  draw();
+  if(running) anim = requestAnimationFrame(t=>stepAnim(t, now));
+}
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  if(running) return;
+  const s = state();
+  if(!s.moving){ draw(); return; }
+  running = true; vel = 0;
+  anim = requestAnimationFrame(t=>stepAnim(t,t));
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  running=false; cancelAnimationFrame(anim); pos=0; vel=0; draw();
+});
+[m1Slider,m2Slider,musSlider,mukSlider].forEach(s=>s.addEventListener('input', ()=>{
+  document.getElementById('m1Val').textContent = m1Slider.value+' kg';
+  document.getElementById('m2Val').textContent = m2Slider.value+' kg';
+  document.getElementById('musVal').textContent = parseFloat(musSlider.value).toFixed(2);
+  document.getElementById('mukVal').textContent = parseFloat(mukSlider.value).toFixed(2);
+  if(!running){ pos=0; draw(); }
+}));
+draw();
+
+// ---------------- activity ----------------
+document.getElementById('checkAct').addEventListener('click', ()=>{
+  const v = parseFloat(document.getElementById('actA').value);
+  const fb = document.getElementById('fbAct');
+  const m1=6, m2=3, muk=0.2;
+  const expected = (m2*G - muk*m1*G)/(m1+m2);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  if(Math.abs(v-expected) <= 0.15){
+    fb.className='feedback show ok';
+    fb.textContent = 'Correct — a ≈ '+fmt(expected,2)+' m/s². Set Block A to 6 kg, Block B to 3 kg, μ_k to 0.2 above, and press Play to see the same number in the readout.';
+  } else {
+    fb.className='feedback show no';
+    fb.textContent = 'Not quite. a = (m₂g − μ_k m₁g) / (m₁ + m₂) with m₁=6, m₂=3, μ_k=0.2.';
+  }
+});
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='a'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = 'Correct. An inextensible string over an ideal pulley forces both objects to move the same distance in the same time, so their speeds and accelerations always match in magnitude — regardless of mass.';
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = 'Not quite. The one guarantee from an ideal string and pulley is that both objects share the same acceleration magnitude — that constraint is what makes the system solvable.';
+    }
+  });
+});
+function checkPair(idA, idB, expA, expB, fbId, tolA, tolB, note){
+  const a = parseFloat(document.getElementById(idA).value);
+  const b = parseFloat(document.getElementById(idB).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(a) || isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+  const okA = Math.abs(a-expA) <= tolA;
+  const okB = Math.abs(b-expB) <= tolB;
+  if(okA && okB){ fb.className='feedback show ok'; fb.textContent = 'Correct — '+note; }
+  else{
+    fb.className='feedback show no';
+    let msg='Not quite yet. ';
+    if(!okA) msg+='Check the first value. ';
+    if(!okB) msg+='Check the second value. ';
+    msg+='Open "Show solution" if you want a walkthrough.';
+    fb.textContent = msg;
+  }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkPair('q2a','q2b', 2.99, 27.2, 'fb2', 0.15, 1, 'a = (m₂g − μ_k m₁g)/(m₁+m₂), and T = m₂(g − a).'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkPair('q3a','q3b', 29.4, 39.2, 'fb3', 0.5, 0.5, 'driving force is m₂g; max static friction is μ_s m₁g — and 29.4 < 39.2, so it stays put.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkPair('q4a','q4b', 3.34, 32.3, 'fb4', 0.15, 1, 'a = (m₂g − m₁g sinθ − μ_k m₁g cosθ)/(m₁+m₂), and T = m₂(g − a).'); });
+</script>
+</body>
+</html>

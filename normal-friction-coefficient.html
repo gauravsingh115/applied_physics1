@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Normal Force &amp; Coefficient of Friction — Tilt Until It Slips</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --c1: #111111; --c2: #666666; --c3: #999999;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.c1{ border-top: 2px solid var(--c1); }
+  .concept-card.c2{ border-top: 2px solid var(--c2); }
+  .concept-card.c3{ border-top: 2px solid var(--c3); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card em{ color: var(--text); font-style: normal; font-weight: 600; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: #fafafa; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .controls{ display:flex; gap:2rem; flex-wrap:wrap; margin: 0 0 14px; }
+  .controls > div{ flex:1; min-width:190px; }
+  label{ display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-muted); margin-bottom:.35rem; font-family: var(--font-mono); }
+  label span.v{ color: var(--text); }
+  input[type=range]{ width:100%; accent-color: var(--text); }
+  .readout{ font-family: var(--font-mono); font-size: .85rem; color:#333; margin: 0 0 4px; display:flex; gap:1.4rem; flex-wrap:wrap; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  button.toggle.active{ background: var(--text); border-color: var(--text); color:#fff; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .activity{ background:#fafafa; border:1px solid var(--border); padding:18px 20px; margin-top:14px; }
+  .activity .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .activity .ptext{ font-size:14.5px; line-height:1.6; margin:0 0 12px; color: var(--text); }
+  .activity .ptext em{ font-style:normal; font-weight:600; }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="forces-types.html">Forces &amp; Types</a>
+    <a href="newtons-laws.html">Newton's Laws</a>
+    <a href="frames-of-reference.html">Frames of Reference</a>
+    <a href="pseudo-forces-inertia.html">Pseudo Forces &amp; Inertia</a>
+    <a href="free-body-diagrams.html">Free Body Diagrams</a>
+    <a href="friction-types.html">Friction &amp; Types</a>
+    <a class="here" href="normal-friction-coefficient.html">Normal &amp; Coefficient of Friction</a>
+    <a href="multi-d-fbd-friction.html">Multi-D FBDs w/ Friction</a>
+    <a href="multi-d-newtons-laws-friction.html">Multi-D Newton's Laws &amp; Friction</a>
+  </nav>
+
+  <header>
+    <p class="tag">dynamics — normal force &amp; coefficient of friction</p>
+    <h1>Tilt the ramp until it slips, and you've just measured μ</h1>
+    <p>The normal force isn't some fixed property of an object — it's whatever a surface needs to supply to stop things from passing through it, and it changes with the situation. Tilt a surface, and the normal force shrinks while a new component of gravity appears along the slope. Push that tilt far enough and you reach the exact angle where friction can no longer hold on — a simple, elegant way to measure the coefficient of friction without ever touching a force sensor.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card c1">
+        <h3>Normal force</h3>
+        <p>The perpendicular contact force a surface exerts to stop an object pressing into it. It adjusts to whatever equilibrium demands — it is <em>not</em> always equal to weight.</p>
+      </div>
+      <div class="concept-card c2">
+        <h3>Coefficient of friction</h3>
+        <p>The dimensionless ratio μ = f / N. It describes a <em>pair</em> of surfaces, not a single material — rubber on ice and rubber on asphalt have very different μ.</p>
+        <span class="formula">μ = f / N</span>
+      </div>
+      <div class="concept-card c3">
+        <h3>Angle of repose</h3>
+        <p>The incline angle at which a resting object is right on the verge of sliding. At that exact angle, gravity's pull along the slope exactly equals the maximum static friction.</p>
+        <span class="formula">tanθ = μ_s</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulator">
+    <div class="section-head">
+      <h2>Find the angle of repose</h2>
+      <p>Raise the incline angle slowly. The normal force shrinks, the along-slope pull grows, and friction keeps adjusting to match — until it can't.</p>
+    </div>
+    <div class="panel">
+      <canvas id="stage" style="height:260px"></canvas>
+      <div class="readout" id="readout"></div>
+      <div class="controls">
+        <div>
+          <label>Incline angle θ <span class="v" id="thVal">15°</span></label>
+          <input type="range" id="thSlider" min="0" max="60" step="1" value="15">
+        </div>
+        <div>
+          <label>Mass <span class="v" id="mVal">6 kg</span></label>
+          <input type="range" id="mSlider" min="1" max="20" step="1" value="6">
+        </div>
+        <div>
+          <label>Static coefficient μ_s <span class="v" id="musVal">0.36</span></label>
+          <input type="range" id="musSlider" min="0.05" max="1" step="0.01" value="0.36">
+        </div>
+        <div>
+          <label>Kinetic coefficient μ_k <span class="v" id="mukVal">0.28</span></label>
+          <input type="range" id="mukSlider" min="0.05" max="1" step="0.01" value="0.28">
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="primary" id="playBtn">▶ Let it go</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <p class="note" id="statusNote"><b>Holding.</b> Static friction is easily enough to keep the block in place at this angle.</p>
+    </div>
+
+    <div class="activity">
+      <p class="pnum">try it in the simulator</p>
+      <p class="ptext">Set μ_s to <em>0.36</em>. Calculate the angle of repose — the incline angle at which the block first begins to slide — using <code>tanθ = μ_s</code>. Then drag the incline angle slider up to that value and confirm the block is exactly on the edge of slipping; a degree or two higher and it should slide.</p>
+      <div class="answer-row">
+        <div class="answer-field"><label for="actA">angle of repose =</label><input type="text" id="actA" placeholder="?"><span class="unit">°</span></div>
+        <button id="checkAct">Check</button>
+      </div>
+      <div class="feedback" id="fbAct"></div>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself. Use g = 9.8 m/s².</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">True or false: the normal force on an object is always equal to its weight.</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> True — normal force always equals weight</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> False — it depends on the situation, such as an incline or an angled push</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">A <em>10 kg</em> block sits on a <em>25°</em> frictionless incline. Find the normal force on it, and the minimum coefficient of static friction that <em>would</em> be needed to keep an identical block from sliding at that angle.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">N =</label><input type="text" id="q2a" placeholder="?"><span class="unit">N</span></div>
+          <div class="answer-field"><label for="q2b">μ_s,min =</label><input type="text" id="q2b" placeholder="?"></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Normal force is <code>N = mg cos25° = 98 × 0.906 ≈ 88.8 N</code>. To hold the block in place, static friction would need to match gravity's pull along the slope, <code>mg sin25° = 98 × 0.423 ≈ 41.4 N</code>. Since <code>f_s,max = μ_s N</code>, the minimum coefficient is <code>μ_s = tan25° ≈ 0.466</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A block on an adjustable ramp starts sliding right when the ramp reaches <em>25°</em>. Find μ_s for this block-ramp pair.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">μ_s =</label><input type="text" id="q3a" placeholder="?"></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">At the angle of repose, <code>tanθ = μ_s</code>, so <code>μ_s = tan25° ≈ 0.466</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A <em>5 kg</em> block is already sliding down a <em>40°</em> incline with μ_k = 0.3. Find its acceleration down the slope.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">acceleration =</label><input type="text" id="q4a" placeholder="?"><span class="unit">m/s²</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">Along the slope: <code>a = g(sinθ − μ_k cosθ) = 9.8 × (sin40° − 0.3 × cos40°) = 9.8 × (0.643 − 0.230) = 9.8 × 0.413 ≈ 4.05 m/s²</code>, directed down the slope.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Set μ_k noticeably lower than μ_s, find the angle of repose, then push the angle just 1° past it and press "Let it go." Watch the acceleration readout the instant it starts sliding — why does it jump rather than start at zero?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>use g = 9.8 m/s² throughout</footer>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+const G = 9.8;
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2,dashed){
+  ctx.save();
+  ctx.setLineDash(dashed?[4,3]:[]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.setLineDash([]);
+  const ang = Math.atan2(y2-y1, x2-x1), hs=7;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+const sim = makeCanvas('stage', 260);
+const thSlider = document.getElementById('thSlider'), mSlider = document.getElementById('mSlider');
+const musSlider = document.getElementById('musSlider'), mukSlider = document.getElementById('mukSlider');
+let slidePos = 0, running = false, anim = null;
+
+function state(){
+  const thDeg = parseFloat(thSlider.value), th = thDeg*Math.PI/180;
+  const m = parseFloat(mSlider.value), mus = parseFloat(musSlider.value), muk = parseFloat(mukSlider.value);
+  const N = m*G*Math.cos(th);
+  const gAlong = m*G*Math.sin(th);
+  const fsMax = mus*N;
+  const fk = muk*N;
+  let sliding, friction, a;
+  if(gAlong <= fsMax + 1e-9){ sliding = false; friction = gAlong; a = 0; }
+  else { sliding = true; friction = fk; a = (gAlong - fk)/m; }
+  return { thDeg, th, m, mus, muk, N, gAlong, fsMax, fk, sliding, friction, a };
+}
+
+function draw(){
+  const ctx = sim.ctx, w = sim.w, h = sim.h;
+  ctx.clearRect(0,0,w,h);
+  const s = state();
+
+  const baseX = w*0.12, baseY = h*0.86, rampLen = w*0.7;
+  const topX = baseX + rampLen*Math.cos(s.th), topY = baseY - rampLen*Math.sin(s.th);
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.75;
+  ctx.beginPath(); ctx.moveTo(baseX,baseY); ctx.lineTo(topX,topY); ctx.stroke();
+  ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(baseX-20,baseY); ctx.lineTo(baseX+rampLen*Math.cos(s.th)+10,baseY); ctx.stroke();
+
+  const travel = Math.min(slidePos, rampLen*0.72);
+  const cx = topX - (travel+34)*Math.cos(s.th);
+  const cy = topY + (travel+34)*Math.sin(s.th);
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(-s.th);
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.75; ctx.fillStyle = '#fff';
+  ctx.strokeRect(-20, -16, 40, 32);
+  ctx.restore();
+
+  const scale = 3.2;
+  // weight straight down
+  ctx.strokeStyle = '#999'; ctx.fillStyle = '#999'; ctx.lineWidth = 1.5;
+  arrow(ctx, cx, cy, cx, cy + s.m*G*scale*0.28, true);
+  // normal perpendicular to incline
+  const nx = Math.sin(s.th), ny = Math.cos(s.th);
+  ctx.strokeStyle = '#111'; ctx.fillStyle = '#111'; ctx.lineWidth = 2;
+  arrow(ctx, cx, cy, cx + nx*s.N*scale*0.28, cy - ny*s.N*scale*0.28, false);
+  // friction along incline, opposing sliding tendency (up-slope if about to slide down)
+  const ux = -Math.cos(s.th), uy = Math.sin(s.th);
+  ctx.strokeStyle = '#666'; ctx.fillStyle = '#666'; ctx.lineWidth = 2;
+  arrow(ctx, cx, cy, cx + ux*s.friction*scale*0.28, cy + uy*s.friction*scale*0.28, s.sliding);
+
+  ctx.font = '11px ui-monospace,Menlo,monospace'; ctx.fillStyle = '#999';
+  ctx.fillText('mg', cx+4, cy + s.m*G*scale*0.28 + 12);
+  ctx.fillStyle = '#111';
+  ctx.fillText('N', cx + nx*s.N*scale*0.28 + 4, cy - ny*s.N*scale*0.28 - 4);
+  ctx.fillStyle = '#666';
+  ctx.fillText('f', cx + ux*s.friction*scale*0.28 - 12, cy + uy*s.friction*scale*0.28 - 4);
+
+  document.getElementById('readout').innerHTML =
+    'N = '+fmt(s.N)+' N &nbsp; &nbsp; mg sinθ = '+fmt(s.gAlong)+' N &nbsp; &nbsp; max static = '+fmt(s.fsMax)+' N &nbsp; &nbsp; friction now = '+fmt(s.friction)+' N &nbsp; &nbsp; a = '+fmt(s.a,2)+' m/s²';
+
+  const note = document.getElementById('statusNote');
+  if(s.sliding) note.innerHTML = '<b>Sliding.</b> Gravity\'s pull along the slope has beaten the maximum static friction — the block accelerates downhill.';
+  else if(s.thDeg < 0.5) note.innerHTML = '<b>Flat.</b> With no tilt, there\'s no pull along the surface for friction to resist.';
+  else note.innerHTML = '<b>Holding.</b> Static friction is matching gravity\'s pull along the slope, so the block stays put.';
+}
+
+function stepAnim(now,last){
+  const dt = Math.min((now-last)/1000, 0.05);
+  const s = state();
+  if(s.sliding){
+    slidePos += (0.5*s.a*dt*dt + slideV*dt);
+    slideV += s.a*dt;
+  }
+  draw();
+  const { w } = sim.canvas.getBoundingClientRect();
+  if(running) anim = requestAnimationFrame(t=>stepAnim(t, now));
+}
+let slideV = 0;
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  if(running) return;
+  const s = state();
+  if(!s.sliding) { draw(); return; }
+  running = true; slideV = 0;
+  anim = requestAnimationFrame(t=>stepAnim(t,t));
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  running=false; cancelAnimationFrame(anim); slidePos=0; slideV=0; draw();
+});
+[thSlider,mSlider,musSlider,mukSlider].forEach(s=>s.addEventListener('input', ()=>{
+  document.getElementById('thVal').textContent = thSlider.value+'°';
+  document.getElementById('mVal').textContent = mSlider.value+' kg';
+  document.getElementById('musVal').textContent = parseFloat(musSlider.value).toFixed(2);
+  document.getElementById('mukVal').textContent = parseFloat(mukSlider.value).toFixed(2);
+  if(!running){ slidePos=0; draw(); }
+}));
+draw();
+
+// ---------------- activity ----------------
+document.getElementById('checkAct').addEventListener('click', ()=>{
+  const v = parseFloat(document.getElementById('actA').value);
+  const fb = document.getElementById('fbAct');
+  const expected = Math.atan(0.36)*180/Math.PI;
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  if(Math.abs(v-expected) <= 1){
+    fb.className='feedback show ok';
+    fb.textContent = 'Correct — θ = tan⁻¹(0.36) ≈ 19.8°. Set μ_s to 0.36 above and slide the incline angle to about 20° to see the block sitting right on the edge of slipping.';
+  } else {
+    fb.className='feedback show no';
+    fb.textContent = 'Not quite. θ = tan⁻¹(μ_s) = tan⁻¹(0.36).';
+  }
+});
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='b'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = 'Correct. On an incline, the normal force is mg cosθ — less than the weight. Push at an angle and it changes again. The normal force is whatever equilibrium in that direction requires, not a fixed fraction of weight.';
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = 'Not quite. Normal force only equals weight when the surface is flat and there\'s no other vertical force involved. Tilt the surface or add an angled push, and it changes.';
+    }
+  });
+});
+function checkPair(idA, idB, expA, expB, fbId, tolA, tolB, note){
+  const a = parseFloat(document.getElementById(idA).value);
+  const b = parseFloat(document.getElementById(idB).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(a) || isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+  const okA = Math.abs(a-expA) <= tolA;
+  const okB = Math.abs(b-expB) <= tolB;
+  if(okA && okB){ fb.className='feedback show ok'; fb.textContent = 'Correct — '+note; }
+  else{
+    fb.className='feedback show no';
+    let msg='Not quite yet. ';
+    if(!okA) msg+='Check the first value. ';
+    if(!okB) msg+='Check the second value. ';
+    msg+='Open "Show solution" if you want a walkthrough.';
+    fb.textContent = msg;
+  }
+}
+function checkSingle(id, exp, fbId, tol, note){
+  const v = parseFloat(document.getElementById(id).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  if(Math.abs(v-exp) <= tol){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+  else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" if you want a walkthrough.'; }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkPair('q2a','q2b', 88.8, 0.466, 'fb2', 1.5, 0.02, 'N = mg cosθ, and μ_s,min = tanθ.'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkSingle('q3a', 0.466, 'fb3', 0.02, 'μ_s = tanθ at the angle of repose.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkSingle('q4a', 4.05, 'fb4', 0.1, 'a = g(sinθ − μ_k cosθ).'); });
+</script>
+</body>
+</html>
