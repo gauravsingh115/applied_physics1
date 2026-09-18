@@ -211,6 +211,10 @@
           <input type="range" id="mukSlider" min="0.05" max="1" step="0.01" value="0.3">
         </div>
       </div>
+      <div class="btnRow">
+        <button class="primary" id="playBtn">▶ Play</button>
+        <button id="resetBtn">Reset</button>
+      </div>
       <p class="note" id="statusNote"><b>Static.</b> Friction is matching the applied force exactly, so the block isn't moving yet.</p>
     </div>
 
@@ -337,6 +341,7 @@ function arrow(ctx,x1,y1,x2,y2,dashed){
 const sim = makeCanvas('stage', 260);
 const fSlider = document.getElementById('fSlider'), mSlider = document.getElementById('mSlider');
 const musSlider = document.getElementById('musSlider'), mukSlider = document.getElementById('mukSlider');
+let blockX = 0, blockV = 0, running = false, anim = null;
 
 function state(){
   const F = parseFloat(fSlider.value), m = parseFloat(mSlider.value);
@@ -358,7 +363,7 @@ function draw(){
   const groundY = blockAreaH*0.78;
   ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0,groundY); ctx.lineTo(w,groundY); ctx.stroke();
-  const cx = w*0.28, cy = groundY, bw=70, bh=48;
+  const cx = w*0.28 + blockX, cy = groundY, bw=70, bh=48;
   ctx.strokeStyle = '#111'; ctx.lineWidth = 1.75; ctx.fillStyle = '#fff';
   ctx.strokeRect(cx-bw/2, cy-bh, bw, bh);
   const scale = 1.6;
@@ -425,9 +430,40 @@ function draw(){
   document.getElementById('mVal').textContent = mSlider.value+' kg';
   document.getElementById('musVal').textContent = parseFloat(musSlider.value).toFixed(2);
   document.getElementById('mukVal').textContent = parseFloat(mukSlider.value).toFixed(2);
-  draw();
+  if(!running) draw();
 }));
 draw();
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  running = false; cancelAnimationFrame(anim);
+  blockX = 0; blockV = 0;
+  draw();
+});
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  if(running) return;
+  const s = state();
+  if(!s.moving){
+    const note = document.getElementById('statusNote');
+    note.innerHTML = '<b>Nothing to play yet.</b> The applied force hasn\'t beaten the maximum static friction, so the block has no reason to move — raise the applied force past '+fmt(s.fsMax)+' N first.';
+    return;
+  }
+  running = true;
+  let last = performance.now();
+  function step(now){
+    const dt = Math.min((now-last)/1000, 0.05); last = now;
+    const cur = state();
+    if(!cur.moving){ running = false; draw(); return; }
+    blockV += cur.a*dt*22;
+    blockX += blockV*dt;
+    draw();
+    const w = sim.w;
+    const cx = w*0.28 + blockX, bw = 70;
+    const rightEdge = cx + bw/2 + cur.F*1.6 + 40;
+    if(running && rightEdge < w) anim = requestAnimationFrame(step);
+    else running = false;
+  }
+  anim = requestAnimationFrame(step);
+});
 
 // ---------------- activity ----------------
 document.getElementById('checkAct').addEventListener('click', ()=>{
