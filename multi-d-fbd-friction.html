@@ -325,7 +325,10 @@ function draw(){
   ctx.clearRect(0,0,w,h);
   const s = state();
 
-  const baseX = w*0.1, baseY = h*0.88, rampLen = w*0.62;
+  const baseX = w*0.1, bottomMargin = 60, baseY = h - bottomMargin;
+  const marginRight = 60, marginTop = 60;
+  const availW = (w - marginRight) - baseX, availH = baseY - marginTop;
+  const rampLen = Math.min(availW / Math.cos(s.th), availH / Math.max(Math.sin(s.th), 1e-6));
   const topX = baseX + rampLen*Math.cos(s.th), topY = baseY - rampLen*Math.sin(s.th);
   ctx.strokeStyle = '#111'; ctx.lineWidth = 1.75;
   ctx.beginPath(); ctx.moveTo(baseX,baseY); ctx.lineTo(topX,topY); ctx.stroke();
@@ -342,26 +345,26 @@ function draw(){
   ctx.strokeRect(-20, -16, 40, 32);
   ctx.restore();
 
-  const scale = 2.1;
+  const vscale = 0.2;
   // weight straight down
   ctx.strokeStyle = '#999'; ctx.fillStyle = '#999'; ctx.lineWidth = 1.5;
-  arrow(ctx, cx, cy, cx, cy + s.m*G*scale*0.24, true);
+  arrow(ctx, cx, cy, cx, cy + s.m*G*vscale, true);
   ctx.font = '11px ui-monospace,Menlo,monospace'; ctx.fillStyle = '#999';
-  ctx.fillText('mg', cx+4, cy + s.m*G*scale*0.24 + 12);
+  ctx.fillText('mg', cx+4, cy + s.m*G*vscale + 12);
 
   // normal, perpendicular to incline
-  const nx = Math.sin(s.th), ny = Math.cos(s.th);
+  const nx = -Math.sin(s.th), ny = Math.cos(s.th);
   ctx.strokeStyle = '#111'; ctx.fillStyle = '#111'; ctx.lineWidth = 2;
-  arrow(ctx, cx, cy, cx + nx*s.N*scale*0.24, cy - ny*s.N*scale*0.24, false);
-  ctx.fillText('N', cx + nx*s.N*scale*0.24 + 4, cy - ny*s.N*scale*0.24 - 4);
+  arrow(ctx, cx, cy, cx + nx*s.N*vscale, cy - ny*s.N*vscale, false);
+  ctx.fillText('N', cx + nx*s.N*vscale + 4, cy - ny*s.N*vscale - 4);
 
   // rope tension, at angle ph above the incline surface
   const ropeAngle = s.th + s.ph; // measured from horizontal
   const rx = Math.cos(ropeAngle), ry = -Math.sin(ropeAngle);
   if(s.F > 0.5){
     ctx.strokeStyle = '#3a3a3a'; ctx.fillStyle = '#3a3a3a'; ctx.lineWidth = 2;
-    arrow(ctx, cx, cy, cx + rx*s.F*scale*0.24, cy + ry*s.F*scale*0.24, false);
-    ctx.fillText('F', cx + rx*s.F*scale*0.24 + 4, cy + ry*s.F*scale*0.24 - 4);
+    arrow(ctx, cx, cy, cx + rx*s.F*vscale, cy + ry*s.F*vscale, false);
+    ctx.fillText('F', cx + rx*s.F*vscale + 4, cy + ry*s.F*vscale - 4);
   }
 
   // friction, along the incline surface
@@ -369,8 +372,8 @@ function draw(){
   if(Math.abs(s.friction) > 0.3){
     const dir = Math.sign(s.friction);
     ctx.strokeStyle = '#666'; ctx.fillStyle = '#666'; ctx.lineWidth = 2;
-    arrow(ctx, cx, cy, cx + dir*upSlopeX*Math.abs(s.friction)*scale*0.24, cy + dir*upSlopeY*Math.abs(s.friction)*scale*0.24, s.regime==='kinetic');
-    ctx.fillText('f', cx + dir*upSlopeX*Math.abs(s.friction)*scale*0.24 - 12, cy + dir*upSlopeY*Math.abs(s.friction)*scale*0.24 - 4);
+    arrow(ctx, cx, cy, cx + dir*upSlopeX*Math.abs(s.friction)*vscale, cy + dir*upSlopeY*Math.abs(s.friction)*vscale, s.regime==='kinetic');
+    ctx.fillText('f', cx + dir*upSlopeX*Math.abs(s.friction)*vscale - 12, cy + dir*upSlopeY*Math.abs(s.friction)*vscale - 4);
   }
 
   document.getElementById('readout').innerHTML =

@@ -308,7 +308,11 @@ function draw(){
   ctx.clearRect(0,0,w,h);
   const s = state();
 
-  const baseX = w*0.12, baseY = h*0.86, rampLen = w*0.7;
+  const baseX = w*0.12, bottomMargin = 58, baseY = h - bottomMargin;
+  const marginRight = 46, marginTop = 78;
+  const availW = (w - marginRight) - baseX;
+  const availH = baseY - marginTop;
+  const rampLen = Math.min(availW / Math.cos(s.th), availH / Math.max(Math.sin(s.th), 1e-6));
   const topX = baseX + rampLen*Math.cos(s.th), topY = baseY - rampLen*Math.sin(s.th);
   ctx.strokeStyle = '#111'; ctx.lineWidth = 1.75;
   ctx.beginPath(); ctx.moveTo(baseX,baseY); ctx.lineTo(topX,topY); ctx.stroke();
@@ -316,8 +320,8 @@ function draw(){
   ctx.beginPath(); ctx.moveTo(baseX-20,baseY); ctx.lineTo(baseX+rampLen*Math.cos(s.th)+10,baseY); ctx.stroke();
 
   const travel = Math.min(slidePos, rampLen*0.72);
-  const cx = topX - (travel+34)*Math.cos(s.th);
-  const cy = topY + (travel+34)*Math.sin(s.th);
+  const cx = topX - (travel+40)*Math.cos(s.th);
+  const cy = topY + (travel+40)*Math.sin(s.th);
 
   ctx.save();
   ctx.translate(cx, cy);
@@ -326,25 +330,25 @@ function draw(){
   ctx.strokeRect(-20, -16, 40, 32);
   ctx.restore();
 
-  const scale = 3.2;
+  const vscale = 0.2;
   // weight straight down
   ctx.strokeStyle = '#999'; ctx.fillStyle = '#999'; ctx.lineWidth = 1.5;
-  arrow(ctx, cx, cy, cx, cy + s.m*G*scale*0.28, true);
+  arrow(ctx, cx, cy, cx, cy + s.m*G*vscale, true);
   // normal perpendicular to incline
-  const nx = Math.sin(s.th), ny = Math.cos(s.th);
+  const nx = -Math.sin(s.th), ny = Math.cos(s.th);
   ctx.strokeStyle = '#111'; ctx.fillStyle = '#111'; ctx.lineWidth = 2;
-  arrow(ctx, cx, cy, cx + nx*s.N*scale*0.28, cy - ny*s.N*scale*0.28, false);
+  arrow(ctx, cx, cy, cx + nx*s.N*vscale, cy - ny*s.N*vscale, false);
   // friction along incline, opposing sliding tendency (up-slope if about to slide down)
   const ux = -Math.cos(s.th), uy = Math.sin(s.th);
   ctx.strokeStyle = '#666'; ctx.fillStyle = '#666'; ctx.lineWidth = 2;
-  arrow(ctx, cx, cy, cx + ux*s.friction*scale*0.28, cy + uy*s.friction*scale*0.28, s.sliding);
+  arrow(ctx, cx, cy, cx + ux*s.friction*vscale, cy + uy*s.friction*vscale, s.sliding);
 
   ctx.font = '11px ui-monospace,Menlo,monospace'; ctx.fillStyle = '#999';
-  ctx.fillText('mg', cx+4, cy + s.m*G*scale*0.28 + 12);
+  ctx.fillText('mg', cx+4, cy + s.m*G*vscale + 12);
   ctx.fillStyle = '#111';
-  ctx.fillText('N', cx + nx*s.N*scale*0.28 + 4, cy - ny*s.N*scale*0.28 - 4);
+  ctx.fillText('N', cx + nx*s.N*vscale + 4, cy - ny*s.N*vscale - 4);
   ctx.fillStyle = '#666';
-  ctx.fillText('f', cx + ux*s.friction*scale*0.28 - 12, cy + uy*s.friction*scale*0.28 - 4);
+  ctx.fillText('f', cx + ux*s.friction*vscale - 12, cy + uy*s.friction*vscale - 4);
 
   document.getElementById('readout').innerHTML =
     'N = '+fmt(s.N)+' N &nbsp; &nbsp; mg sinθ = '+fmt(s.gAlong)+' N &nbsp; &nbsp; max static = '+fmt(s.fsMax)+' N &nbsp; &nbsp; friction now = '+fmt(s.friction)+' N &nbsp; &nbsp; a = '+fmt(s.a,2)+' m/s²';
@@ -363,8 +367,12 @@ function stepAnim(now,last){
     slideV += s.a*dt;
   }
   draw();
-  const { w } = sim.canvas.getBoundingClientRect();
-  if(running) anim = requestAnimationFrame(t=>stepAnim(t, now));
+  const baseX = sim.w*0.12, bottomMargin = 58, baseY = sim.h - bottomMargin;
+  const marginRight = 46, marginTop = 78;
+  const availW = (sim.w - marginRight) - baseX, availH = baseY - marginTop;
+  const rampLen = Math.min(availW/Math.cos(s.th), availH/Math.max(Math.sin(s.th), 1e-6));
+  if(running && slidePos < rampLen*0.72) anim = requestAnimationFrame(t=>stepAnim(t, now));
+  else running = false;
 }
 let slideV = 0;
 document.getElementById('playBtn').addEventListener('click', ()=>{
