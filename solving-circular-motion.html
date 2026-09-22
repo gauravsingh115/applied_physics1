@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solving Circular Motion — The Vertical Loop</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --c1: #111111; --c2: #666666; --c3: #999999;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.c1{ border-top: 2px solid var(--c1); }
+  .concept-card.c2{ border-top: 2px solid var(--c2); }
+  .concept-card.c3{ border-top: 2px solid var(--c3); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card em{ color: var(--text); font-style: normal; font-weight: 600; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: #fafafa; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .controls{ display:flex; gap:2rem; flex-wrap:wrap; margin: 0 0 14px; }
+  .controls > div{ flex:1; min-width:190px; }
+  label{ display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-muted); margin-bottom:.35rem; font-family: var(--font-mono); }
+  label span.v{ color: var(--text); }
+  input[type=range]{ width:100%; accent-color: var(--text); }
+  .readout{ font-family: var(--font-mono); font-size: .85rem; color:#333; margin: 0 0 4px; display:flex; gap:1.4rem; flex-wrap:wrap; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .activity{ background:#fafafa; border:1px solid var(--border); padding:18px 20px; margin-top:14px; }
+  .activity .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .activity .ptext{ font-size:14.5px; line-height:1.6; margin:0 0 12px; color: var(--text); }
+  .activity .ptext em{ font-style:normal; font-weight:600; }
+  .activity code{ font-family: var(--font-mono); font-size: 13px; background:#fff; border:1px solid var(--border); padding:1px 6px; }
+  .steps{ counter-reset: stepnum; list-style: none; margin: 0; padding: 0; }
+  .steps li{ counter-increment: stepnum; position: relative; padding: 10px 0 10px 34px; border-top: 1px solid var(--border-soft); font-size: 14px; color: var(--text-muted); line-height: 1.55; }
+  .steps li:first-child{ border-top: none; }
+  .steps li::before{ content: counter(stepnum); position: absolute; left: 0; top: 9px; width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 11.5px; color: var(--text); }
+  .steps li strong{ color: var(--text); font-weight: 600; }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="angular-coordinates.html">Angular Coordinates</a>
+    <a href="radial-tangential-vectors.html">Radial &amp; Tangential Vectors</a>
+    <a href="angular-displacement-speed.html">Angular Displacement &amp; Speed</a>
+    <a href="angular-velocity-acceleration.html">Angular Velocity &amp; Acceleration</a>
+    <a href="centripetal-centrifugal.html">Centripetal &amp; Centrifugal</a>
+    <a class="here" href="solving-circular-motion.html">Solving Circular Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">circular motion — solving circular motion</p>
+    <h1>Putting it all together: the vertical loop</h1>
+    <p>Every circular motion problem reduces to the same move: draw the free body diagram, pick radial and tangential axes, and apply Newton's second law along the radial direction — ΣF_radial = mv²/r. The vertical loop is the classic test of this, because the answer changes with position: gravity sometimes helps supply the centripetal force, and sometimes fights against it.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card c1">
+        <h3>Isolate the radial direction</h3>
+        <p>At any instant, "toward the center" is a specific, well-defined direction. Every force gets projected onto it before anything else happens.</p>
+      </div>
+      <div class="concept-card c2">
+        <h3>Gravity's role changes</h3>
+        <p>On a vertical circle, gravity is constant, but the fraction of it that points toward the center depends entirely on where the object is in the loop.</p>
+      </div>
+      <div class="concept-card c3">
+        <h3>Tension can't push</h3>
+        <p>A string can only pull. If the radial equation ever demands a negative tension, the string has actually gone slack — the motion isn't circular any more.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulator">
+    <div class="section-head">
+      <h2>Tension around a vertical loop</h2>
+      <p>Move the ball to any position in the loop and set its speed there. The radial version of Newton's second law gives the string's tension at that exact instant.</p>
+    </div>
+    <div class="panel">
+      <canvas id="stage" style="height:300px"></canvas>
+      <div class="readout" id="readout"></div>
+      <div class="controls">
+        <div>
+          <label>Position in loop, γ (0° = bottom) <span class="v" id="gVal">0°</span></label>
+          <input type="range" id="gSlider" min="0" max="360" step="1" value="0">
+        </div>
+        <div>
+          <label>Speed at this point, v <span class="v" id="vVal">3.0 m/s</span></label>
+          <input type="range" id="vSlider" min="0" max="8" step="0.1" value="3">
+        </div>
+        <div>
+          <label>Radius r <span class="v" id="rVal">0.6 m</span></label>
+          <input type="range" id="rSlider" min="0.3" max="1.5" step="0.05" value="0.6">
+        </div>
+        <div>
+          <label>Mass m <span class="v" id="mVal">0.3 kg</span></label>
+          <input type="range" id="mSlider" min="0.1" max="2" step="0.05" value="0.3">
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="primary" id="sweepBtn">▶ Sweep around the loop (constant speed)</button>
+        <button id="resetBtn">Stop</button>
+      </div>
+      <p class="note" id="statusNote">Tension is largest at the bottom, where gravity fights the centripetal requirement, and smallest at the top, where gravity helps supply it.</p>
+    </div>
+
+    <div class="activity">
+      <p class="pnum">try it in the simulator</p>
+      <p class="ptext">Set r = <em>0.6 m</em>, m = <em>0.3 kg</em>, v = <em>3 m/s</em>. Calculate the tension at the very <em>top</em> of the loop (γ = 180°) using <code>T = mv²/r + mg cosγ</code>, and check whether the string would even stay taut there (T ≥ 0). Then set the position slider to 180° and verify.</p>
+      <div class="answer-row">
+        <div class="answer-field"><label for="actA">T_top =</label><input type="text" id="actA" placeholder="?"><span class="unit">N</span></div>
+        <button id="checkAct">Check</button>
+      </div>
+      <div class="feedback" id="fbAct"></div>
+    </div>
+  </section>
+
+  <section id="strategy">
+    <div class="section-head">
+      <h2>A general strategy</h2>
+      <p>The same four steps solve almost any circular motion problem, vertical loops included.</p>
+    </div>
+    <div class="panel">
+      <ol class="steps">
+        <li><strong>Draw the free body diagram</strong> at the specific instant or position you care about — don't try to handle "the whole loop" at once.</li>
+        <li><strong>Identify the radial direction</strong> (toward the center) at that instant, and decompose every force onto it.</li>
+        <li><strong>Apply ΣF_radial = mv²/r</strong>, solving for whatever is unknown — tension, normal force, friction, or the speed itself.</li>
+        <li><strong>Sanity-check the sign.</strong> A string or rope can only pull (T ≥ 0); if your answer comes out negative, the assumed motion isn't actually possible.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself. Use g = 9.8 m/s².</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">At the very top of a vertical circular loop, gravity's role in providing the centripetal force is to:</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> Oppose it entirely, so more tension is needed</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> Help provide it, so less tension is needed</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> Have no effect at all, since gravity only acts vertically</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> Always exactly equal the tension</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">A ball of mass <em>0.5 kg</em> on a <em>1.2 m</em> string moves at <em>4 m/s</em> through the very <em>bottom</em> of a vertical loop. Find the tension there.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">T =</label><input type="text" id="q2a" placeholder="?"><span class="unit">N</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">At the bottom, gravity points directly away from the center, so it fully opposes the centripetal requirement: <code>T = mv²/r + mg = 0.5×16/1.2 + 0.5×9.8 ≈ 6.67 + 4.9 ≈ 11.57 N</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">Using the same string and ball (r = 1.2 m), find the <em>minimum</em> speed at the <em>top</em> of the loop needed to keep the string taut (T ≥ 0 there).</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">v_min =</label><input type="text" id="q3a" placeholder="?"><span class="unit">m/s</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">At the top, <code>T = mv²/r − mg</code>. Setting T = 0: <code>v_min = √(gr) = √(9.8 × 1.2) ≈ 3.43 m/s</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">Same ball and string (r = 1.2 m), now moving at <em>4 m/s</em> through the <em>side</em> of the loop (90° from the bottom). Find the tension there.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">T =</label><input type="text" id="q4a" placeholder="?"><span class="unit">N</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">At the side, gravity is entirely tangential — none of it points toward the center, so <code>T = mv²/r = 0.5×16/1.2 ≈ 6.67 N</code> alone.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Lower the speed slider until the readout shows a negative tension somewhere near the top. What does that negative number actually mean physically, and at what position does it first appear?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>ΣF_radial = mv²/r solves every step of the loop</footer>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+const G = 9.8, DEG = Math.PI/180;
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2,dashed){
+  ctx.save();
+  ctx.setLineDash(dashed?[4,3]:[]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.setLineDash([]);
+  const ang = Math.atan2(y2-y1, x2-x1), hs=7;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+const sim = makeCanvas('stage', 300);
+const gSlider = document.getElementById('gSlider'), vSlider = document.getElementById('vSlider');
+const rSlider = document.getElementById('rSlider'), mSlider = document.getElementById('mSlider');
+const Rpx = 90, mgPxCap = 40, tPxCap = 55, pxPerN = 3.5;
+let sweeping = false, anim = null;
+
+function state(){
+  const gammaDeg = parseFloat(gSlider.value), gamma = gammaDeg*DEG;
+  const v = parseFloat(vSlider.value), r = parseFloat(rSlider.value), m = parseFloat(mSlider.value);
+  const T = m*v*v/r + m*G*Math.cos(gamma);
+  return { gammaDeg, gamma, v, r, m, T };
+}
+
+function draw(){
+  const ctx = sim.ctx, w = sim.w, h = sim.h;
+  ctx.clearRect(0,0,w,h);
+  const s = state();
+  const cx0 = w/2, cy0 = h/2;
+
+  // faint circle (loop)
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx0, cy0, Rpx, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = '#999'; ctx.beginPath(); ctx.arc(cx0,cy0,3,0,7); ctx.fill();
+
+  const px = cx0 + Rpx*Math.sin(s.gamma), py = cy0 + Rpx*Math.cos(s.gamma);
+
+  // string
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(cx0,cy0); ctx.lineTo(px,py); ctx.stroke();
+
+  // ball
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(px,py,8,0,7); ctx.fill();
+
+  // gravity, straight down
+  ctx.strokeStyle = '#999'; ctx.fillStyle = '#999'; ctx.lineWidth = 1.8;
+  arrow(ctx, px, py, px, py+mgPxCap, true);
+  ctx.font = '11px ui-monospace,Menlo,monospace'; ctx.fillStyle = '#999';
+  ctx.fillText('mg', px+6, py+mgPxCap+2);
+
+  // tension, toward center (or away if negative, shown dashed as a warning)
+  const inX = -Math.sin(s.gamma), inY = -Math.cos(s.gamma);
+  const tMag = Math.abs(s.T);
+  const tPx = Math.min(tMag*pxPerN, tPxCap);
+  const dir = s.T >= 0 ? 1 : -1;
+  ctx.strokeStyle = s.T >= 0 ? '#111' : '#c1373f';
+  ctx.fillStyle = s.T >= 0 ? '#111' : '#c1373f';
+  ctx.lineWidth = 2.5;
+  arrow(ctx, px, py, px+inX*tPx*dir, py+inY*tPx*dir, s.T<0);
+  ctx.font = '11px ui-monospace,Menlo,monospace';
+  ctx.fillText('T='+fmt(s.T,2)+'N', px+inX*tPx*dir+6, py+inY*tPx*dir+4);
+
+  document.getElementById('readout').innerHTML =
+    'γ = '+fmt(s.gammaDeg,0)+'° &nbsp; &nbsp; v = '+fmt(s.v,1)+' m/s &nbsp; &nbsp; required centripetal force = '+fmt(s.m*s.v*s.v/s.r,2)+' N &nbsp; &nbsp; T = '+fmt(s.T,2)+' N';
+
+  const note = document.getElementById('statusNote');
+  if(s.T < 0){
+    note.innerHTML = '<b>Impossible as drawn.</b> The equation demands a negative tension — a real string can\'t push, so at this speed the ball can\'t actually stay on this circular path here.';
+  } else if(s.gammaDeg < 10 || s.gammaDeg > 350){
+    note.innerHTML = '<b>Bottom of the loop.</b> Gravity points directly away from the center, fighting the centripetal requirement — tension is at its largest here.';
+  } else if(Math.abs(s.gammaDeg-180) < 10){
+    note.innerHTML = '<b>Top of the loop.</b> Gravity points toward the center here, helping supply the centripetal force — tension is at its smallest.';
+  } else {
+    note.innerHTML = 'Tension is largest at the bottom, where gravity fights the centripetal requirement, and smallest at the top, where gravity helps supply it.';
+  }
+}
+
+function stepSweep(now,last){
+  const dt = Math.min((now-last)/1000, 0.05);
+  const s = state();
+  const om = s.r>0 ? s.v/s.r : 0;
+  let g = parseFloat(gSlider.value) + om*dt/DEG;
+  if(g >= 360) g -= 360;
+  gSlider.value = g;
+  document.getElementById('gVal').textContent = fmt(g,0)+'°';
+  draw();
+  if(sweeping) anim = requestAnimationFrame(t=>stepSweep(t, now));
+}
+document.getElementById('sweepBtn').addEventListener('click', ()=>{
+  if(sweeping) return; sweeping = true;
+  anim = requestAnimationFrame(t=>stepSweep(t,t));
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  sweeping = false; cancelAnimationFrame(anim); draw();
+});
+[gSlider,vSlider,rSlider,mSlider].forEach(s=>s.addEventListener('input', ()=>{
+  document.getElementById('gVal').textContent = gSlider.value+'°';
+  document.getElementById('vVal').textContent = parseFloat(vSlider.value).toFixed(1)+' m/s';
+  document.getElementById('rVal').textContent = parseFloat(rSlider.value).toFixed(2)+' m';
+  document.getElementById('mVal').textContent = parseFloat(mSlider.value).toFixed(2)+' kg';
+  if(!sweeping) draw();
+}));
+window.addEventListener('resize', draw);
+draw();
+
+// ---------------- activity ----------------
+document.getElementById('checkAct').addEventListener('click', ()=>{
+  const v = parseFloat(document.getElementById('actA').value);
+  const fb = document.getElementById('fbAct');
+  const r=0.6, m=0.3, vv=3;
+  const exp = m*vv*vv/r + m*G*Math.cos(Math.PI);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  if(Math.abs(v-exp)<=0.2){
+    fb.className='feedback show ok';
+    fb.textContent = 'Correct — T_top ≈ 1.56 N, which is positive, so the string does stay taut. Set r=0.6, m=0.3, v=3, and γ=180° above to confirm.';
+  } else {
+    fb.className='feedback show no';
+    fb.textContent = 'Not quite. T = mv²/r + mg cosγ, and at the top, γ=180° so cosγ = −1.';
+  }
+});
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='b'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = 'Correct. At the top, gravity points straight toward the center, so it does part of the centripetal job for you — the string only needs to supply the rest.';
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = 'Not quite. At the top of the loop, gravity points toward the center — the same direction the centripetal force needs — so it reduces how much tension the string has to supply.';
+    }
+  });
+});
+function checkSingle(id, exp, fbId, tol, note){
+  const v = parseFloat(document.getElementById(id).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  if(Math.abs(v-exp) <= tol){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+  else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" if you want a walkthrough.'; }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkSingle('q2a', 11.57, 'fb2', 0.3, 'T = mv²/r + mg at the bottom.'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkSingle('q3a', Math.sqrt(G*1.2), 'fb3', 0.1, 'v_min = √(gr), from setting T = 0 at the top.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkSingle('q4a', 0.5*16/1.2, 'fb4', 0.3, 'T = mv²/r alone at the side, since gravity is purely tangential there.'); });
+</script>
+</body>
+</html>

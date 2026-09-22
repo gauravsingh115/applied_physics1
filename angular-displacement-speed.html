@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Angular Displacement &amp; Speed — One ω, Many Speeds</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --c1: #111111; --c2: #666666; --c3: #999999;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.c1{ border-top: 2px solid var(--c1); }
+  .concept-card.c2{ border-top: 2px solid var(--c2); }
+  .concept-card.c3{ border-top: 2px solid var(--c3); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card em{ color: var(--text); font-style: normal; font-weight: 600; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: #fafafa; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .controls{ display:flex; gap:2rem; flex-wrap:wrap; margin: 0 0 14px; }
+  .controls > div{ flex:1; min-width:190px; }
+  label{ display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-muted); margin-bottom:.35rem; font-family: var(--font-mono); }
+  label span.v{ color: var(--text); }
+  input[type=range]{ width:100%; accent-color: var(--text); }
+  .readout{ font-family: var(--font-mono); font-size: .85rem; color:#333; margin: 0 0 4px; display:flex; gap:1.4rem; flex-wrap:wrap; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .activity{ background:#fafafa; border:1px solid var(--border); padding:18px 20px; margin-top:14px; }
+  .activity .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .activity .ptext{ font-size:14.5px; line-height:1.6; margin:0 0 12px; color: var(--text); }
+  .activity .ptext em{ font-style:normal; font-weight:600; }
+  .activity code{ font-family: var(--font-mono); font-size: 13px; background:#fff; border:1px solid var(--border); padding:1px 6px; }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a href="angular-coordinates.html">Angular Coordinates</a>
+    <a href="radial-tangential-vectors.html">Radial &amp; Tangential Vectors</a>
+    <a class="here" href="angular-displacement-speed.html">Angular Displacement &amp; Speed</a>
+    <a href="angular-velocity-acceleration.html">Angular Velocity &amp; Acceleration</a>
+    <a href="centripetal-centrifugal.html">Centripetal &amp; Centrifugal</a>
+    <a href="solving-circular-motion.html">Solving Circular Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">circular motion — angular displacement &amp; speed</p>
+    <h1>One spin rate, a different speed for everyone on board</h1>
+    <p>Every point on a spinning rigid object — a fan blade, a record, a merry-go-round — shares exactly the same angular displacement and the same angular speed, no matter how far it sits from the center. But their actual, physical speed through space depends on that distance. This is the single most useful fact for connecting "how fast is it spinning" to "how fast is that specific point moving."</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card c1">
+        <h3>Angular displacement, Δθ</h3>
+        <p>The change in angular position over some time interval. Positive for counterclockwise rotation, negative for clockwise — same sign convention as θ itself.</p>
+      </div>
+      <div class="concept-card c2">
+        <h3>Angular speed, ω</h3>
+        <p>How fast the angle is changing. Average angular speed is displacement over time; every point on a rigid rotating object shares the same ω.</p>
+        <span class="formula">ω_avg = Δθ / Δt</span>
+      </div>
+      <div class="concept-card c3">
+        <h3>Linear (tangential) speed, v</h3>
+        <p>The actual speed of a specific point, which does depend on its distance from the center — twice the radius means twice the speed, for the same ω.</p>
+        <span class="formula">v = rω</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulator">
+    <div class="section-head">
+      <h2>A spinning rod, two riders</h2>
+      <p>Two markers sit at different distances from the center of a rotating rod. Press Play and compare their speeds — same ω, very different v.</p>
+    </div>
+    <div class="panel">
+      <canvas id="stage" style="height:300px"></canvas>
+      <div class="readout" id="readout"></div>
+      <div class="controls">
+        <div>
+          <label>Angular speed ω <span class="v" id="omVal">2.0 rad/s</span></label>
+          <input type="range" id="omSlider" min="0" max="6" step="0.1" value="2">
+        </div>
+        <div>
+          <label>Inner marker radius r₁ <span class="v" id="r1Val">1.0 m</span></label>
+          <input type="range" id="r1Slider" min="0.2" max="3.8" step="0.1" value="1">
+        </div>
+        <div>
+          <label>Outer marker radius r₂ <span class="v" id="r2Val">3.0 m</span></label>
+          <input type="range" id="r2Slider" min="0.4" max="4" step="0.1" value="3">
+        </div>
+      </div>
+      <div class="btnRow">
+        <button class="primary" id="playBtn">▶ Play</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <p class="note" id="statusNote">Both markers complete a revolution in exactly the same time — but the outer one covers far more distance doing it.</p>
+    </div>
+
+    <div class="activity">
+      <p class="pnum">try it in the simulator</p>
+      <p class="ptext">Set ω = <em>2 rad/s</em>, r₁ = <em>1 m</em>, r₂ = <em>3 m</em>. Calculate the linear speed of each marker using <code>v = rω</code>. Then press Play and confirm the readout — the outer marker's speed should be exactly three times the inner one's.</p>
+      <div class="answer-row">
+        <div class="answer-field"><label for="actA">v₁ =</label><input type="text" id="actA" placeholder="?"><span class="unit">m/s</span></div>
+        <div class="answer-field"><label for="actB">v₂ =</label><input type="text" id="actB" placeholder="?"><span class="unit">m/s</span></div>
+        <button id="checkAct">Check</button>
+      </div>
+      <div class="feedback" id="fbAct"></div>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">Two points sit at different radii on the same spinning, rigid disk. Which quantity do they always share?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> Linear (tangential) speed</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> Angular speed</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> Distance travelled per second</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> None of the above — nothing is shared</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">A fan blade completes <em>3 full revolutions</em> in <em>2 seconds</em>, spinning at a constant rate. Find its average angular speed.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">ω =</label><input type="text" id="q2a" placeholder="?"><span class="unit">rad/s</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body">3 revolutions is <code>3 × 2π = 6π rad</code> of angular displacement, so <code>ω = 6π / 2 = 3π ≈ 9.42 rad/s</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A point on the tip of that same fan blade sits <em>0.5 m</em> from the center. Find its linear speed.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">v =</label><input type="text" id="q3a" placeholder="?"><span class="unit">m/s</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>v = rω = 0.5 × 9.42 ≈ 4.71 m/s</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A wheel's angular position changes from θ = <em>1.2 rad</em> to θ = <em>4.8 rad</em> over <em>1.8 s</em>. Find its average angular speed.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">ω_avg =</label><input type="text" id="q4a" placeholder="?"><span class="unit">rad/s</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>Δθ = 4.8 − 1.2 = 3.6 rad</code>, so <code>ω_avg = 3.6 / 1.8 = 2 rad/s</code>.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Slide the inner marker all the way down toward the center (r₁ → 0). What happens to its speed, even though ω hasn't changed at all?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>every point on a rigid rotor shares ω; only v depends on r</footer>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+const DEG = Math.PI/180;
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2,dashed){
+  ctx.save();
+  ctx.setLineDash(dashed?[4,3]:[]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.setLineDash([]);
+  const ang = Math.atan2(y2-y1, x2-x1), hs=7;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+const sim = makeCanvas('stage', 300);
+const omSlider = document.getElementById('omSlider'), r1Slider = document.getElementById('r1Slider'), r2Slider = document.getElementById('r2Slider');
+const RpxPerM = 18, vPxPerMS = 2.2, uMax = 55;
+let rodAngle = 0, running = false, anim = null;
+
+function draw(){
+  const ctx = sim.ctx, w = sim.w, h = sim.h;
+  ctx.clearRect(0,0,w,h);
+
+  const om = parseFloat(omSlider.value);
+  const r1 = parseFloat(r1Slider.value), r2 = parseFloat(r2Slider.value);
+  const cx0 = w/2, cy0 = h/2;
+
+  const dirX = Math.cos(rodAngle), dirY = -Math.sin(rodAngle);
+  const thX = -Math.sin(rodAngle), thY = -Math.cos(rodAngle);
+
+  // rod (both directions, so it looks like a full diameter)
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx0-dirX*r2*RpxPerM, cy0-dirY*r2*RpxPerM);
+  ctx.lineTo(cx0+dirX*r2*RpxPerM, cy0+dirY*r2*RpxPerM);
+  ctx.stroke();
+
+  // faint pivot circle
+  ctx.fillStyle = '#999';
+  ctx.beginPath(); ctx.arc(cx0,cy0,3,0,7); ctx.fill();
+
+  function drawMarker(r, color, label){
+    const mx = cx0+dirX*r*RpxPerM, my = cy0+dirY*r*RpxPerM;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(mx,my,6,0,7); ctx.fill();
+    const v = r*om;
+    const vPx = Math.min(v*vPxPerMS, uMax);
+    if(vPx > 1){
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2;
+      arrow(ctx, mx, my, mx+thX*vPx, my+thY*vPx, false);
+    }
+    ctx.font = '11px ui-monospace,Menlo,monospace'; ctx.fillStyle = color;
+    ctx.fillText(label+' v='+fmt(v,2), mx+thX*vPx+6, my+thY*vPx+4);
+    return v;
+  }
+  const v1 = drawMarker(r1, '#111', 'inner');
+  const v2 = drawMarker(r2, '#666', 'outer');
+
+  document.getElementById('readout').innerHTML =
+    'ω = '+fmt(om,2)+' rad/s &nbsp; &nbsp; v (inner, r='+fmt(r1,1)+'m) = '+fmt(v1,2)+' m/s &nbsp; &nbsp; v (outer, r='+fmt(r2,1)+'m) = '+fmt(v2,2)+' m/s';
+}
+
+function stepAnim(now,last){
+  const dt = Math.min((now-last)/1000, 0.05);
+  const om = parseFloat(omSlider.value);
+  rodAngle += om*dt;
+  draw();
+  if(running) anim = requestAnimationFrame(t=>stepAnim(t, now));
+}
+document.getElementById('playBtn').addEventListener('click', ()=>{
+  if(running) return;
+  running = true;
+  anim = requestAnimationFrame(t=>stepAnim(t,t));
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  running=false; cancelAnimationFrame(anim); rodAngle=0; draw();
+});
+[omSlider,r1Slider,r2Slider].forEach(s=>s.addEventListener('input', ()=>{
+  document.getElementById('omVal').textContent = parseFloat(omSlider.value).toFixed(1)+' rad/s';
+  document.getElementById('r1Val').textContent = parseFloat(r1Slider.value).toFixed(1)+' m';
+  document.getElementById('r2Val').textContent = parseFloat(r2Slider.value).toFixed(1)+' m';
+  if(!running) draw();
+}));
+window.addEventListener('resize', draw);
+draw();
+
+// ---------------- activity ----------------
+document.getElementById('checkAct').addEventListener('click', ()=>{
+  const a = parseFloat(document.getElementById('actA').value);
+  const b = parseFloat(document.getElementById('actB').value);
+  const fb = document.getElementById('fbAct');
+  const om=2, r1=1, r2=3;
+  if(isNaN(a)||isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+  if(Math.abs(a-om*r1)<=0.1 && Math.abs(b-om*r2)<=0.1){
+    fb.className='feedback show ok';
+    fb.textContent = 'Correct — v₁ = 2 m/s, v₂ = 6 m/s. Set ω=2, r₁=1, r₂=3 above and press Play to watch the outer marker\'s arrow stay three times as long.';
+  } else {
+    fb.className='feedback show no';
+    fb.textContent = 'Not quite. v = rω for each marker.';
+  }
+});
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='b'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = 'Correct. Every point on a rigid rotating object sweeps through the same angle in the same time, so ω is shared — but v = rω differs with radius.';
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = 'Not quite. Linear speed depends on radius (v = rω), so it\'s different for every point except angular speed, which every point on a rigid rotor shares.';
+    }
+  });
+});
+function checkSingle(id, exp, fbId, tol, note){
+  const v = parseFloat(document.getElementById(id).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  if(Math.abs(v-exp) <= tol){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+  else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" if you want a walkthrough.'; }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkSingle('q2a', 3*Math.PI, 'fb2', 0.1, 'ω = Δθ/Δt = (3 × 2π)/2 = 3π rad/s.'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkSingle('q3a', 0.5*3*Math.PI, 'fb3', 0.1, 'v = rω = 0.5 × 3π.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkSingle('q4a', 2, 'fb4', 0.05, 'ω_avg = Δθ/Δt = 3.6/1.8.'); });
+</script>
+</body>
+</html>

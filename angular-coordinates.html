@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Angular Coordinate System — Position by Angle, Not Just (x, y)</title>
+<style>
+  :root{
+    --bg: #ffffff; --border: #ddd; --border-soft: #eee;
+    --text: #111111; --text-muted: #666666; --text-dim: #999999;
+    --c1: #111111; --c2: #666666; --c3: #999999;
+    --bad: #c1373f; --good: #1a7f37;
+    --font-display: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-body: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --font-mono: ui-monospace,Menlo,monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; padding: 32px 20px 80px; -webkit-font-smoothing: antialiased; }
+  .app{ max-width: 840px; margin: 0 auto; }
+  a{ color: inherit; }
+  ::selection{ background: #eee; }
+  nav.pagenav{ font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-mono); }
+  nav.pagenav a{ color: var(--text-muted); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; }
+  nav.pagenav a.here{ color: var(--text); border-bottom-color: var(--text); }
+  nav.pagenav a:hover{ color: var(--text); }
+  header{ margin-bottom: 30px; max-width: 760px; }
+  .tag{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-dim); margin: 0 0 12px; letter-spacing:.02em; }
+  h1{ font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; margin: 0 0 14px; letter-spacing: -0.015em; }
+  header p{ color: var(--text-muted); font-size: 16px; line-height: 1.6; margin: 0; }
+  section{ margin-bottom: 34px; }
+  .section-head{ margin-bottom: 16px; }
+  .section-head h2{ font-family: var(--font-display); font-weight: 600; font-size: 21px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .section-head p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.55; margin: 0; max-width: 620px; }
+  .concepts{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .concept-card{ background: #fff; border: 1px solid var(--border); padding: 22px 22px 20px; }
+  .concept-card.c1{ border-top: 2px solid var(--c1); }
+  .concept-card.c2{ border-top: 2px solid var(--c2); }
+  .concept-card.c3{ border-top: 2px solid var(--c3); }
+  .concept-card h3{ font-family: var(--font-display); font-size: 18px; margin: 0 0 4px; }
+  .concept-card p{ color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 8px 0 0; }
+  .concept-card em{ color: var(--text); font-style: normal; font-weight: 600; }
+  .concept-card .formula{ font-family: var(--font-mono); font-size: 13px; color: var(--text); background: #fafafa; padding: 8px 11px; margin-top: 10px; display: inline-block; }
+  .panel{ background: #fff; border: 1px solid var(--border); padding: 16px 16px 18px; }
+  canvas{ width:100%; display:block; border:1px solid var(--border); margin: 0 0 14px; }
+  .controls{ display:flex; gap:2rem; flex-wrap:wrap; margin: 0 0 14px; }
+  .controls > div{ flex:1; min-width:190px; }
+  label{ display:flex; justify-content:space-between; font-size:.85rem; color:var(--text-muted); margin-bottom:.35rem; font-family: var(--font-mono); }
+  label span.v{ color: var(--text); }
+  input[type=range]{ width:100%; accent-color: var(--text); }
+  .readout{ font-family: var(--font-mono); font-size: .85rem; color:#333; margin: 0 0 4px; display:flex; gap:1.4rem; flex-wrap:wrap; }
+  .btnRow{ display:flex; flex-wrap:wrap; gap:.6rem; margin: 0 0 6px; }
+  button{ font-family: var(--font-body); font-weight: 600; font-size: 13px; border: 1px solid var(--border); background:#fff; color:var(--text); padding:7px 13px; cursor:pointer; transition: border-color .15s ease, background .15s ease, transform .1s ease; }
+  button:hover{ border-color: rgba(0,0,0,.32); background:#f2f2f2; }
+  button:active{ transform: translateY(1px); }
+  button.primary{ background: var(--text); border-color: var(--text); color: #fff; }
+  button.primary:hover{ background:#333; }
+  button.toggle.active{ background: var(--text); border-color: var(--text); color:#fff; }
+  .note{ font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+  .note b{ color: var(--text-muted); }
+  .activity{ background:#fafafa; border:1px solid var(--border); padding:18px 20px; margin-top:14px; }
+  .activity .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .activity .ptext{ font-size:14.5px; line-height:1.6; margin:0 0 12px; color: var(--text); }
+  .activity .ptext em{ font-style:normal; font-weight:600; }
+  .activity code{ font-family: var(--font-mono); font-size: 13px; background:#fff; border:1px solid var(--border); padding:1px 6px; }
+  .problems{ display:flex; flex-direction:column; gap:14px; }
+  .problem{ background:#fff; border:1px solid var(--border); padding:18px 20px; }
+  .problem .pnum{ font-family: var(--font-mono); font-size:12px; color:var(--text-dim); margin:0 0 8px; }
+  .problem .ptext{ font-size:15px; line-height:1.55; margin:0 0 14px; }
+  .problem .ptext em{ color:var(--text); font-style:normal; font-weight:600; }
+  .mcq-opts{ display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .mcq-opt{ display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border:1px solid var(--border); cursor:pointer; font-size:14px; transition: border-color .15s ease, background .15s ease; }
+  .mcq-opt:hover{ border-color: rgba(0,0,0,.3); }
+  .mcq-opt input{ margin-top:3px; accent-color: var(--text); }
+  .mcq-opt.correct{ border-color: var(--good); background: rgba(107,222,142,.08); }
+  .mcq-opt.incorrect{ border-color: var(--bad); background: rgba(255,122,107,.08); }
+  .answer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:8px; }
+  .answer-field{ display:flex; align-items:center; gap:6px; }
+  .answer-field label{ font-size:13px; color:var(--text-muted); font-family: var(--font-mono); }
+  .answer-field input{ width:96px; background:#fafafa; border:1px solid var(--border); color:var(--text); font-family: var(--font-mono); font-size:14px; padding:6px 9px; }
+  .answer-field .unit{ font-size:12.5px; color:var(--text-dim); }
+  .feedback{ font-size:13.5px; margin-top:8px; line-height:1.55; display:none; padding:10px 12px; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background: rgba(107,222,142,.08); color: var(--good); border:1px solid rgba(107,222,142,.25); }
+  .feedback.no{ background: rgba(255,122,107,.08); color: var(--bad); border:1px solid rgba(255,122,107,.25); }
+  details.solution{ margin-top:6px; }
+  details.solution summary{ cursor:pointer; font-size:13px; color:var(--text); font-weight:600; list-style:none; display:inline-flex; align-items:center; gap:5px; }
+  details.solution summary::-webkit-details-marker{ display:none; }
+  details.solution summary::before{ content:'›'; display:inline-block; transition: transform .15s ease; font-size:16px; }
+  details.solution[open] summary::before{ transform: rotate(90deg); }
+  details.solution .sol-body{ font-size:13.5px; color:var(--text-muted); line-height:1.6; margin-top:8px; padding-top:10px; border-top:1px solid var(--border-soft); }
+  details.solution .sol-body code{ font-family: var(--font-mono); color: var(--text); }
+  .challenge{ border:1px dashed var(--border); background:transparent; padding:16px 20px; }
+  .challenge .ptext{ margin-bottom:4px; }
+  .challenge .pnum{ color: var(--text-muted); }
+  footer{ margin-top:40px; text-align:center; color:var(--text-dim); font-size:12.5px; font-family: var(--font-mono); }
+  @media (max-width: 700px){ .concepts{ grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <nav class="pagenav">
+    <a class="here" href="angular-coordinates.html">Angular Coordinates</a>
+    <a href="radial-tangential-vectors.html">Radial &amp; Tangential Vectors</a>
+    <a href="angular-displacement-speed.html">Angular Displacement &amp; Speed</a>
+    <a href="angular-velocity-acceleration.html">Angular Velocity &amp; Acceleration</a>
+    <a href="centripetal-centrifugal.html">Centripetal &amp; Centrifugal</a>
+    <a href="solving-circular-motion.html">Solving Circular Motion</a>
+  </nav>
+
+  <header>
+    <p class="tag">circular motion — angular coordinate system</p>
+    <h1>A second way to say where something is</h1>
+    <p>So far, position has meant an (x, y) pair. For anything moving on a circle, there's a far more natural description: how far around it has gone, measured as a single angle. Pick a reference direction, agree on a positive sense of rotation, and suddenly a whole circle's worth of positions collapses into one number, θ.</p>
+  </header>
+
+  <section id="concepts">
+    <div class="concepts">
+      <div class="concept-card c1">
+        <h3>Angular position, θ</h3>
+        <p>The angle between a reference direction (almost always the positive x-axis) and the line from the center to the object. By convention, counterclockwise is <em>positive</em>.</p>
+      </div>
+      <div class="concept-card c2">
+        <h3>Radians</h3>
+        <p>The natural unit for angles in physics — defined so that an angle of 1 rad subtends an arc exactly as long as the radius. A full circle is 2π rad.</p>
+        <span class="formula">θ(rad) = θ(°) × π/180</span>
+      </div>
+      <div class="concept-card c3">
+        <h3>Arc length</h3>
+        <p>The actual distance travelled along the circle connects directly to θ, as long as θ is measured in radians.</p>
+        <span class="formula">s = rθ</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="simulator">
+    <div class="section-head">
+      <h2>Drag the angle around the circle</h2>
+      <p>The dashed lines are the ordinary x and y coordinates — notice they're completely determined once you know r and θ.</p>
+    </div>
+    <div class="panel">
+      <canvas id="stage" style="height:280px"></canvas>
+      <div class="readout" id="readout"></div>
+      <div class="controls">
+        <div>
+          <label>Angle θ <span class="v" id="thVal">40°</span></label>
+          <input type="range" id="thSlider" min="0" max="360" step="1" value="40">
+        </div>
+        <div>
+          <label>Radius r <span class="v" id="rVal">3.0 m</span></label>
+          <input type="range" id="rSlider" min="1" max="5" step="0.1" value="3">
+        </div>
+      </div>
+      <p class="note" id="statusNote">The point sits at (x, y) = (r cosθ, r sinθ), and the shaded wedge shows the arc it has swept from the positive x-axis.</p>
+    </div>
+
+    <div class="activity">
+      <p class="pnum">try it in the simulator</p>
+      <p class="ptext">Set r = <em>4 m</em> and θ = <em>150°</em>. Calculate the (x, y) coordinates of the point and the arc length swept from the positive x-axis (<code>s = rθ</code>, θ in radians). Then set the sliders to match and check the readout.</p>
+      <div class="answer-row">
+        <div class="answer-field"><label for="actA">x =</label><input type="text" id="actA" placeholder="?"><span class="unit">m</span></div>
+        <div class="answer-field"><label for="actB">y =</label><input type="text" id="actB" placeholder="?"><span class="unit">m</span></div>
+        <div class="answer-field"><label for="actC">s =</label><input type="text" id="actC" placeholder="?"><span class="unit">m</span></div>
+        <button id="checkAct">Check</button>
+      </div>
+      <div class="feedback" id="fbAct"></div>
+    </div>
+  </section>
+
+  <section id="practice">
+    <div class="section-head">
+      <h2>Practice</h2>
+      <p>Work these by hand, then check yourself.</p>
+    </div>
+    <div class="problems">
+
+      <div class="problem">
+        <p class="pnum">Problem 1 — concept check</p>
+        <p class="ptext">By the standard convention used throughout physics, which direction of rotation counts as positive angular position?</p>
+        <div class="mcq-opts" id="mcq1">
+          <label class="mcq-opt"><input type="radio" name="q1" value="a"> Counterclockwise</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="b"> Clockwise</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="c"> Whichever direction the object happens to be moving</label>
+          <label class="mcq-opt"><input type="radio" name="q1" value="d"> There is no standard convention</label>
+        </div>
+        <div class="feedback" id="fb1"></div>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 2</p>
+        <p class="ptext">Convert <em>210°</em> to radians.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q2a">θ =</label><input type="text" id="q2a" placeholder="?"><span class="unit">rad</span></div>
+          <button id="check2">Check</button>
+        </div>
+        <div class="feedback" id="fb2"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>210 × π/180 ≈ 3.665 rad</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 3</p>
+        <p class="ptext">A point sits on a circle of radius <em>6 m</em> at angular position <em>θ = 2.5 rad</em>. Find its (x, y) coordinates.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q3a">x =</label><input type="text" id="q3a" placeholder="?"><span class="unit">m</span></div>
+          <div class="answer-field"><label for="q3b">y =</label><input type="text" id="q3b" placeholder="?"><span class="unit">m</span></div>
+          <button id="check3">Check</button>
+        </div>
+        <div class="feedback" id="fb3"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>x = r cosθ = 6 × cos(2.5) ≈ −4.80 m</code>, <code>y = r sinθ = 6 × sin(2.5) ≈ 3.59 m</code>.</div>
+        </details>
+      </div>
+
+      <div class="problem">
+        <p class="pnum">Problem 4</p>
+        <p class="ptext">A point on the rim of a wheel of radius <em>3 m</em> traces out an arc length of <em>15 m</em>. Find the angle swept, in both radians and degrees.</p>
+        <div class="answer-row">
+          <div class="answer-field"><label for="q4a">θ =</label><input type="text" id="q4a" placeholder="?"><span class="unit">rad</span></div>
+          <div class="answer-field"><label for="q4b">θ =</label><input type="text" id="q4b" placeholder="?"><span class="unit">°</span></div>
+          <button id="check4">Check</button>
+        </div>
+        <div class="feedback" id="fb4"></div>
+        <details class="solution">
+          <summary>Show solution</summary>
+          <div class="sol-body"><code>θ = s/r = 15/3 = 5 rad</code>, and <code>5 × 180/π ≈ 286.5°</code>.</div>
+        </details>
+      </div>
+
+      <div class="challenge">
+        <p class="pnum">Try it in the simulator</p>
+        <p class="ptext">Drag θ past 90°, 180°, and 270° and watch the signs of x and y flip in each quadrant. Which quadrant has both x and y negative?</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>angles measured counterclockwise from the positive x-axis</footer>
+</div>
+
+<script>
+function fmt(n,d){ if(d===undefined) d=1; return Number(n).toFixed(d); }
+const DEG = Math.PI/180;
+
+function makeCanvas(id, cssHeight){
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const state = {canvas, ctx, w:0, h:cssHeight};
+  function resize(){
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    state.w = rect.width;
+    canvas.width = Math.max(1, Math.round(rect.width*dpr));
+    canvas.height = Math.max(1, Math.round(cssHeight*dpr));
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  return state;
+}
+function arrow(ctx,x1,y1,x2,y2,dashed){
+  ctx.save();
+  ctx.setLineDash(dashed?[4,3]:[]);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.setLineDash([]);
+  const ang = Math.atan2(y2-y1, x2-x1), hs=7;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(ang-0.4), y2-hs*Math.sin(ang-0.4));
+  ctx.lineTo(x2-hs*Math.cos(ang+0.4), y2-hs*Math.sin(ang+0.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+const sim = makeCanvas('stage', 280);
+const thSlider = document.getElementById('thSlider'), rSlider = document.getElementById('rSlider');
+
+function draw(){
+  const ctx = sim.ctx, w = sim.w, h = sim.h;
+  ctx.clearRect(0,0,w,h);
+
+  const thDeg = parseFloat(thSlider.value), th = thDeg*DEG;
+  const r = parseFloat(rSlider.value);
+  const cx0 = w*0.42, cy0 = h*0.52;
+  const pxPerM = Math.min((w*0.36)/5, (h*0.42)/5);
+  const Rpx = r*pxPerM;
+
+  // axes
+  ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx0-pxPerM*5.3, cy0); ctx.lineTo(cx0+pxPerM*5.3, cy0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx0, cy0-pxPerM*5.3); ctx.lineTo(cx0, cy0+pxPerM*5.3); ctx.stroke();
+  ctx.fillStyle = '#999'; ctx.font = '11px ui-monospace,Menlo,monospace';
+  ctx.fillText('+x', cx0+pxPerM*5.3-18, cy0-6);
+  ctx.fillText('+y', cx0+6, cy0-pxPerM*5.3+12);
+
+  // full circle, faint
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(cx0, cy0, Rpx, 0, Math.PI*2); ctx.stroke();
+
+  // swept sector, shaded
+  const steps = 48;
+  ctx.fillStyle = 'rgba(17,17,17,0.05)';
+  ctx.beginPath();
+  ctx.moveTo(cx0, cy0);
+  for(let i=0;i<=steps;i++){
+    const t = th * i/steps;
+    ctx.lineTo(cx0 + Rpx*Math.cos(t), cy0 - Rpx*Math.sin(t));
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const t = th * i/steps;
+    const px = cx0 + Rpx*Math.cos(t), py = cy0 - Rpx*Math.sin(t);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+
+  const px = cx0 + Rpx*Math.cos(th), py = cy0 - Rpx*Math.sin(th);
+
+  // radius line
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx0,cy0); ctx.lineTo(px,py); ctx.stroke();
+
+  // projections
+  ctx.strokeStyle = '#999'; ctx.lineWidth = 1.3; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px,cy0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(cx0,py); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // point
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(px,py,5,0,7); ctx.fill();
+
+  // theta label near center
+  ctx.fillStyle = '#666'; ctx.font = '12px ui-monospace,Menlo,monospace';
+  const labelAng = th/2;
+  ctx.fillText('θ', cx0 + 22*Math.cos(labelAng), cy0 - 22*Math.sin(labelAng));
+
+  const x = r*Math.cos(th), y = r*Math.sin(th), s = r*th;
+  document.getElementById('readout').innerHTML =
+    'θ = '+fmt(thDeg,0)+'° ('+fmt(th,3)+' rad) &nbsp; &nbsp; x = '+fmt(x,2)+' m &nbsp; &nbsp; y = '+fmt(y,2)+' m &nbsp; &nbsp; arc length s = '+fmt(s,2)+' m';
+}
+
+[thSlider,rSlider].forEach(s=>s.addEventListener('input', ()=>{
+  document.getElementById('thVal').textContent = thSlider.value+'°';
+  document.getElementById('rVal').textContent = parseFloat(rSlider.value).toFixed(1)+' m';
+  draw();
+}));
+window.addEventListener('resize', draw);
+draw();
+
+// ---------------- activity ----------------
+document.getElementById('checkAct').addEventListener('click', ()=>{
+  const a = parseFloat(document.getElementById('actA').value);
+  const b = parseFloat(document.getElementById('actB').value);
+  const c = parseFloat(document.getElementById('actC').value);
+  const fb = document.getElementById('fbAct');
+  const th = 150*DEG, r=4;
+  const expX = r*Math.cos(th), expY = r*Math.sin(th), expS = r*th;
+  if(isNaN(a)||isNaN(b)||isNaN(c)){ fb.className='feedback show no'; fb.textContent='Enter all three values first.'; return; }
+  const ok = Math.abs(a-expX)<=0.15 && Math.abs(b-expY)<=0.15 && Math.abs(c-expS)<=0.15;
+  if(ok){
+    fb.className='feedback show ok';
+    fb.textContent = 'Correct — x ≈ '+fmt(expX,2)+' m, y ≈ '+fmt(expY,2)+' m, s ≈ '+fmt(expS,2)+' m. Set r=4 and θ=150° above to see the same point and shaded wedge.';
+  } else {
+    fb.className='feedback show no';
+    fb.textContent = 'Not quite. x = r cosθ, y = r sinθ, and s = rθ with θ in radians (150° ≈ 2.618 rad).';
+  }
+});
+
+// ---------------- practice ----------------
+document.querySelectorAll('#mcq1 input').forEach(inp=>{
+  inp.addEventListener('change', ()=>{
+    document.querySelectorAll('#mcq1 .mcq-opt').forEach(o=>o.classList.remove('correct','incorrect'));
+    const fb = document.getElementById('fb1');
+    const chosen = document.querySelector('#mcq1 input:checked');
+    const label = chosen.closest('.mcq-opt');
+    if(chosen.value==='a'){
+      label.classList.add('correct'); fb.className='feedback show ok';
+      fb.textContent = 'Correct. Counterclockwise is the standard positive direction — it\'s also the direction that matches the right-hand rule for angular velocity vectors later on.';
+    } else {
+      label.classList.add('incorrect'); fb.className='feedback show no';
+      fb.textContent = 'Not quite. The universal convention is counterclockwise = positive, regardless of which way any particular object happens to be spinning.';
+    }
+  });
+});
+function checkSingle(id, exp, fbId, tol, note){
+  const v = parseFloat(document.getElementById(id).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(v)){ fb.className='feedback show no'; fb.textContent='Enter a value first.'; return; }
+  if(Math.abs(v-exp) <= tol){ fb.className='feedback show ok'; fb.textContent='Correct — '+note; }
+  else{ fb.className='feedback show no'; fb.textContent='Not quite yet. Open "Show solution" if you want a walkthrough.'; }
+}
+function checkPair(idA, idB, expA, expB, fbId, tolA, tolB, note){
+  const a = parseFloat(document.getElementById(idA).value);
+  const b = parseFloat(document.getElementById(idB).value);
+  const fb = document.getElementById(fbId);
+  if(isNaN(a) || isNaN(b)){ fb.className='feedback show no'; fb.textContent='Enter both values first.'; return; }
+  const okA = Math.abs(a-expA) <= tolA;
+  const okB = Math.abs(b-expB) <= tolB;
+  if(okA && okB){ fb.className='feedback show ok'; fb.textContent = 'Correct — '+note; }
+  else{
+    fb.className='feedback show no';
+    let msg='Not quite yet. ';
+    if(!okA) msg+='Check the first value. ';
+    if(!okB) msg+='Check the second value. ';
+    msg+='Open "Show solution" if you want a walkthrough.';
+    fb.textContent = msg;
+  }
+}
+document.getElementById('check2').addEventListener('click', ()=>{ checkSingle('q2a', 210*DEG, 'fb2', 0.02, 'θ(rad) = θ(°) × π/180.'); });
+document.getElementById('check3').addEventListener('click', ()=>{ checkPair('q3a','q3b', 6*Math.cos(2.5), 6*Math.sin(2.5), 'fb3', 0.1, 0.1, 'x = r cosθ and y = r sinθ.'); });
+document.getElementById('check4').addEventListener('click', ()=>{ checkPair('q4a','q4b', 5, 5*180/Math.PI, 'fb4', 0.05, 1, 'θ = s/r gives radians directly; multiply by 180/π for degrees.'); });
+</script>
+</body>
+</html>
